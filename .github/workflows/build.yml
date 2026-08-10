@@ -62,7 +62,7 @@ jobs:
 
       - name: Extract Version
         run: |
-          echo "RELEASE_TAG=$(grep -oP '"version":\s*"\K[^"]+' cmd/lxdapi/main.go)" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=$(grep -oP '"version":\s*"\K[^"]+' lxdapi/cmd/lxdapi/main.go)" >> "$GITHUB_ENV"
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
