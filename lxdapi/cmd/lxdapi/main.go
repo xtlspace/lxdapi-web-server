@@ -64,6 +64,12 @@ func main() {
 
 	logger.Info("正在初始化网络组件...")
 	
+	if err := ipv4.FlushNftTables(); err != nil {
+		logger.Error("清空nftables表失败: %v", err)
+	} else {
+		logger.OK("nftables 表已清空，等待按数据库重建")
+	}
+	
 	if err := ipv4.InitManager(); err != nil {
 		logger.Error("IPv4管理器初始化失败: %v", err)
 	}

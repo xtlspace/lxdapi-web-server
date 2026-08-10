@@ -7,17 +7,6 @@ import (
 	"strings"
 )
 
-func (m *Manager) checkPortDNATExists(publicIP string, publicPort int, containerIP string, containerPort int, protocol, iface string) bool {
-	groups := m.buildPortDNATMatchGroups(publicIP, publicPort, publicPort, containerIP, containerPort, containerPort, protocol, iface, true)
-	handles := m.findNftHandlesByGroups("lxdnat", "prerouting", groups)
-	return len(handles) > 0
-}
-
-func (m *Manager) checkDNATExists(publicIP, containerIP, iface string) bool {
-	handle := m.findNftHandle("lxdip", "prerouting", publicIP, containerIP)
-	return handle != ""
-}
-
 func (m *Manager) addPortDNAT(publicIP string, publicPort, publicPortEnd int, containerIP string, containerPort, containerPortEnd int, protocol, iface string) error {
 	var portRange, containerPortRange string
 	if publicPortEnd > 0 && publicPortEnd != publicPort {

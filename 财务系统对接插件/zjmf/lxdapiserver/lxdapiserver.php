@@ -2,12 +2,12 @@
 
 use think\Db;
 
-define('LXDAPISERVER_DEBUG', false);
+define('lxdapiserver_DEBUG', false);
 
 function lxdapiserver_debug($message, $data = null)
 {
-    if (!LXDAPISERVER_DEBUG) return;
-    $log = '[LXDAPISERVER-DEBUG] ' . $message;
+    if (!lxdapiserver_DEBUG) return;
+    $log = '[lxdapiserver-DEBUG] ' . $message;
     if ($data !== null) {
         $log .= ' | Data: ' . json_encode($data, JSON_UNESCAPED_UNICODE);
     }
@@ -17,7 +17,7 @@ function lxdapiserver_debug($message, $data = null)
 function lxdapiserver_MetaData()
 {
     return [
-        'DisplayName' => '魔方财务-LXD对接插件 by xkatld',
+        'DisplayName' => '魔方财务-LXD对接插件V2',
         'APIVersion'  => 'v2.1.0',
         'HelpDoc'     => 'https://github.com/xkatld/lxdapi-web-server',
     ];
@@ -74,6 +74,13 @@ function lxdapiserver_ConfigOptions()
             'description' => '单位：GB',
             'default'     => '100',
             'key'         => 'traffic_limit',
+        ],
+        'traffic_reset_price' => [
+            'type'        => 'text',
+            'name'        => '流量重置价格',
+            'description' => '前台重置流量收费，单位：元/次，留空或0则不显示重置按钮',
+            'default'     => '0',
+            'key'         => 'traffic_reset_price',
         ],
         'ipv4_pool_limit' => [
             'type'        => 'text',
@@ -340,7 +347,7 @@ function lxdapiserver_CreateAccount($params)
             $update = [
                 'domainstatus' => 'Active',
                 'username'     => 'root',
-                'dedicatedip'  => $params['server_ip'],
+                'dedicatedip'  => '请自行映射22端口',
             ];
             
             Db::name('host')->where('id', $params['hostid'])->update($update);
@@ -607,6 +614,197 @@ function lxdapiserver_TrafficReset($params)
     return ['status' => 'error', 'msg' => $res['msg'] ?? '流量重置失败'];
 }
 
+function lxdapiserver_EnsureTrafficResetTable()
+{
+    $prefix = \think\Db::getConfig('prefix');
+    if (empty($prefix)) {
+        $prefix = 'shd_';
+    }
+    $table = $prefix . 'lxd_traffic_reset';
+    $exists = Db::query("SHOW TABLES LIKE '" . $table . "'");
+    if (empty($exists)) {
+        Db::execute("CREATE TABLE IF NOT EXISTS `" . $table . "` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `uid` int(11) NOT NULL DEFAULT '0',
+            `hostid` int(11) NOT NULL DEFAULT '0',
+            `invoiceid` int(11) NOT NULL DEFAULT '0',
+            `amount` decimal(10,2) NOT NULL DEFAULT '0.00',
+            `status` varchar(20) NOT NULL DEFAULT 'pending',
+            `create_time` int(11) NOT NULL DEFAULT '0',
+            `paid_time` int(11) NOT NULL DEFAULT '0',
+            `handle_time` int(11) NOT NULL DEFAULT '0',
+            `remark` varchar(255) NOT NULL DEFAULT '',
+            PRIMARY KEY (`id`),
+            KEY `hostid` (`hostid`),
+            KEY `invoiceid` (`invoiceid`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+}
+
+function lxdapiserver_DoTrafficResetByHost($hostid, $uid = 0)
+{
+    $hostid = intval($hostid);
+    if ($hostid <= 0) {
+        return ['status' => 'error', 'msg' => '主机参数错误'];
+    }
+    
+    $hostinfo = Db::name('host')->where('id', $hostid)->find();
+    if (empty($hostinfo)) {
+        return ['status' => 'error', 'msg' => '主机不存在'];
+    }
+    if ($uid > 0 && intval($hostinfo['uid']) != intval($uid)) {
+        return ['status' => 'error', 'msg' => '无权操作该主机'];
+    }
+    
+    try {
+        $hostModel = new \app\common\model\HostModel();
+        $params = $hostModel->getProvisionParams($hostid);
+    } catch (\Exception $e) {
+        return ['status' => 'error', 'msg' => '获取主机配置失败: ' . $e->getMessage()];
+    }
+    if (empty($params) || empty($params['server_ip'])) {
+        return ['status' => 'error', 'msg' => '获取主机配置失败'];
+    }
+    
+    $res = lxdapiserver_TrafficReset($params);
+    if (isset($res['status']) && $res['status'] == 'success') {
+        try {
+            Db::name('host')->where('id', $hostid)->update(['bwusage' => 0]);
+        } catch (\Exception $e) {
+            lxdapiserver_debug('清零流量用量失败', ['hostid' => $hostid, 'error' => $e->getMessage()]);
+        }
+        return ['status' => 'success', 'msg' => $res['msg'] ?? '流量重置成功'];
+    }
+    
+    return ['status' => 'error', 'msg' => $res['msg'] ?? '流量重置失败'];
+}
+
+function lxdapiserver_AllowFunction()
+{
+    return [
+        'client' => ['ResetTraffic'],
+    ];
+}
+
+function lxdapiserver_ResetTraffic($params)
+{
+    $hostid = intval($params['hostid'] ?? 0);
+    $uid = intval($params['uid'] ?? ($params['userid'] ?? 0));
+    $containerName = is_array($params['domain']) ? $params['domain'][0] : ($params['domain'] ?? '');
+    
+    $price = floatval($params['configoptions']['traffic_reset_price'] ?? 0);
+    if ($price <= 0) {
+        return ['status' => 'error', 'msg' => '暂未开放流量重置功能'];
+    }
+    
+    $hostinfo = Db::name('host')->where('id', $hostid)->where('uid', $uid)->find();
+    if (empty($hostinfo)) {
+        return ['status' => 'error', 'msg' => '主机不存在'];
+    }
+    if (empty($hostinfo['domain'])) {
+        return ['status' => 'error', 'msg' => '容器信息不存在'];
+    }
+    if ($hostinfo['domainstatus'] != 'Active') {
+        return ['status' => 'error', 'msg' => '当前状态不支持重置流量'];
+    }
+    
+    lxdapiserver_EnsureTrafficResetTable();
+    
+    $existing = Db::name('lxd_traffic_reset')
+        ->where('hostid', $hostid)
+        ->where('uid', $uid)
+        ->whereIn('status', ['pending', 'failed'])
+        ->order('id', 'desc')
+        ->find();
+    if (!empty($existing)) {
+        $invoiceInfo = Db::name('invoices')->where('id', $existing['invoiceid'])->find();
+        $invStatus = $invoiceInfo['status'] ?? '';
+        if ($invStatus == 'Unpaid') {
+            return [
+                'status'    => 200,
+                'msg'       => '已有待支付的重置账单，请前往支付',
+                'invoiceid' => intval($existing['invoiceid']),
+                'data'      => ['invoiceid' => intval($existing['invoiceid'])],
+            ];
+        }
+        if ($invStatus == 'Paid') {
+            $resetResult = lxdapiserver_DoTrafficResetByHost($hostid, $uid);
+            if (isset($resetResult['status']) && $resetResult['status'] == 'success') {
+                Db::name('lxd_traffic_reset')->where('id', $existing['id'])->update([
+                    'status'      => 'done',
+                    'paid_time'   => intval($invoiceInfo['paid_time']),
+                    'handle_time' => time(),
+                    'remark'      => $resetResult['msg'],
+                ]);
+                return ['status' => 200, 'msg' => '流量已重置成功'];
+            }
+            Db::name('lxd_traffic_reset')->where('id', $existing['id'])->update([
+                'handle_time' => time(),
+                'remark'      => $resetResult['msg'],
+            ]);
+            return ['status' => 'error', 'msg' => '流量重置失败：' . $resetResult['msg']];
+        }
+    }
+    
+    $now = time();
+    $invoiceData = [
+        'uid'                 => $uid,
+        'invoice_num'         => date('YmdHis') . mt_rand(1000, 9999),
+        'create_time'         => $now,
+        'update_time'         => $now,
+        'due_time'            => $now + 86400 * 7,
+        'paid_time'           => 0,
+        'last_capture_attempt' => 0,
+        'subtotal'            => $price,
+        'credit'              => 0,
+        'tax'                 => 0,
+        'tax2'                => 0,
+        'total'               => $price,
+        'taxrate'             => 0,
+        'taxrate2'            => 0,
+        'status'              => 'Unpaid',
+        'payment'             => '',
+        'notes'               => '',
+        'delete_time'         => 0,
+        'due_email_times'     => 0,
+        'type'                => 'product',
+    ];
+    $invoiceId = Db::name('invoices')->insertGetId($invoiceData);
+    
+    Db::name('invoice_items')->insert([
+        'invoice_id'  => $invoiceId,
+        'uid'         => $uid,
+        'type'        => 'custom',
+        'rel_id'      => $hostid,
+        'description' => '容器流量重置（' . $containerName . '）',
+        'amount'      => $price,
+        'taxed'       => 0,
+        'due_time'    => 0,
+        'payment'     => '',
+        'notes'       => '',
+        'delete_time' => 0,
+    ]);
+    
+    Db::name('lxd_traffic_reset')->insert([
+        'uid'         => $uid,
+        'hostid'      => $hostid,
+        'invoiceid'   => $invoiceId,
+        'amount'      => $price,
+        'status'      => 'pending',
+        'create_time' => $now,
+        'paid_time'   => 0,
+        'handle_time' => 0,
+        'remark'      => '',
+    ]);
+    
+    return [
+        'status'    => 200,
+        'msg'       => '账单已生成，请完成支付',
+        'invoiceid' => intval($invoiceId),
+        'data'      => ['invoiceid' => intval($invoiceId)],
+    ];
+}
+
 function lxdapiserver_CrackPassword($params, $new_pass)
 {
     $containerName = is_array($params['domain']) ? $params['domain'][0] : $params['domain'];
@@ -672,6 +870,61 @@ function lxdapiserver_ClientAreaOutput($params, $key)
     
     if ($key == 'info') {
         $containerName = is_array($params['domain']) ? $params['domain'][0] : $params['domain'];
+        $hostid = intval($params['hostid'] ?? 0);
+        $uid = intval($params['uid'] ?? ($params['userid'] ?? 0));
+        
+        $resetPrice = floatval($params['configoptions']['traffic_reset_price'] ?? 0);
+        $trafficResetEnabled = $resetPrice > 0;
+        $resetNotice = '';
+        $resetNoticeType = '';
+        $hasPending = false;
+        $pendingInvoiceId = 0;
+        
+        if ($trafficResetEnabled && $hostid > 0 && $uid > 0) {
+            try {
+                lxdapiserver_EnsureTrafficResetTable();
+                $pendingList = Db::name('lxd_traffic_reset')
+                    ->where('hostid', $hostid)
+                    ->where('uid', $uid)
+                    ->whereIn('status', ['pending', 'failed'])
+                    ->order('id', 'desc')
+                    ->limit(20)
+                    ->select()
+                    ->toArray();
+                foreach ($pendingList as $pending) {
+                    $invoiceInfo = Db::name('invoices')->where('id', $pending['invoiceid'])->find();
+                    if (empty($invoiceInfo)) {
+                        continue;
+                    }
+                    if ($invoiceInfo['status'] == 'Paid') {
+                        $resetResult = lxdapiserver_DoTrafficResetByHost($hostid, $uid);
+                        if (isset($resetResult['status']) && $resetResult['status'] == 'success') {
+                            Db::name('lxd_traffic_reset')->where('id', $pending['id'])->update([
+                                'status'      => 'done',
+                                'paid_time'   => intval($invoiceInfo['paid_time']),
+                                'handle_time' => time(),
+                                'remark'      => $resetResult['msg'],
+                            ]);
+                            $resetNotice = '流量已重置成功';
+                            $resetNoticeType = 'success';
+                        } else {
+                            Db::name('lxd_traffic_reset')->where('id', $pending['id'])->update([
+                                'handle_time' => time(),
+                                'remark'      => $resetResult['msg'],
+                            ]);
+                            $resetNotice = '流量重置失败：' . $resetResult['msg'];
+                            $resetNoticeType = 'danger';
+                        }
+                    } elseif ($invoiceInfo['status'] == 'Unpaid') {
+                        $hasPending = true;
+                        $pendingInvoiceId = intval($pending['invoiceid']);
+                        break;
+                    }
+                }
+            } catch (\Exception $e) {
+                lxdapiserver_debug('流量重置兜底处理异常', ['error' => $e->getMessage()]);
+            }
+        }
         
         $endpoint = '/api/system/containers/' . urlencode($containerName) . '/credential';
         $res = lxdapiserver_ApiRequest($params, $endpoint, [], 'GET');
@@ -701,6 +954,12 @@ function lxdapiserver_ClientAreaOutput($params, $key)
                 'iframe_url' => $iframeUrl,
                 'access_code' => $accessCode,
                 'error_msg' => $errorMsg,
+                'traffic_reset_enabled' => $trafficResetEnabled,
+                'reset_price' => number_format($resetPrice, 2),
+                'reset_notice' => $resetNotice,
+                'reset_notice_type' => $resetNoticeType,
+                'has_pending' => $hasPending,
+                'pending_invoiceid' => $pendingInvoiceId,
             ]
         ];
     }

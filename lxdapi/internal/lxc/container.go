@@ -501,3 +501,21 @@ func (c *Client) GetContainerDNS(ctx context.Context, name string) ([]string, er
 	
 	return dnsServers, nil
 }
+
+func (c *Client) SetContainerIPv4Address(ctx context.Context, name, ip string) error {
+	_, err := c.exec(ctx, "config", "device", "set", name, "eth0", "ipv4.address", ip)
+	if err != nil {
+		return fmt.Errorf("固定容器IPv4地址失败: %v", err)
+	}
+	logger.OK("容器 %s 的IPv4地址已固定: %s", name, ip)
+	return nil
+}
+
+func (c *Client) SetContainerIPv6Address(ctx context.Context, name, ip string) error {
+	_, err := c.exec(ctx, "config", "device", "set", name, "eth0", "ipv6.address", ip)
+	if err != nil {
+		return fmt.Errorf("固定容器IPv6地址失败: %v", err)
+	}
+	logger.OK("容器 %s 的IPv6地址已固定: %s", name, ip)
+	return nil
+}

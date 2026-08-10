@@ -239,10 +239,8 @@ func (m *Manager) restoreBindingsWithRetry(bindings []models.IPv6Binding) {
 
 		var container models.Container
 		if err := db.DB.Where("name = ?", binding.ContainerName).First(&container).Error; err == nil && container.PrivateIPv6 != "" {
-			if !m.checkDNATExists(binding.IPAddress, container.PrivateIPv6, pool.Interface) {
-				m.addSNAT(binding.IPAddress, container.PrivateIPv6, pool.Interface)
-				m.addDNAT(binding.IPAddress, container.PrivateIPv6, pool.Interface)
-			}
+			m.addSNAT(binding.IPAddress, container.PrivateIPv6, pool.Interface)
+			m.addDNAT(binding.IPAddress, container.PrivateIPv6, pool.Interface)
 		}
 
 		restored++
@@ -264,17 +262,10 @@ func (m *Manager) restorePortMappings() {
 		return
 	}
 
-	logger.Info("检查 %d 个IPv6端口映射...", len(mappings))
+	logger.Info("重建 %d 个IPv6端口映射...", len(mappings))
 	restored := 0
 
 	for _, mapping := range mappings {
-		proto := mapping.Protocol
-		if proto == "both" {
-			proto = "tcp"
-		}
-		if m.checkPortDNATExists(mapping.ForwardIP, mapping.PublicPort, mapping.ContainerIP, mapping.ContainerPort, proto, mapping.Interface) {
-			continue
-		}
 		publicPortEnd := mapping.PublicPortEnd
 		if publicPortEnd == 0 {
 			publicPortEnd = mapping.PublicPort
@@ -284,14 +275,14 @@ func (m *Manager) restorePortMappings() {
 			containerPortEnd = mapping.ContainerPort
 		}
 		if err := m.addPortDNAT(mapping.ForwardIP, mapping.PublicPort, publicPortEnd, mapping.ContainerIP, mapping.ContainerPort, containerPortEnd, mapping.Protocol, mapping.Interface); err != nil {
-			logger.Warn("恢复IPv6端口映射失败 %s:%d: %v", mapping.ForwardIP, mapping.PublicPort, err)
+			logger.Warn("重建IPv6端口映射失败 %s:%d: %v", mapping.ForwardIP, mapping.PublicPort, err)
 			continue
 		}
 		restored++
 	}
 
 	if restored > 0 {
-		logger.OK("IPv6端口映射恢复: %d 条", restored)
+		logger.OK("IPv6端口映射重建: %d 条", restored)
 	}
 }
 

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"lxdapi/internal/core"
 	"lxdapi/internal/db"
-	"lxdapi/internal/ipv4"
-	"lxdapi/internal/ipv6"
 	"lxdapi/internal/lxc"
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
@@ -78,8 +76,6 @@ func (m *Monitor) collect() {
 	}
 
 	for _, name := range containers {
-		m.syncContainerIP(name)
-
 		if m.isUserTrafficLocked(name) {
 			m.stopLockedContainer(name)
 			continue
@@ -449,139 +445,6 @@ func (m *Monitor) isUserTrafficLocked(containerName string) bool {
 	}
 	
 	return user.TrafficLocked
-}
-
-func (m *Monitor) syncContainerIP(containerName string) {
-	var container models.Container
-	if err := db.DB.Where("name = ?", containerName).First(&container).Error; err != nil {
-		return
-	}
-
-	ctx := context.Background()
-
-	actualIPv4, _ := m.lxcClient.GetContainerIP(ctx, containerName)
-	actualIPv6, _ := m.lxcClient.GetContainerIPv6(ctx, containerName)
-
-	ipv4Changed := actualIPv4 != "" && actualIPv4 != container.PrivateIP
-	ipv6Changed := actualIPv6 != "" && actualIPv6 != container.PrivateIPv6
-
-	if ipv4Changed {
-		logger.Warn("检测到容器 %s 的IPv4地址变化: %s -> %s", containerName, container.PrivateIP, actualIPv4)
-
-		oldIP := container.PrivateIP
-		db.DB.Model(&container).Update("private_ip", actualIPv4)
-
-		m.updateIPv4Rules(containerName, oldIP, actualIPv4)
-
-		logger.OK("容器 %s 的IPv4地址已同步并更新规则", containerName)
-	}
-
-	if ipv6Changed {
-		logger.Warn("检测到容器 %s 的IPv6地址变化: %s -> %s", containerName, container.PrivateIPv6, actualIPv6)
-
-		oldIP := container.PrivateIPv6
-		db.DB.Model(&container).Update("private_ipv6", actualIPv6)
-
-		m.updateIPv6Rules(containerName, oldIP, actualIPv6)
-
-		logger.OK("容器 %s 的IPv6地址已同步并更新规则", containerName)
-	}
-}
-
-func (m *Monitor) updateIPv4Rules(containerName, oldIP, newIP string) {
-	if ipv4.GlobalManager == nil {
-		return
-	}
-
-	var bindings []models.IPv4Binding
-	if err := db.DB.Where("container_name = ?", containerName).Find(&bindings).Error; err == nil {
-		for _, binding := range bindings {
-			var pool models.IPv4Pool
-			if err := db.DB.Where("ip_address = ?", binding.IPAddress).First(&pool).Error; err != nil {
-				continue
-			}
-
-			ipv4.GlobalManager.RemovePortMapping(binding.IPAddress, 0, 0, oldIP, 0, 0, "", pool.Interface)
-
-			if err := ipv4.GlobalManager.BindIP(containerName, binding.IPAddress, newIP); err != nil {
-				logger.Warn("重新绑定IPv4失败 %s: %v", binding.IPAddress, err)
-			}
-		}
-	}
-
-	var mappings []models.PortMappingV4
-	if err := db.DB.Where("container_name = ?", containerName).Find(&mappings).Error; err == nil {
-		for _, mapping := range mappings {
-			publicPortEnd := mapping.PublicPortEnd
-			if publicPortEnd == 0 {
-				publicPortEnd = mapping.PublicPort
-			}
-			containerPortEnd := mapping.ContainerPortEnd
-			if containerPortEnd == 0 {
-				containerPortEnd = mapping.ContainerPort
-			}
-
-			if err := ipv4.GlobalManager.RemovePortMapping(mapping.ForwardIP, mapping.PublicPort, publicPortEnd, oldIP, mapping.ContainerPort, containerPortEnd, mapping.Protocol, mapping.Interface); err != nil {
-				logger.Warn("删除旧IPv4端口映射失败 %s:%d: %v", mapping.ForwardIP, mapping.PublicPort, err)
-				continue
-			}
-
-			if err := ipv4.GlobalManager.AddPortMapping(mapping.ForwardIP, mapping.PublicPort, publicPortEnd, newIP, mapping.ContainerPort, containerPortEnd, mapping.Protocol, mapping.Interface); err != nil {
-				logger.Warn("重新添加IPv4端口映射失败 %s:%d: %v", mapping.ForwardIP, mapping.PublicPort, err)
-				continue
-			}
-
-			db.DB.Model(&mapping).Update("container_ip", newIP)
-		}
-	}
-}
-
-func (m *Monitor) updateIPv6Rules(containerName, oldIP, newIP string) {
-	if ipv6.GlobalManager == nil {
-		return
-	}
-
-	var bindings []models.IPv6Binding
-	if err := db.DB.Where("container_name = ?", containerName).Find(&bindings).Error; err == nil {
-		for _, binding := range bindings {
-			var pool models.IPv6Pool
-			if err := db.DB.Where("ip_address = ?", binding.IPAddress).First(&pool).Error; err != nil {
-				continue
-			}
-
-			ipv6.GlobalManager.RemovePortMapping(binding.IPAddress, 0, 0, oldIP, 0, 0, "", pool.Interface)
-
-			if err := ipv6.GlobalManager.BindIP(containerName, binding.IPAddress, newIP); err != nil {
-				logger.Warn("重新绑定IPv6失败 %s: %v", binding.IPAddress, err)
-			}
-		}
-	}
-
-	var mappings []models.PortMappingV6
-	if err := db.DB.Where("container_name = ?", containerName).Find(&mappings).Error; err == nil {
-		for _, mapping := range mappings {
-			publicPortEnd := mapping.PublicPortEnd
-			if publicPortEnd == 0 {
-				publicPortEnd = mapping.PublicPort
-			}
-			containerPortEnd := mapping.ContainerPortEnd
-			if containerPortEnd == 0 {
-				containerPortEnd = mapping.ContainerPort
-			}
-
-			if err := ipv6.GlobalManager.RemovePortMapping(mapping.ForwardIP, mapping.PublicPort, publicPortEnd, oldIP, mapping.ContainerPort, containerPortEnd, mapping.Protocol, mapping.Interface); err != nil {
-				logger.Warn("删除旧IPv6端口映射失败 %s:%d: %v", mapping.ForwardIP, mapping.PublicPort, err)
-				continue
-			}
-
-			if err := ipv6.GlobalManager.AddPortMapping(mapping.ForwardIP, mapping.PublicPort, publicPortEnd, newIP, mapping.ContainerPort, containerPortEnd, mapping.Protocol, mapping.Interface); err != nil {
-				logger.Warn("重新添加IPv6端口映射失败 %s:%d: %v", mapping.ForwardIP, mapping.PublicPort, err)
-				continue
-			}
-
-			db.DB.Model(&mapping).Update("container_ip", newIP)
-		}
-	}
 }
 
 func (m *Monitor) ResetUserTraffic(username string) error {
