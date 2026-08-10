@@ -8,6 +8,7 @@ import (
 type Config struct {
 	System   SystemConfig   `yaml:"system"`
 	LXC      LXCConfig      `yaml:"lxc"`
+	Network  NetworkConfig  `yaml:"network"`
 	Traffic  TrafficConfig  `yaml:"traffic"`
 	Task     TaskConfig     `yaml:"task"`
 	Admin    AdminConfig    `yaml:"admin"`
@@ -48,6 +49,10 @@ type LXCConfig struct {
 	Socket         string `yaml:"socket"`
 	Timeout        int    `yaml:"timeout"`
 	DefaultStorage string `yaml:"default_storage"`
+}
+
+type NetworkConfig struct {
+	StartPostCommand string `yaml:"start_post_command"`
 }
 
 type TrafficConfig struct {

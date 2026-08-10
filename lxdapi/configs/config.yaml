@@ -63,6 +63,11 @@ lxc:
   # 默认存储池
   default_storage: "default"
 
+# 网络配置
+network:
+  # nftables规则重建完成后执行的命令(通过sh -c执行，留空不执行)
+  start_post_command: ""
+
 # 流量监控配置
 traffic:
   # 启用流量监控

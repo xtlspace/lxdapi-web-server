@@ -3,6 +3,7 @@ package ipv4
 import (
 	"fmt"
 	"lxdapi/internal/db"
+	"lxdapi/internal/network"
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
 	"os/exec"
@@ -263,6 +264,7 @@ func (m *Manager) restoreBindingsWithRetry(bindings []models.IPv4Binding) {
 }
 
 func (m *Manager) restorePortMappings() {
+	defer network.NotifyRebuildDone()
 	var mappings []models.PortMappingV4
 	if err := db.DB.Where("status = ?", "active").Find(&mappings).Error; err != nil {
 		logger.Warn("查询端口映射失败: %v", err)

@@ -3,6 +3,7 @@ package ipv6
 import (
 	"fmt"
 	"lxdapi/internal/db"
+	"lxdapi/internal/network"
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
 	"os/exec"
@@ -252,6 +253,7 @@ func (m *Manager) restoreBindingsWithRetry(bindings []models.IPv6Binding) {
 }
 
 func (m *Manager) restorePortMappings() {
+	defer network.NotifyRebuildDone()
 	var mappings []models.PortMappingV6
 	if err := db.DB.Where("status = ?", "active").Find(&mappings).Error; err != nil {
 		logger.Warn("查询IPv6端口映射失败: %v", err)
