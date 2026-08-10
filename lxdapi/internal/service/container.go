@@ -184,9 +184,6 @@ func (s *ContainerService) Create(ctx context.Context, req *models.CreateContain
 	
 	if privateIPv6 != "" {
 		logger.Info("容器内网IPv6: %s", privateIPv6)
-		if err := s.lxcClient.SetContainerIPv6Address(ctx, req.Name, privateIPv6); err != nil {
-			logger.Warn("固定容器IPv6地址失败: %v", err)
-		}
 	} else {
 		logger.Warn("首次未获取到容器内网IPv6，将在后台任务中重试")
 	}
@@ -485,9 +482,6 @@ func (s *ContainerService) Reinstall(ctx context.Context, name, image, password 
 			s.updateContainerIPv6Rules(name, container.PrivateIPv6, actualPrivateIPv6)
 		} else {
 			logger.OK("容器内网IPv6保持不变: %s", actualPrivateIPv6)
-		}
-		if err := s.lxcClient.SetContainerIPv6Address(ctx, name, actualPrivateIPv6); err != nil {
-			logger.Warn("固定容器IPv6地址失败: %v", err)
 		}
 	}
 	
@@ -818,9 +812,6 @@ func (s *ContainerService) retryGetContainerIPs(containerName string, needIPv4, 
 			if ipv6 := s.getContainerIPv6(ctx, containerName); ipv6 != "" {
 				updateFields["private_ipv6"] = ipv6
 				logger.OK("后台任务成功获取容器 %s 内网IPv6: %s", containerName, ipv6)
-				if err := s.lxcClient.SetContainerIPv6Address(ctx, containerName, ipv6); err != nil {
-					logger.Warn("固定容器IPv6地址失败: %v", err)
-				}
 				if oldIPv6 != "" && ipv6 != oldIPv6 {
 					s.updateContainerIPv6Rules(containerName, oldIPv6, ipv6)
 				}

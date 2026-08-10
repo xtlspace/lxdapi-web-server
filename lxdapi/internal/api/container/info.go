@@ -114,6 +114,11 @@ func Action(c *gin.Context) {
 
 	userID := dbContainer.UserID
 
+	if (action == "start" || action == "restart") && dbContainer.Status == "frozen" {
+		response.Error(c, 403, "容器已暂停，无法启动或重启")
+		return
+	}
+
 	switch action {
 	case "start":
 		err := executor.CreateSyncTask(name, "start", userID, func(ctx context.Context) error {
