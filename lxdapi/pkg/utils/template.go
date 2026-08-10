@@ -3,9 +3,11 @@ package utils
 import (
 	"github.com/gin-gonic/gin"
 	"lxdapi/internal/service"
+	"lxdapi/pkg/version"
 )
 
 func MergeTemplateData(c *gin.Context, data gin.H) gin.H {
+	data["Version"] = version.Version
 	if systemName, exists := c.Get("SystemName"); exists {
 		data["SystemName"] = systemName
 	}

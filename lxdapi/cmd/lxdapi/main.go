@@ -36,6 +36,7 @@ import (
 	"lxdapi/pkg/response"
 	sysinfo "lxdapi/pkg/system"
 	tlsManager "lxdapi/pkg/tls"
+	"lxdapi/pkg/version"
 	"lxdapi/plugins/nginx"
 	"lxdapi/plugins/opengfw"
 	"log"
@@ -323,7 +324,7 @@ func main() {
 			"author":       "xkatld",
 			"project":      "https://github.com/xkatld/lxdapi-web-server",
 			"description":  "主流财务系统对接支持，提供完整的Web管理界面与RESTful API",
-			"version":      "v2.1.5",
+			"version":      version.Version,
 			"name":         sysInfo.Name,
 			"docs":         sysInfo.Docs,
 			"os":           sysInfo.OS,
