@@ -6,6 +6,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -19,14 +21,54 @@ jobs:
         run: |
           go install github.com/swaggo/swag/cmd/swag@latest
 
-      - name: Run Build Script
+      - name: Download Dependencies
         run: |
           cd lxdapi
-          chmod +x build.sh
-          ./build.sh
+          go mod tidy
+          go mod download
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Generate Swagger Docs
+        run: |
+          cd lxdapi
+          if command -v swag &> /dev/null; then
+            swag init -g cmd/lxdapi/main.go --output docs --parseDependency --parseInternal
+          elif [ -f ~/go/bin/swag ]; then
+            ~/go/bin/swag init -g cmd/lxdapi/main.go --output docs --parseDependency --parseInternal
+          else
+            echo "警告: 未找到 swag 命令，跳过 Swagger 文档生成"
+          fi
+
+      - name: Prepare Embedded Resources
+        run: |
+          cd lxdapi
+          rm -rf cmd/lxdapi/templates cmd/lxdapi/docs cmd/lxdapi/static
+          cp -r ../lxdweb/templates cmd/lxdapi/
+          cp -r ../lxdweb/static cmd/lxdapi/
+          cp -r docs cmd/lxdapi/
+
+      - name: Build linux/amd64
+        run: |
+          cd lxdapi/cmd/lxdapi
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../../lxdapi-amd64 .
+          cd ../..
+          ls -lh lxdapi-amd64
+
+      - name: Build linux/arm64
+        run: |
+          cd lxdapi/cmd/lxdapi
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../../lxdapi-arm64 .
+          cd ../..
+          ls -lh lxdapi-arm64
+
+      - name: Extract Version
+        run: |
+          echo "RELEASE_TAG=$(grep -oP '"version":\s*"\K[^"]+' cmd/lxdapi/main.go)" >> "$GITHUB_ENV"
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: binaries
-          path: lxdapi/release/*.tar.gz
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TAG }}
+          files: |
+            lxdapi/lxdapi-amd64
+            lxdapi/lxdapi-arm64
