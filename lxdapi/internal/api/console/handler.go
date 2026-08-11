@@ -3,6 +3,8 @@ package console
 import (
 	"encoding/json"
 	"lxdapi/internal/console"
+	"lxdapi/internal/db"
+	"lxdapi/models"
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/response"
 	"net/http"
@@ -74,6 +76,15 @@ func HandleWebSocket(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"code": 401,
 			"msg":  "令牌无效、已使用或已过期",
+		})
+		return
+	}
+
+	var container models.Container
+	if err := db.DB.Where("name = ?", containerName).First(&container).Error; err == nil && container.Status == "frozen" {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"code": 401,
+			"msg":  "容器已暂停，无法使用控制台",
 		})
 		return
 	}

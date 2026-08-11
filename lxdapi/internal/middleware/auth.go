@@ -4,7 +4,9 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"lxdapi/internal/core"
+	"lxdapi/internal/db"
 	"lxdapi/internal/service"
+	"lxdapi/models"
 	"lxdapi/pkg/auth"
 	"lxdapi/pkg/response"
 )
@@ -171,6 +173,14 @@ func ContainerAuth() gin.HandlerFunc {
 		cred, err := service.GetContainerByHash(containerHash)
 		if err != nil {
 			response.Error(c, 401, "容器级认证失败")
+			c.Abort()
+			return
+		}
+		
+		var container models.Container
+		if err := db.DB.Where("name = ?", cred.ContainerName).First(&container).Error; err == nil &&
+			container.Status == "frozen" && c.Request.Method != "GET" {
+			response.Error(c, 401, "容器已暂停，无法进行任何操作")
 			c.Abort()
 			return
 		}
