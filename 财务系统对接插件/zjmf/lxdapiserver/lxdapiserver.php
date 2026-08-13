@@ -929,19 +929,14 @@ function lxdapiserver_ClientAreaOutput($params, $key)
         $endpoint = '/api/system/containers/' . urlencode($containerName) . '/credential';
         $res = lxdapiserver_ApiRequest($params, $endpoint, [], 'GET');
         
-        $jumpUrl = '';
         $iframeUrl = '';
         $accessCode = '';
-        $errorMsg = '';
         
         if (isset($res['code']) && $res['code'] == 200 && isset($res['data'])) {
             $accessCode = $res['data']['access_code'] ?? '';
             $protocol = 'https';
             $baseUrl = $protocol . '://' . $params['server_ip'] . ':' . $params['port'];
-            $jumpUrl = $baseUrl . '/container/dashboard?hash=' . $accessCode;
-            $iframeUrl = $baseUrl . '/container/dashboard/base?hash=' . $accessCode;
-        } else {
-            $errorMsg = $res['msg'] ?? '获取访问码失败';
+            $iframeUrl = $baseUrl . '/container/dashboard/lite?hash=' . $accessCode;
         }
         
         return [
@@ -950,10 +945,8 @@ function lxdapiserver_ClientAreaOutput($params, $key)
                 'container_name' => $containerName,
                 'server_ip' => $params['server_ip'],
                 'server_port' => $params['port'],
-                'jump_url' => $jumpUrl,
                 'iframe_url' => $iframeUrl,
                 'access_code' => $accessCode,
-                'error_msg' => $errorMsg,
                 'traffic_reset_enabled' => $trafficResetEnabled,
                 'reset_price' => number_format($resetPrice, 2),
                 'reset_notice' => $resetNotice,
