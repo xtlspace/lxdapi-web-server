@@ -14,11 +14,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     {{end}}
-    {{if .UseLocalCDN}}
-    <script src="/static/js/chart.min.js"></script>
-    {{else}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    {{end}}
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -467,29 +462,6 @@
                     </div>
                 </div>
 
-                <div class="md-card md-surface p-5 sm:p-6">
-                    <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color: var(--md-on-surface);">
-                        <span class="iconify w-5 h-5" style="color: var(--md-primary);" data-icon="heroicons:presentation-chart-line"></span> 资源趋势
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div>
-                            <p class="text-xs text-center mb-3 font-medium" style="color: var(--md-on-surface-variant);">CPU 使用率</p>
-                            <div class="h-32"><canvas id="cpuChart"></canvas></div>
-                        </div>
-                        <div>
-                            <p class="text-xs text-center mb-3 font-medium" style="color: var(--md-on-surface-variant);">内存使用率</p>
-                            <div class="h-32"><canvas id="memoryChart"></canvas></div>
-                        </div>
-                        <div>
-                            <p class="text-xs text-center mb-3 font-medium" style="color: var(--md-on-surface-variant);">磁盘使用率</p>
-                            <div class="h-32"><canvas id="diskChart"></canvas></div>
-                        </div>
-                        <div>
-                            <p class="text-xs text-center mb-3 font-medium" style="color: var(--md-on-surface-variant);">流量使用趋势</p>
-                            <div class="h-32"><canvas id="trafficChart"></canvas></div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div id="ipv4PoolTab" style="display: none;">
@@ -883,13 +855,8 @@
             }
         }
 
-        let cpuChart, memoryChart, diskChart, trafficChart;
-        const maxDataPoints = 20;
-        const chartData = { labels: [], cpu: [], memory: [], disk: [], traffic: [] };
-
         $(document).ready(function() {
             switchTab('info');
-            initCharts();
             loadIPPoolSettings();
             loadPortRangeConfig();
             loadContainerInfo();
@@ -1098,8 +1065,6 @@
             $('#resMemory').text(formatBytes(memoryUsed) + ' / ' + formatBytes(memoryTotal));
             $('#resDisk').text(formatBytes(diskUsed) + ' / ' + formatBytes(diskTotal));
             $('#resTraffic').text(formatBytes(trafficUsed) + (trafficLimit > 0 ? ' / ' + formatBytes(trafficLimit) : ''));
-
-            updateChartData(cpuUsage, memoryUsed, memoryTotal, diskUsed, diskTotal, trafficUsed, trafficLimit);
         }
 
         function startContainer() {
@@ -1293,72 +1258,6 @@
             }
             password = password.split('').sort(() => Math.random() - 0.5).join('');
             $('#reinstallPassword').val(password);
-        }
-
-        function initCharts() {
-            const opts = {
-                responsive: true, 
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        titleColor: '#1D1B20',
-                        bodyColor: '#49454F',
-                        borderColor: '#CAC4D0',
-                        borderWidth: 1,
-                        cornerRadius: 12,
-                        padding: 12,
-                        callbacks: {
-                            label: function(context) {
-                                return context.parsed.y.toFixed(1) + '%';
-                            }
-                        }
-                    }
-                },
-                scales: { 
-                    x: { display: false }, 
-                    y: { 
-                        beginAtZero: true, 
-                        max: 100, 
-                        grid: { color: '#E7E0EC' },
-                        ticks: { 
-                            color: '#49454F',
-                            callback: function(value) { return value + "%" }
-                        } 
-                    } 
-                },
-                elements: { 
-                    point: { radius: 3, hitRadius: 10, hoverRadius: 5 }, 
-                    line: { borderWidth: 2, tension: 0.4 } 
-                }
-            };
-            
-            const createChart = (id, color, dataArray) => new Chart(document.getElementById(id), {
-                type: 'line',
-                data: { labels: chartData.labels, datasets: [{ data: dataArray, borderColor: color, backgroundColor: color + '20', fill: true }] },
-                options: opts
-            });
-
-            cpuChart = createChart('cpuChart', '#6750A4', chartData.cpu);
-            memoryChart = createChart('memoryChart', '#22c55e', chartData.memory);
-            diskChart = createChart('diskChart', '#f59e0b', chartData.disk);
-            trafficChart = createChart('trafficChart', '#7D5260', chartData.traffic);
-        }
-
-        function updateChartData(cpu, memUsed, memTotal, diskUsed, diskTotal, trafUsed, trafTotal) {
-            chartData.labels.push(new Date().toLocaleTimeString());
-            chartData.cpu.push(cpu);
-            chartData.memory.push(memTotal ? (memUsed/memTotal*100) : 0);
-            chartData.disk.push(diskTotal ? (diskUsed/diskTotal*100) : 0);
-            chartData.traffic.push(trafTotal ? (trafUsed/trafTotal*100) : 0);
-
-            if(chartData.labels.length > maxDataPoints) {
-                chartData.labels.shift(); chartData.cpu.shift(); chartData.memory.shift(); chartData.disk.shift(); chartData.traffic.shift();
-            }
-            
-            cpuChart.update('none'); memoryChart.update('none'); diskChart.update('none'); trafficChart.update('none');
         }
 
         function showAddIPv4PoolModal() { document.getElementById('addIPv4PoolModal').showModal(); }

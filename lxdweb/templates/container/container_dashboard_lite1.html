@@ -14,11 +14,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     {{end}}
-    {{if .UseLocalCDN}}
-    <script src="/static/js/chart.min.js"></script>
-    {{else}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    {{end}}
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
     <!-- Font: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -245,30 +240,6 @@
                     </div>
                 </div>
 
-                <!-- Charts -->
-                <div class="content-box rounded-xl border border-gray-200 shadow-sm p-4 sm:p-5">
-                    <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <span class="iconify text-blue-500" data-icon="heroicons:presentation-chart-line"></span> 资源趋势
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div>
-                            <p class="text-xs text-center text-gray-500 mb-2">CPU 使用率</p>
-                            <div class="h-32"><canvas id="cpuChart"></canvas></div>
-                        </div>
-                        <div>
-                             <p class="text-xs text-center text-gray-500 mb-2">内存使用率</p>
-                            <div class="h-32"><canvas id="memoryChart"></canvas></div>
-                        </div>
-                        <div>
-                             <p class="text-xs text-center text-gray-500 mb-2">磁盘使用率</p>
-                            <div class="h-32"><canvas id="diskChart"></canvas></div>
-                        </div>
-                        <div>
-                             <p class="text-xs text-center text-gray-500 mb-2">流量使用趋势</p>
-                            <div class="h-32"><canvas id="trafficChart"></canvas></div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- IPv4 Pool Tab -->
@@ -671,14 +642,8 @@
             }
         }
 
-        // Chart Variables
-        let cpuChart, memoryChart, diskChart, trafficChart;
-        const maxDataPoints = 20;
-        const chartData = { labels: [], cpu: [], memory: [], disk: [], traffic: [] };
-
         $(document).ready(function() {
             switchTab('info');
-            initCharts();
             loadIPPoolSettings();
             loadPortRangeConfig();
             loadContainerInfo();
@@ -892,8 +857,6 @@
             $('#resMemory').text(formatBytes(memoryUsed) + ' / ' + formatBytes(memoryTotal));
             $('#resDisk').text(formatBytes(diskUsed) + ' / ' + formatBytes(diskTotal));
             $('#resTraffic').text(formatBytes(trafficUsed) + (trafficLimit > 0 ? ' / ' + formatBytes(trafficLimit) : ''));
-
-            updateChartData(cpuUsage, memoryUsed, memoryTotal, diskUsed, diskTotal, trafficUsed, trafficLimit);
         }
 
         function startContainer() {
@@ -1088,69 +1051,6 @@
             password = password.split('').sort(() => Math.random() - 0.5).join('');
             $('#reinstallPassword').val(password);
         }
-
-        // --- Charts ---
-        function initCharts() {
-            const opts = {
-                responsive: true, 
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.parsed.y.toFixed(1) + '%';
-                            }
-                        }
-                    }
-                },
-                scales: { 
-                    x: { display: false }, 
-                    y: { 
-                        beginAtZero: true, 
-                        max: 100, 
-                        ticks: { 
-                            callback: function(value) { return value + "%" }
-                        } 
-                    } 
-                },
-                elements: { 
-                    point: { radius: 3, hitRadius: 10, hoverRadius: 5 }, 
-                    line: { borderWidth: 2, tension: 0.4 } 
-                }
-            };
-            
-            const createChart = (id, color, dataArray) => new Chart(document.getElementById(id), {
-                type: 'line',
-                data: { labels: chartData.labels, datasets: [{ data: dataArray, borderColor: color, backgroundColor: color + '20', fill: true }] },
-                options: opts
-            });
-
-            cpuChart = createChart('cpuChart', '#3b82f6', chartData.cpu);
-            memoryChart = createChart('memoryChart', '#22c55e', chartData.memory);
-            diskChart = createChart('diskChart', '#eab308', chartData.disk);
-            trafficChart = createChart('trafficChart', '#a855f7', chartData.traffic);
-        }
-
-        function updateChartData(cpu, memUsed, memTotal, diskUsed, diskTotal, trafUsed, trafTotal) {
-            chartData.labels.push(new Date().toLocaleTimeString());
-            chartData.cpu.push(cpu);
-            chartData.memory.push(memTotal ? (memUsed/memTotal*100) : 0);
-            chartData.disk.push(diskTotal ? (diskUsed/diskTotal*100) : 0);
-            chartData.traffic.push(trafTotal ? (trafUsed/trafTotal*100) : 0);
-
-            if(chartData.labels.length > maxDataPoints) {
-                chartData.labels.shift(); chartData.cpu.shift(); chartData.memory.shift(); chartData.disk.shift(); chartData.traffic.shift();
-            }
-            
-            cpuChart.update('none'); memoryChart.update('none'); diskChart.update('none'); trafficChart.update('none');
-        }
-
-
 
         // IPv4 Pool
         function showAddIPv4PoolModal() { document.getElementById('addIPv4PoolModal').showModal(); }
