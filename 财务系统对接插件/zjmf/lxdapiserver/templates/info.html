@@ -39,7 +39,7 @@
     {/if}
 
     {if $iframe_url}
-    <div class="card shadow">
+    <div class="card shadow mb-3">
         <div class="card-header py-2">
             <h6 class="m-0 font-weight-bold text-primary">
                 <i class="fas fa-desktop mr-2"></i>容器管理
@@ -56,6 +56,33 @@
         </div>
     </div>
     {/if}
+
+    <div class="card shadow">
+        <div class="card-header py-2">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-external-link-alt mr-2"></i>容器面板
+            </h6>
+        </div>
+        <div class="card-body py-3">
+            {if $error_msg}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> {$error_msg}
+            </div>
+            {elseif $jump_url}
+            <div class="d-flex align-items-center">
+                <a href="{$jump_url}" 
+                   target="_blank" 
+                   class="btn btn-primary px-4">
+                    <i class="fas fa-external-link-alt mr-2"></i>进入独立面板
+                </a>
+                <span class="ml-3 text-muted" style="font-size: 13px;">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    点击按钮将在新窗口打开容器管理面板。
+                </span>
+            </div>
+            {/if}
+        </div>
+    </div>
 </div>
 
 <script>

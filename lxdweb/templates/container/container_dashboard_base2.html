@@ -123,7 +123,7 @@
         html { scrollbar-width: none; -ms-overflow-style: none; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col text-gray-800">
+<body class="text-gray-800">
     {{template "container/container_toast.html"}}
     
     <!-- Background Image Handling -->
@@ -131,7 +131,7 @@
         {{if .BgImage}}<div class="absolute inset-0 bg-gray-50/90 backdrop-blur-sm"></div>{{end}}
     </div>
 
-    <div class="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl flex-1 flex flex-col gap-4 sm:gap-6">
+    <div class="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl flex flex-col gap-4 sm:gap-6">
         
         <!-- Top Hero Section Removed as per request -->
         <div style="display:none;">

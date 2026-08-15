@@ -89,7 +89,7 @@
         html { scrollbar-width: none; -ms-overflow-style: none; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col text-gray-700">
+<body class="text-gray-700">
     {{template "container/container_toast.html"}}
     
     <!-- Background Image Handling -->
@@ -97,7 +97,7 @@
         {{if .BgImage}}<div class="absolute inset-0 bg-white/80 backdrop-blur-sm"></div>{{end}}
     </div>
 
-    <div class="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl flex-1 flex flex-col gap-6 sm:gap-8">
+    <div class="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl flex flex-col gap-6 sm:gap-8">
         
         <!-- Container Info Card -->
         <div class="content-box rounded-2xl p-5 sm:p-6 border border-gray-100">

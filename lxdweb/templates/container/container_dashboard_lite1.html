@@ -89,7 +89,7 @@
         html { scrollbar-width: none; -ms-overflow-style: none; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col text-gray-800">
+<body class="text-gray-800">
     {{template "container/container_toast.html"}}
     
     <!-- Background Image Handling -->
@@ -97,7 +97,7 @@
         {{if .BgImage}}<div class="absolute inset-0 bg-gray-50/90 backdrop-blur-sm"></div>{{end}}
     </div>
 
-    <div class="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl flex-1 flex flex-col gap-4 sm:gap-6">
+    <div class="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl flex flex-col gap-4 sm:gap-6">
         
         <!-- Container Info Card -->
         <div class="content-box rounded-xl p-3 sm:p-4 border border-gray-200 shadow-sm">
@@ -571,8 +571,6 @@
         </div>
         <form method="dialog" class="modal-backdrop"><button>关闭</button></form>
     </dialog>
-
-    {{template "container/container_footer.html" .}}
 
     <!-- JS Logic -->
     {{if .UseLocalCDN}}
