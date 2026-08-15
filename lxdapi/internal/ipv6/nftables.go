@@ -41,7 +41,6 @@ func (m *Manager) addPortDNAT(publicIP string, publicPort, publicPortEnd int, co
 		logger.Info("nft添加IPv6端口转发: [%s]:%s(%s) -> %s", publicIP, portRange, proto, containerPortRange)
 	}
 
-	m.saveNftRules()
 	return nil
 }
 
@@ -89,7 +88,6 @@ func (m *Manager) removePortDNAT(publicIP string, publicPort, publicPortEnd int,
 		}
 	}
 
-	m.saveNftRules()
 	if deleted == 0 && len(protos) > 0 {
 		return fmt.Errorf("nft删除IPv6端口转发失败: 未找到匹配规则")
 	}
@@ -195,7 +193,6 @@ func (m *Manager) addSNAT(publicIP, containerIP, iface string) error {
 	}
 
 	logger.Info("nft添加IPv6 SNAT规则: %s -> %s", containerIP, publicIP)
-	m.saveNftRules()
 	return nil
 }
 
@@ -207,7 +204,6 @@ func (m *Manager) addDNAT(publicIP, containerIP, iface string) error {
 	}
 
 	logger.Info("nft添加IPv6 DNAT规则: %s -> %s", publicIP, containerIP)
-	m.saveNftRules()
 	return nil
 }
 
@@ -217,7 +213,6 @@ func (m *Manager) removeSNAT(publicIP, containerIP, iface string) error {
 		exec.Command("nft", "delete", "rule", "inet", "lxdip", "postrouting", "handle", handle).Run()
 		logger.Info("nft删除IPv6 SNAT规则: %s -> %s handle %s", containerIP, publicIP, handle)
 	}
-	m.saveNftRules()
 	return nil
 }
 
@@ -227,7 +222,6 @@ func (m *Manager) removeDNAT(publicIP, containerIP, iface string) error {
 		exec.Command("nft", "delete", "rule", "inet", "lxdip", "prerouting", "handle", handle).Run()
 		logger.Info("nft删除IPv6 DNAT规则: %s -> %s handle %s", publicIP, containerIP, handle)
 	}
-	m.saveNftRules()
 	return nil
 }
 
@@ -281,15 +275,7 @@ func (m *Manager) removeAllRules(publicIP string) error {
 	}
 
 	logger.Info("nft已清除 IPv6 %s 的所有相关规则", publicIP)
-	m.saveNftRules()
 	return nil
-}
-
-func (m *Manager) saveNftRules() {
-	cmd := exec.Command("sh", "-c", "nft list ruleset > /etc/nftables.conf")
-	if err := cmd.Run(); err != nil {
-		logger.Warn("导出nftables规则失败: %v", err)
-	}
 }
 
 func (m *Manager) addIPToInterface(ip, iface string) error {

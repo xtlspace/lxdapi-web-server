@@ -714,36 +714,13 @@ func (s *ContainerService) GetInfo(ctx context.Context, name string) (map[string
 				result["disk_usage"] = formatBytes(uint64(usage))
 			}
 		}
+	}
 
-		ipv4List := []string{}
-		ipv6List := []string{}
-
-		if eth0Data, exists := info.State.Network["eth0"]; exists {
-			if iface, ok := eth0Data.(map[string]interface{}); ok {
-				if addresses, ok := iface["addresses"].([]interface{}); ok {
-					for _, addr := range addresses {
-						if addrMap, ok := addr.(map[string]interface{}); ok {
-							if family, ok := addrMap["family"].(string); ok {
-								if address, ok := addrMap["address"].(string); ok {
-									if family == "inet" {
-										if !isLoopbackOrLocalIP(address) {
-											ipv4List = append(ipv4List, address)
-										}
-									} else if family == "inet6" {
-										if !isLoopbackOrLocalIP(address) {
-											ipv6List = append(ipv6List, address)
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		result["ipv4"] = ipv4List
-		result["ipv6"] = ipv6List
+	if container.PrivateIP != "" {
+		result["ipv4"] = []string{container.PrivateIP}
+	}
+	if container.PrivateIPv6 != "" {
+		result["ipv6"] = []string{container.PrivateIPv6}
 	}
 
 	return result, nil
@@ -765,19 +742,6 @@ func (s *ContainerService) getContainerIPv6(ctx context.Context, name string) st
 		return ""
 	}
 	return ip
-}
-
-func isLoopbackOrLocalIP(ip string) bool {
-	if ip == "127.0.0.1" || ip == "::1" {
-		return true
-	}
-	if strings.HasPrefix(ip, "fe80:") {
-		return true
-	}
-	if strings.HasPrefix(ip, "169.254.") {
-		return true
-	}
-	return false
 }
 
 func (s *ContainerService) retryGetContainerIPs(containerName string, needIPv4, needIPv6 bool, oldIPv4, oldIPv6 string) {

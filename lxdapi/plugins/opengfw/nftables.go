@@ -45,8 +45,6 @@ func (m *NFTablesManager) Setup() error {
 	}
 	
 	logger.OK("nftables NFQueue 规则已添加")
-	// 持久化
-	exec.Command("sh", "-c", "nft list ruleset > /etc/nftables.conf").Run()
 	return nil
 }
 
@@ -62,7 +60,6 @@ func (m *NFTablesManager) Remove() error {
 	}
 	
 	logger.OK("nftables NFQueue 规则已删除")
-	exec.Command("sh", "-c", "nft list ruleset > /etc/nftables.conf").Run()
 	return nil
 }
 

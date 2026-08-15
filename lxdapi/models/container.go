@@ -36,10 +36,8 @@ type Container struct {
 	DiskUsageRaw    uint64
 	TrafficUsage    string  `gorm:"size:50"`
 	TrafficUsageRaw uint64
-	IPv4            string  `gorm:"type:text"`
 	IPv4PoolLimit   int
 	IPv4MappingLimit int
-	IPv6            string  `gorm:"type:text"`
 	IPv6PoolLimit   int
 	IPv6MappingLimit int
 	ReverseProxyLimit int

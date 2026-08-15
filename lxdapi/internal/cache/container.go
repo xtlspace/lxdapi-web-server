@@ -29,8 +29,6 @@ type ContainerCacheJSON struct {
 	TrafficUsage    string                 `json:"traffic_usage"`
 	TrafficUsageRaw uint64                 `json:"traffic_usage_raw"`
 	TrafficLimit    int                    `json:"traffic_limit"`
-	IPv4            []string               `json:"ipv4"`
-	IPv6            []string               `json:"ipv6"`
 	Config          map[string]interface{} `json:"config"`
 	CreatedAt       string                 `json:"created_at"`
 	LastSync        string                 `json:"last_sync"`
@@ -63,12 +61,6 @@ func GetAllContainersCache() []ContainerCacheJSON {
 			Remark:          c.Remark,
 		}
 
-		if c.IPv4 != "" {
-			json.Unmarshal([]byte(c.IPv4), &cacheData.IPv4)
-		}
-		if c.IPv6 != "" {
-			json.Unmarshal([]byte(c.IPv6), &cacheData.IPv6)
-		}
 		if c.ConfigJSON != "" {
 			json.Unmarshal([]byte(c.ConfigJSON), &cacheData.Config)
 		}
@@ -105,12 +97,6 @@ func GetContainerCache(name string) (*ContainerCacheJSON, bool) {
 		Remark:          container.Remark,
 	}
 
-	if container.IPv4 != "" {
-		json.Unmarshal([]byte(container.IPv4), &cacheData.IPv4)
-	}
-	if container.IPv6 != "" {
-		json.Unmarshal([]byte(container.IPv6), &cacheData.IPv6)
-	}
 	if container.ConfigJSON != "" {
 		json.Unmarshal([]byte(container.ConfigJSON), &cacheData.Config)
 	}
@@ -192,9 +178,6 @@ func RefreshContainerCache(ctx context.Context, name string) error {
 		container.TrafficUsage = fmt.Sprintf("%.2f", traffic.TotalGB)
 	}
 
-	ipv4List := make([]string, 0)
-	ipv6List := make([]string, 0)
-
 	if info.State != nil && info.Status == "Running" {
 		cpuUsage := getContainerCPUUsagePercent(ctx, name)
 		container.CPUUsage = cpuUsage
@@ -210,36 +193,8 @@ func RefreshContainerCache(ctx context.Context, name string) error {
 				container.DiskUsage = formatBytes(uint64(usage))
 			}
 		}
-
-		if eth0Data, exists := info.State.Network["eth0"]; exists {
-			if iface, ok := eth0Data.(map[string]interface{}); ok {
-				if addresses, ok := iface["addresses"].([]interface{}); ok {
-					for _, addr := range addresses {
-						if addrMap, ok := addr.(map[string]interface{}); ok {
-							if family, ok := addrMap["family"].(string); ok {
-								if address, ok := addrMap["address"].(string); ok {
-									if family == "inet" {
-										ipv4List = append(ipv4List, address)
-									} else if family == "inet6" {
-										ipv6List = append(ipv6List, address)
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
 	}
 
-	if len(ipv4List) > 0 {
-		ipv4JSON, _ := json.Marshal(ipv4List)
-		container.IPv4 = string(ipv4JSON)
-	}
-	if len(ipv6List) > 0 {
-		ipv6JSON, _ := json.Marshal(ipv6List)
-		container.IPv6 = string(ipv6JSON)
-	}
 	if info.Config != nil {
 		configJSON, _ := json.Marshal(info.Config)
 		container.ConfigJSON = string(configJSON)
