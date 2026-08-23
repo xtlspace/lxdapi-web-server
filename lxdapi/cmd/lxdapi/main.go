@@ -428,6 +428,7 @@ func main() {
 		adminAPI.GET("/host/stats", admin.GetHostStats)
 		adminAPI.GET("/containers", admin.ListContainers)
 		adminAPI.GET("/containers/:name", admin.GetContainer)
+		adminAPI.GET("/containers/:name/cpuUsage", admin.GetContainerCPUUsage)
 		adminAPI.DELETE("/containers/:name", admin.DeleteContainer)
 		adminAPI.POST("/containers/:name/action", admin.ContainerAction)
 		adminAPI.GET("/containers/:name/config", admin.GetContainerConfig)
@@ -493,6 +494,7 @@ func main() {
 		userAPI.POST("/containers", user.CreateContainer)
 		userAPI.GET("/containers", user.ListContainers)
 		userAPI.GET("/containers/:name", user.GetContainer)
+		userAPI.GET("/containers/:name/cpuUsage", user.GetContainerCPUUsage)
 		userAPI.DELETE("/containers/:name", user.DeleteContainer)
 		userAPI.POST("/containers/:name/action", user.ContainerAction)
 		userAPI.GET("/containers/:name/config", user.GetContainerConfig)
@@ -523,6 +525,7 @@ func main() {
 	containerAPI.Use(middleware.ContainerAuth())
 	{
 		containerAPI.GET("/info", container.GetInfo)
+	containerAPI.GET("/cpuUsage", container.GetCPUUsage)
 		containerAPI.GET("/templates", container.GetTemplateList)
 		containerAPI.POST("/action", container.Action)
 		containerAPI.GET("/dns", container.GetDNS)

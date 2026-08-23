@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -40,6 +39,7 @@ func GetAllContainersCache() []ContainerCacheJSON {
 	db.DB.Find(&containers)
 
 	result := make([]ContainerCacheJSON, 0, len(containers))
+	cpuUsages := getLatestCPUUsages()
 	for _, c := range containers {
 		cacheData := ContainerCacheJSON{
 			Name:            c.Name,
@@ -48,7 +48,7 @@ func GetAllContainersCache() []ContainerCacheJSON {
 			CPU:             c.CPU,
 			Memory:          formatMBToString(c.Memory),
 			Disk:            formatMBToString(c.Disk),
-			CPUUsage:        c.CPUUsage,
+			CPUUsage:        cpuUsages[c.Name],
 			MemoryUsage:     c.MemoryUsage,
 			MemoryUsageRaw:  c.MemoryUsageRaw,
 			DiskUsage:       c.DiskUsage,
@@ -84,7 +84,7 @@ func GetContainerCache(name string) (*ContainerCacheJSON, bool) {
 		CPU:             container.CPU,
 		Memory:          formatMBToString(container.Memory),
 		Disk:            formatMBToString(container.Disk),
-		CPUUsage:        container.CPUUsage,
+		CPUUsage:        GetLatestCPUUsage(container.Name),
 		MemoryUsage:     container.MemoryUsage,
 		MemoryUsageRaw:  container.MemoryUsageRaw,
 		DiskUsage:       container.DiskUsage,
@@ -160,9 +160,6 @@ func RefreshContainerCache(ctx context.Context, name string) error {
 	}
 
 	if info.State != nil && info.Status == "Running" {
-		cpuUsage := getContainerCPUUsagePercent(ctx, name)
-		container.CPUUsage = cpuUsage
-
 		if memUsage, ok := info.State.Memory["usage"].(float64); ok {
 			container.MemoryUsageRaw = uint64(memUsage)
 			container.MemoryUsage = formatBytes(uint64(memUsage))
@@ -198,31 +195,30 @@ func parseCPULimit(limit string) int {
 	return cpus
 }
 
-func getContainerCPUUsagePercent(ctx context.Context, containerName string) float64 {
-	lxcClient := lxc.NewClient()
-	
-	output, err := lxcClient.ExecInContainer(ctx, containerName, []string{"sh", "-c", "vmstat 1 2 | tail -1 | awk '{print $15}'"})
-	if err != nil {
-		logger.Warn("获取容器 %s CPU使用率失败: %v", containerName, err)
+func GetLatestCPUUsage(name string) float64 {
+	var metric models.CPUMetric
+	if err := db.DB.Where("name = ?", name).Order("created_at DESC").First(&metric).Error; err != nil {
 		return 0
 	}
-	
-	idleStr := strings.TrimSpace(output)
-	idlePercent, err := strconv.ParseFloat(idleStr, 64)
-	if err != nil {
-		logger.Warn("解析容器 %s CPU idle值失败: %v, 输出: %s", containerName, err, idleStr)
-		return 0
+	return metric.CPUUsage
+}
+
+func getLatestCPUUsages() map[string]float64 {
+	var metrics []models.CPUMetric
+	db.DB.Raw(`SELECT cm.* FROM cpu_metrics cm
+		JOIN (SELECT name, MAX(id) AS id FROM cpu_metrics GROUP BY name) t ON cm.id = t.id`).Scan(&metrics)
+
+	result := make(map[string]float64, len(metrics))
+	for _, v := range metrics {
+		result[v.Name] = v.CPUUsage
 	}
-	
-	cpuUsage := 100 - idlePercent
-	if cpuUsage < 0 {
-		cpuUsage = 0
-	}
-	if cpuUsage > 100 {
-		cpuUsage = 100
-	}
-	
-	return cpuUsage
+	return result
+}
+
+func GetRecentCPUMetrics(name string, since time.Time) []models.CPUMetric {
+	var metrics []models.CPUMetric
+	db.DB.Where("name = ? AND created_at >= ?", name, since).Order("created_at ASC").Find(&metrics)
+	return metrics
 }
 
 func formatBytes(bytes uint64) string {

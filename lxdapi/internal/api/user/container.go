@@ -12,6 +12,7 @@ import (
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/response"
+	"time"
 )
 
 var containerService *service.ContainerService
@@ -293,6 +294,38 @@ func GetContainer(c *gin.Context) {
 	}
 
 	response.Success(c, info)
+}
+
+func GetContainerCPUUsage(c *gin.Context) {
+	name := c.Param("name")
+	if name == "" {
+		response.Error(c, 400, "缺少容器名称")
+		return
+	}
+
+	username, _ := c.Get("username")
+
+	container, err := containerService.Get(name)
+	if err != nil {
+		response.Error(c, 404, err.Error())
+		return
+	}
+
+	if container.UserID != username.(string) {
+		response.Error(c, 403, "无权访问该容器")
+		return
+	}
+
+	metrics := cache.GetRecentCPUMetrics(name, time.Now().Add(-time.Hour))
+	list := make([]gin.H, 0, len(metrics))
+	for _, m := range metrics {
+		list = append(list, gin.H{
+			"time":      m.CreatedAt.Format("15:04:05"),
+			"cpu_usage": m.CPUUsage,
+		})
+	}
+
+	response.Success(c, list)
 }
 
 // ContainerAction 容器操作统一接口

@@ -74,8 +74,6 @@ traffic:
   enabled: true
   # 采集间隔(秒)
   interval: __TRAFFIC_INTERVAL__
-  # 批量更新数量
-  batch_size: __TRAFFIC_BATCH_SIZE__
 
 # 异步任务配置
 task:

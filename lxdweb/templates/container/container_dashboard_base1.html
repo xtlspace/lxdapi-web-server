@@ -176,14 +176,7 @@
                 </div>
 
                 <!-- Resources Grid -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                    <div class="content-box rounded-xl p-3 sm:p-4 border border-gray-200 shadow-sm">
-                        <div class="flex items-center gap-2 mb-2">
-                            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><span class="iconify" data-icon="heroicons:cpu-chip"></span></div>
-                            <span class="text-xs sm:text-sm font-medium text-gray-600">CPU</span>
-                        </div>
-                        <p id="resCPU" class="text-lg sm:text-xl font-bold text-gray-800">-</p>
-                    </div>
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     <div class="content-box rounded-xl p-3 sm:p-4 border border-gray-200 shadow-sm">
                         <div class="flex items-center gap-2 mb-2">
                             <div class="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center"><span class="iconify" data-icon="heroicons:server-stack"></span></div>
@@ -566,12 +559,13 @@
 
         // Chart Variables
         let cpuChart;
-        const maxDataPoints = 20;
+        const maxDataPoints = 60;
         const chartData = { labels: [], cpu: [] };
 
         $(document).ready(function() {
             switchTab('info');
             initCharts();
+            loadCPUHistory();
             loadIPPoolSettings();
             loadPortRangeConfig();
             loadContainerInfo();
@@ -699,7 +693,6 @@
 
             // Resources
             const cpuUsage = c.cpu_usage || 0;
-            const cpuCores = c.cpu || 0;
             const memoryUsed = c.memory_usage_raw || 0;
             const memoryTotal = c.memory ? parseMemorySize(c.memory) : 0;
             const diskUsed = c.disk_usage_raw || 0;
@@ -707,7 +700,6 @@
             const trafficUsed = (c.traffic_usage_raw || 0) * 1024 * 1024 * 1024;
             const trafficLimit = c.traffic_limit > 0 ? (c.traffic_limit * 1024 * 1024 * 1024) : 0;
 
-            $('#resCPU').text(cpuUsage.toFixed(1) + '% / ' + cpuCores + ' 核');
             $('#resMemory').text(formatBytes(memoryUsed) + ' / ' + formatBytes(memoryTotal));
             $('#resDisk').text(formatBytes(diskUsed) + ' / ' + formatBytes(diskTotal));
             $('#resTraffic').text(formatBytes(trafficUsed) + (trafficLimit > 0 ? ' / ' + formatBytes(trafficLimit) : ''));
@@ -759,15 +751,53 @@
             });
         }
 
+        let lastCPUValue = null;
+        let lastCPUPushAt = 0;
+
         function updateChartData(cpu, memUsed, memTotal, diskUsed, diskTotal, trafUsed, trafTotal) {
+            const nowMs = Date.now();
+            if (cpu === lastCPUValue && nowMs - lastCPUPushAt < 55000) {
+                return;
+            }
+            lastCPUValue = cpu;
+            lastCPUPushAt = nowMs;
+
             chartData.labels.push(new Date().toLocaleTimeString());
             chartData.cpu.push(cpu);
 
             if(chartData.labels.length > maxDataPoints) {
                 chartData.labels.shift(); chartData.cpu.shift();
             }
-            
+
             cpuChart.update('none');
+        }
+
+        function loadCPUHistory() {
+            $.ajax({
+                url: '/api/container/cpuUsage',
+                type: 'GET',
+                headers: headers,
+                success: function(result) {
+                    if (result.code === 200 && Array.isArray(result.data)) {
+                        result.data.forEach(function(item) {
+                            chartData.labels.push(item.time);
+                            chartData.cpu.push(item.cpu_usage);
+                        });
+                        while (chartData.labels.length > maxDataPoints) {
+                            chartData.labels.shift();
+                            chartData.cpu.shift();
+                        }
+                        if (result.data.length > 0) {
+                            lastCPUValue = result.data[result.data.length - 1].cpu_usage;
+                            lastCPUPushAt = Date.now();
+                        }
+                        if (cpuChart) cpuChart.update('none');
+                    }
+                },
+                error: function() {
+                    console.error('加载CPU历史数据失败');
+                }
+            });
         }
 
 

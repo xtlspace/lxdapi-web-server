@@ -238,14 +238,7 @@
                 </div>
 
                 <!-- Resources Grid -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-                    <div class="content-box rounded-lg p-4 sm:p-5 border border-gray-200">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-10 h-10 rounded bg-blue-50 text-blue-500 flex items-center justify-center"><span class="iconify text-lg" data-icon="heroicons:cpu-chip"></span></div>
-                            <span class="text-sm font-medium text-gray-700">CPU</span>
-                        </div>
-                        <p id="resCPU" class="text-xl font-semibold text-gray-900">-</p>
-                    </div>
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                     <div class="content-box rounded-lg p-4 sm:p-5 border border-gray-200">
                         <div class="flex items-center gap-2 mb-3">
                             <div class="w-10 h-10 rounded bg-green-50 text-green-500 flex items-center justify-center"><span class="iconify text-lg" data-icon="heroicons:server-stack"></span></div>
@@ -876,8 +869,6 @@
             $('#containerIPv6').text(c.ipv6 && c.ipv6.length > 0 ? c.ipv6.join('\n') : '无');
 
             // Resources
-            const cpuUsage = c.cpu_usage || 0;
-            const cpuCores = c.cpu || 0;
             const memoryUsed = c.memory_usage_raw || 0;
             const memoryTotal = c.memory ? parseMemorySize(c.memory) : 0;
             const diskUsed = c.disk_usage_raw || 0;
@@ -885,7 +876,6 @@
             const trafficUsed = (c.traffic_usage_raw || 0) * 1024 * 1024 * 1024;
             const trafficLimit = c.traffic_limit > 0 ? (c.traffic_limit * 1024 * 1024 * 1024) : 0;
 
-            $('#resCPU').text(cpuUsage.toFixed(1) + '% / ' + cpuCores + ' 核');
             $('#resMemory').text(formatBytes(memoryUsed) + ' / ' + formatBytes(memoryTotal));
             $('#resDisk').text(formatBytes(diskUsed) + ' / ' + formatBytes(diskTotal));
             $('#resTraffic').text(formatBytes(trafficUsed) + (trafficLimit > 0 ? ' / ' + formatBytes(trafficLimit) : ''));

@@ -209,14 +209,7 @@
                 </div>
 
                 <!-- Resources Grid -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div class="content-box rounded-2xl p-5 sm:p-6 border border-gray-100">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-500 flex items-center justify-center"><span class="iconify" data-icon="heroicons:cpu-chip"></span></div>
-                            <span class="text-xs sm:text-sm font-medium text-gray-600">CPU</span>
-                        </div>
-                        <p id="resCPU" class="text-lg sm:text-2xl font-bold text-gray-800">-</p>
-                    </div>
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     <div class="content-box rounded-2xl p-5 sm:p-6 border border-gray-100">
                         <div class="flex items-center gap-3 mb-3">
                             <div class="w-10 h-10 rounded-xl bg-green-100 text-green-500 flex items-center justify-center"><span class="iconify" data-icon="heroicons:server-stack"></span></div>
@@ -835,8 +828,6 @@
             $('#containerIPv4').text(c.ipv4 && c.ipv4.length > 0 ? c.ipv4.join('\n') : '无');
             $('#containerIPv6').text(c.ipv6 && c.ipv6.length > 0 ? c.ipv6.join('\n') : '无');
 
-            const cpuUsage = c.cpu_usage || 0;
-            const cpuCores = c.cpu || 0;
             const memoryUsed = c.memory_usage_raw || 0;
             const memoryTotal = c.memory ? parseMemorySize(c.memory) : 0;
             const diskUsed = c.disk_usage_raw || 0;
@@ -844,7 +835,6 @@
             const trafficUsed = (c.traffic_usage_raw || 0) * 1024 * 1024 * 1024;
             const trafficLimit = c.traffic_limit > 0 ? (c.traffic_limit * 1024 * 1024 * 1024) : 0;
 
-            $('#resCPU').text(cpuUsage.toFixed(1) + '% / ' + cpuCores + ' 核');
             $('#resMemory').text(formatBytes(memoryUsed) + ' / ' + formatBytes(memoryTotal));
             $('#resDisk').text(formatBytes(diskUsed) + ' / ' + formatBytes(diskTotal));
             $('#resTraffic').text(formatBytes(trafficUsed) + (trafficLimit > 0 ? ' / ' + formatBytes(trafficLimit) : ''));

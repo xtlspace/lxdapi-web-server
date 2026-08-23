@@ -155,10 +155,7 @@ configure_lxdapi() {
     
     reading "请输入流量采集间隔秒数 [20]：" traffic_interval
     traffic_interval=${traffic_interval:-20}
-    
-    reading "请输入流量批量更新数量 [10]：" traffic_batch_size
-    traffic_batch_size=${traffic_batch_size:-10}
-    
+
     reading "请输入任务自动清理天数 [7]：" auto_cleanup_days
     auto_cleanup_days=${auto_cleanup_days:-7}
    
@@ -185,7 +182,6 @@ configure_lxdapi() {
     sed -i "s|__ADMIN_PASS__|$admin_pass|g" "$config_file"
     sed -i "s|__SESSION_SECRET__|$session_secret|g" "$config_file"
     sed -i "s|__TRAFFIC_INTERVAL__|$traffic_interval|g" "$config_file"
-    sed -i "s|__TRAFFIC_BATCH_SIZE__|$traffic_batch_size|g" "$config_file"
     sed -i "s|__AUTO_CLEANUP_DAYS__|$auto_cleanup_days|g" "$config_file"
     sed -i "s|__TASK_BACKEND__|$task_backend|g" "$config_file"
     sed -i "s|__DB_TYPE__|$db_type|g" "$config_file"

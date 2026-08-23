@@ -705,8 +705,7 @@ func (s *ContainerService) GetInfo(ctx context.Context, name string) (map[string
 	}
 
 	if info.State != nil && info.Status == "Running" {
-		cpuUsage := getContainerCPUUsagePercent(ctx, name)
-		result["cpu_usage"] = cpuUsage
+		result["cpu_usage"] = cache.GetLatestCPUUsage(name)
 
 		if memUsage, ok := info.State.Memory["usage"].(float64); ok {
 			result["memory_usage_raw"] = uint64(memUsage)
@@ -905,31 +904,6 @@ func (s *ContainerService) updateContainerIPv6Rules(containerName, oldIP, newIP 
 	}
 
 	logger.OK("重装后IPv6规则已更新: %s", containerName)
-}
-
-func getContainerCPUUsagePercent(ctx context.Context, containerName string) float64 {
-	lxcClient := lxc.NewClient()
-	
-	output, err := lxcClient.ExecInContainer(ctx, containerName, []string{"sh", "-c", "vmstat 1 2 | tail -1 | awk '{print $15}'"})
-	if err != nil {
-		return 0
-	}
-	
-	idleStr := strings.TrimSpace(output)
-	idlePercent, err := strconv.ParseFloat(idleStr, 64)
-	if err != nil {
-		return 0
-	}
-	
-	cpuUsage := 100 - idlePercent
-	if cpuUsage < 0 {
-		cpuUsage = 0
-	}
-	if cpuUsage > 100 {
-		cpuUsage = 100
-	}
-	
-	return cpuUsage
 }
 
 func formatBytes(bytes uint64) string {

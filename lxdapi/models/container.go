@@ -29,7 +29,6 @@ type Container struct {
 	IOWrite         int
 	ProcessesLimit  int
 	
-	CPUUsage        float64 `gorm:"type:decimal(5,2)"`
 	MemoryUsage     string  `gorm:"size:50"`
 	MemoryUsageRaw  uint64
 	DiskUsage       string  `gorm:"size:50"`

@@ -29,6 +29,7 @@ func StartAutoCleanup() {
 
 			time.Sleep(duration)
 			CleanupOldTasks(cfg.Task.AutoCleanupDays)
+			CleanupOldCPUMetrics(cfg.Task.AutoCleanupDays)
 		}
 	}()
 }
@@ -51,5 +52,24 @@ func CleanupOldTasks(days int) {
 
 	if result.RowsAffected > 0 {
 		logger.Info("任务清理完成，删除了 %d 条记录", result.RowsAffected)
+	}
+}
+
+func CleanupOldCPUMetrics(days int) {
+	if days <= 0 {
+		return
+	}
+
+	cutoffTime := time.Now().AddDate(0, 0, -days)
+
+	result := db.DB.Where("created_at < ?", cutoffTime).Delete(&models.CPUMetric{})
+
+	if result.Error != nil {
+		logger.Error("CPU使用记录清理失败: %v", result.Error)
+		return
+	}
+
+	if result.RowsAffected > 0 {
+		logger.Info("CPU使用记录清理完成，删除了 %d 条记录", result.RowsAffected)
 	}
 }

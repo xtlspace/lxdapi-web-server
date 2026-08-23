@@ -56,9 +56,8 @@ type NetworkConfig struct {
 }
 
 type TrafficConfig struct {
-	Enabled   bool `yaml:"enabled"`
-	Interval  int  `yaml:"interval"`
-	BatchSize int  `yaml:"batch_size"`
+	Enabled  bool `yaml:"enabled"`
+	Interval int  `yaml:"interval"`
 }
 
 type TaskConfig struct {

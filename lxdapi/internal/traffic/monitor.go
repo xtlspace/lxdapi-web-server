@@ -11,6 +11,7 @@ import (
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/plugin"
 	"os/exec"
+	"sort"
 	"strings"
 	"time"
 )
@@ -18,6 +19,21 @@ import (
 type Monitor struct {
 	lxcClient *lxc.Client
 	interval  time.Duration
+	pending   map[string]*sampleState
+	listAt    time.Time
+}
+
+const (
+	listRefreshInterval = 5 * time.Second
+	maxIdleWait         = time.Second
+)
+
+type sampleState struct {
+	name    string
+	nextDue time.Time
+	baseCPU float64
+	baseAt  time.Time
+	hasBase bool
 }
 
 var GlobalMonitor *Monitor
@@ -28,12 +44,13 @@ func InitMonitor() error {
 		logger.Info("流量监控未启用")
 		return nil
 	}
-	
+
 	GlobalMonitor = &Monitor{
 		lxcClient: lxc.NewClient(),
 		interval:  time.Duration(cfg.Interval) * time.Second,
+		pending:   make(map[string]*sampleState),
 	}
-	
+
 	logger.OK("流量监控器初始化成功")
 	return nil
 }
@@ -42,80 +59,151 @@ func (m *Monitor) Start(ctx context.Context) {
 	if m == nil {
 		return
 	}
-	
-	ticker := time.NewTicker(m.interval)
-	defer ticker.Stop()
-	
-	logger.Info("流量监控已启动，间隔: %v", m.interval)
-	
+
+	logger.Info("流量监控已启动，采样间隔: %v", m.interval)
+
+	var periodicAt time.Time
 	for {
 		select {
 		case <-ctx.Done():
 			logger.Info("流量监控已停止")
 			return
-		case <-ticker.C:
-			m.collect()
+		default:
+		}
+
+		now := time.Now()
+
+		if now.Sub(m.listAt) >= listRefreshInterval {
+			m.refreshSchedule(now)
+			m.listAt = now
+		}
+
+		if periodicAt.IsZero() || now.Sub(periodicAt) >= m.interval {
+			m.checkAutoReset()
+			m.checkUserTrafficLimits()
+			periodicAt = now
+		}
+
+		due, next := m.nextDue(now)
+		if due != nil {
+			m.sampleContainer(due)
+			continue
+		}
+
+		wait := maxIdleWait
+		if !next.IsZero() {
+			if d := next.Sub(now); d < wait {
+				wait = d
+			}
+		}
+		if d := listRefreshInterval - now.Sub(m.listAt); d < wait {
+			wait = d
+		}
+		if !periodicAt.IsZero() {
+			if d := periodicAt.Add(m.interval).Sub(now); d < wait {
+				wait = d
+			}
+		}
+		if wait < 0 {
+			wait = 0
+		}
+
+		timer := time.NewTimer(wait)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			logger.Info("流量监控已停止")
+			return
+		case <-timer.C:
 		}
 	}
 }
 
-func (m *Monitor) collect() {
-	m.checkAutoReset()
-	m.checkUserTrafficLimits()
+func (m *Monitor) nextDue(now time.Time) (*sampleState, time.Time) {
+	var due *sampleState
+	next := time.Time{}
+	for _, s := range m.pending {
+		if !s.nextDue.After(now) {
+			if due == nil || s.nextDue.Before(due.nextDue) {
+				due = s
+			}
+		} else if next.IsZero() || s.nextDue.Before(next) {
+			next = s.nextDue
+		}
+	}
+	return due, next
+}
 
+func (m *Monitor) refreshSchedule(now time.Time) {
 	var containers []models.Container
-	if err := db.DB.Select("name", "status").Find(&containers).Error; err != nil {
+	if err := db.DB.Select("name", "status").Where("status = ?", "running").Find(&containers).Error; err != nil {
 		logger.Error("获取容器列表失败: %v", err)
 		return
 	}
 
-	if len(containers) == 0 {
-		return
-	}
-
-	type pendingSample struct {
-		name      string
-		cpuUsage  float64
-		sampledAt time.Time
-	}
-	pending := make([]pendingSample, 0, len(containers))
-
+	active := make(map[string]bool, len(containers))
+	added := make([]string, 0)
 	for _, c := range containers {
-		if c.Status != "running" {
-			continue
+		active[c.Name] = true
+		if _, ok := m.pending[c.Name]; !ok {
+			added = append(added, c.Name)
 		}
-
-		if m.isUserTrafficLocked(c.Name) {
-			m.stopLockedContainer(c.Name)
-			continue
-		}
-
-		if m.isTrafficLocked(c.Name) {
-			m.stopLockedContainer(c.Name)
-			continue
-		}
-
-		state, err := m.getContainerState(c.Name)
-		if err != nil || state.Status != "Running" {
-			continue
-		}
-
-		pending = append(pending, pendingSample{
-			name:      c.Name,
-			cpuUsage:  state.CPUUsage,
-			sampledAt: time.Now(),
-		})
 	}
 
-	if len(pending) == 0 {
+	for name := range m.pending {
+		if !active[name] {
+			delete(m.pending, name)
+		}
+	}
+
+	if len(added) == 0 {
 		return
 	}
 
-	time.Sleep(m.interval)
+	sort.Strings(added)
 
-	for _, p := range pending {
-		m.collectContainerUsage(p.name, p.cpuUsage, p.sampledAt)
+	total := len(m.pending) + len(added)
+	spacing := m.interval / time.Duration(total)
+	if spacing <= 0 {
+		spacing = time.Millisecond
 	}
+
+	slot := now
+	for _, name := range added {
+		m.pending[name] = &sampleState{name: name, nextDue: slot}
+		slot = slot.Add(spacing)
+	}
+}
+
+func (m *Monitor) sampleContainer(s *sampleState) {
+	if m.isUserTrafficLocked(s.name) {
+		m.stopLockedContainer(s.name)
+		delete(m.pending, s.name)
+		return
+	}
+
+	if m.isTrafficLocked(s.name) {
+		m.stopLockedContainer(s.name)
+		delete(m.pending, s.name)
+		return
+	}
+
+	state, err := m.getContainerState(s.name)
+	if err != nil || state.Status != "Running" {
+		delete(m.pending, s.name)
+		return
+	}
+
+	now := time.Now()
+
+	if s.hasBase {
+		m.collectContainerUsage(s.name, state, s.baseCPU, s.baseAt)
+	}
+
+	s.baseCPU = state.CPUUsage
+	s.baseAt = now
+	s.hasBase = true
+	s.nextDue = now.Add(m.interval)
 }
 
 type NetworkCounters struct {
@@ -175,15 +263,10 @@ func (m *Monitor) getContainerState(name string) (*containerUsageSnapshot, error
 	return snap, nil
 }
 
-func (m *Monitor) collectContainerUsage(name string, baseCPU float64, sampledAt time.Time) {
-	state, err := m.getContainerState(name)
-	if err != nil || state.Status != "Running" {
-		return
-	}
-
+func (m *Monitor) collectContainerUsage(name string, snap *containerUsageSnapshot, baseCPU float64, sampledAt time.Time) {
 	m.updateTraffic(name, &NetworkCounters{
-		BytesReceived: state.RxBytes,
-		BytesSent:     state.TxBytes,
+		BytesReceived: snap.RxBytes,
+		BytesSent:     snap.TxBytes,
 	})
 
 	var container models.Container
@@ -194,7 +277,7 @@ func (m *Monitor) collectContainerUsage(name string, baseCPU float64, sampledAt 
 	wallSeconds := time.Since(sampledAt).Seconds()
 	cpuPercent := 0.0
 	if wallSeconds > 0 {
-		cpuPercent = (state.CPUUsage - baseCPU) / 1e9 / wallSeconds * 100
+		cpuPercent = (snap.CPUUsage - baseCPU) / 1e9 / wallSeconds * 100
 	}
 	if cpuPercent < 0 {
 		cpuPercent = 0
@@ -203,11 +286,15 @@ func (m *Monitor) collectContainerUsage(name string, baseCPU float64, sampledAt 
 		cpuPercent = 100
 	}
 
-	container.CPUUsage = cpuPercent
-	container.MemoryUsageRaw = uint64(state.MemUsage)
-	container.MemoryUsage = formatBytes(uint64(state.MemUsage))
-	container.DiskUsageRaw = uint64(state.DiskUsage)
-	container.DiskUsage = formatBytes(uint64(state.DiskUsage))
+	db.DB.Create(&models.CPUMetric{
+		Name:     name,
+		CPUUsage: cpuPercent,
+	})
+
+	container.MemoryUsageRaw = uint64(snap.MemUsage)
+	container.MemoryUsage = formatBytes(uint64(snap.MemUsage))
+	container.DiskUsageRaw = uint64(snap.DiskUsage)
+	container.DiskUsage = formatBytes(uint64(snap.DiskUsage))
 
 	var traffic models.Traffic
 	if err := db.DB.Where("container_name = ?", name).First(&traffic).Error; err == nil {

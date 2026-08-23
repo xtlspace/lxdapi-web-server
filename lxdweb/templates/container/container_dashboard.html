@@ -168,11 +168,7 @@
 
         <div class="content-box rounded-lg border border-gray-200 p-4 mb-4">
             <h2 class="text-base font-semibold text-gray-800 mb-3">资源监控</h2>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-3 border border-gray-200">
-                    <p class="text-xs text-gray-600">CPU使用</p>
-                    <p id="resCPU" class="text-sm font-medium text-gray-800 mt-0.5">-</p>
-                </div>
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
                 <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-3 border border-gray-200">
                     <p class="text-xs text-gray-600">内存</p>
                     <p id="resMemory" class="text-sm font-medium text-gray-800 mt-0.5">-</p>
@@ -624,7 +620,7 @@
         
         let cpuChart = null;
 
-        const maxDataPoints = 20;
+        const maxDataPoints = 60;
         const chartData = {
             labels: [],
             cpu: []
@@ -636,6 +632,7 @@
             }, 100);
 
             initCharts();
+            loadCPUHistory();
             loadIPPoolSettings();
             loadPortRangeConfig();
             loadContainerInfo();
@@ -759,7 +756,6 @@
             const trafficUsed = trafficUsedGB * 1024 * 1024 * 1024;
             const trafficLimit = c.traffic_limit || 0;
 
-            $('#resCPU').text(cpuUsage.toFixed(1) + '% / ' + (c.cpu || 1) + '核');
             $('#resMemory').text(formatBytes(memoryUsed) + ' / ' + formatBytes(memoryTotal));
             $('#resDisk').text(formatBytes(diskUsed) + ' / ' + formatBytes(diskTotal));
             
@@ -907,7 +903,17 @@
             });
         }
 
+        let lastCPUValue = null;
+        let lastCPUPushAt = 0;
+
         function updateChartData(cpuUsage, memoryUsed, memoryTotal, diskUsed, diskTotal, trafficUsed, trafficLimitBytes) {
+            const nowMs = Date.now();
+            if (cpuUsage === lastCPUValue && nowMs - lastCPUPushAt < 55000) {
+                return;
+            }
+            lastCPUValue = cpuUsage;
+            lastCPUPushAt = nowMs;
+
             const now = new Date().toLocaleTimeString();
 
             chartData.labels.push(now);
@@ -919,6 +925,34 @@
             }
 
             if (cpuChart) cpuChart.update('none');
+        }
+
+        function loadCPUHistory() {
+            $.ajax({
+                url: '/api/container/cpuUsage',
+                type: 'GET',
+                headers: headers,
+                success: function(result) {
+                    if (result.code === 200 && Array.isArray(result.data)) {
+                        result.data.forEach(function(item) {
+                            chartData.labels.push(item.time);
+                            chartData.cpu.push(item.cpu_usage);
+                        });
+                        while (chartData.labels.length > maxDataPoints) {
+                            chartData.labels.shift();
+                            chartData.cpu.shift();
+                        }
+                        if (result.data.length > 0) {
+                            lastCPUValue = result.data[result.data.length - 1].cpu_usage;
+                            lastCPUPushAt = Date.now();
+                        }
+                        if (cpuChart) cpuChart.update('none');
+                    }
+                },
+                error: function() {
+                    console.error('加载CPU历史数据失败');
+                }
+            });
         }
 
         function openConsole() {
