@@ -639,7 +639,6 @@ func (s *ContainerService) GetInfo(ctx context.Context, name string) (map[string
 
 	result := map[string]interface{}{
 		"name":               name,
-		"status":             info.Status,
 		"image":              container.Image,
 		"password":           container.Password,
 		"cpu":                0,
@@ -669,6 +668,12 @@ func (s *ContainerService) GetInfo(ctx context.Context, name string) (map[string
 		if imageDesc, ok := info.Config["image.description"].(string); ok {
 			result["image"] = imageDesc
 		}
+	}
+
+	if container.Status == "frozen" {
+		result["status"] = "frozen"
+	} else {
+		result["status"] = info.Status
 	}
 
 	if cpuLimit, ok := info.Config["limits.cpu"].(string); ok {

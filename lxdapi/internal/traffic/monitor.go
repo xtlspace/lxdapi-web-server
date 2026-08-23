@@ -219,7 +219,7 @@ func (m *Monitor) handleOverLimit(containerName string, current float64, limit i
 		return
 	}
 	
-	db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "stopped")
+	db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "frozen")
 	logger.OK("容器因流量超限已锁定并停止: %s", containerName)
 	
 	if mgr := plugin.GetManager(); mgr != nil {
@@ -260,7 +260,7 @@ func (m *Monitor) stopLockedContainer(containerName string) {
 	
 	ctx := context.Background()
 	if err := m.lxcClient.StopContainer(ctx, containerName); err == nil {
-		db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "stopped")
+		db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "frozen")
 		logger.Warn("流量锁定容器尝试运行已被自动停止: %s", containerName)
 	}
 }
@@ -350,7 +350,21 @@ func (m *Monitor) ResetTraffic(containerName string) error {
 	if err := db.DB.Create(&traffic).Error; err != nil {
 		return fmt.Errorf("创建重置基准记录失败: %v", err)
 	}
-	
+
+	ctx := context.Background()
+	if err := m.lxcClient.StartContainer(ctx, containerName); err != nil {
+		if strings.Contains(err.Error(), "already running") {
+			db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "running")
+			logger.Info("容器已在运行中，跳过自动开机: %s", containerName)
+		} else {
+			db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "stopped")
+			logger.Error("重置流量后自动开机失败 %s: %v", containerName, err)
+		}
+	} else {
+		db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "running")
+		logger.OK("重置流量后已自动开机: %s", containerName)
+	}
+
 	logger.OK("流量统计已重置: %s (重置日期: 每月%d号)", containerName, resetDay)
 	return nil
 }
@@ -386,14 +400,14 @@ func (m *Monitor) handleUserOverLimit(user *models.User, containers []models.Con
 	
 	ctx := context.Background()
 	for _, c := range containers {
-		if c.Status == "stopped" {
+		if c.Status == "stopped" || c.Status == "frozen" {
 			continue
 		}
 		if err := m.lxcClient.StopContainer(ctx, c.Name); err != nil {
 			logger.Error("停止用户超限容器失败 %s: %v", c.Name, err)
 			continue
 		}
-		db.DB.Model(&models.Container{}).Where("name = ?", c.Name).Update("status", "stopped")
+		db.DB.Model(&models.Container{}).Where("name = ?", c.Name).Update("status", "frozen")
 	}
 	
 	logger.Warn("用户 %s 流量超限: %.2fGB / %dGB，已停止所有容器", user.Username, currentUsage, user.TrafficLimit)
