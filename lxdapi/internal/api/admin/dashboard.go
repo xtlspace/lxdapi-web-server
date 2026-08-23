@@ -27,6 +27,9 @@ func GetDashboard(c *gin.Context) {
 	var stoppedCount int64
 	db.DB.Model(&models.Container{}).Where("status = ?", "stopped").Count(&stoppedCount)
 
+	var frozenCount int64
+	db.DB.Model(&models.Container{}).Where("status = ?", "frozen").Count(&frozenCount)
+
 	var portMappingV4Count int64
 	db.DB.Model(&models.PortMappingV4{}).Count(&portMappingV4Count)
 	
@@ -42,6 +45,7 @@ func GetDashboard(c *gin.Context) {
 		"containers": gin.H{
 			"total":   containerCount,
 			"running": runningCount,
+			"frozen":  frozenCount,
 			"stopped": stoppedCount,
 		},
 		"port_mappings": gin.H{

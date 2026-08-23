@@ -857,6 +857,9 @@
             } else if (status === 'stopped') {
                 statusHtml = '<div class="badge badge-neutral gap-2">已停止</div>';
                 iconClass = 'from-gray-500 to-gray-600';
+            } else if (status === 'frozen') {
+                statusHtml = '<div class="badge badge-warning gap-2">已暂停</div>';
+                iconClass = 'from-yellow-500 to-yellow-600';
             } else {
                 statusHtml = `<div class="badge badge-warning gap-2">${status}</div>`;
                 iconClass = 'from-yellow-500 to-yellow-600';

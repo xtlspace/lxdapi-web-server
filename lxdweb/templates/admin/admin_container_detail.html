@@ -1100,15 +1100,16 @@
             $('#ipv6PoolLimit').text(c.ipv6_pool_limit || 0);
             $('#ipv6MappingLimit').text(c.ipv6_mapping_limit || 0);
 
-            const statusBadge = c.status === 'Running' ? 
-                '<span class="px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>运行中</span>' : 
-                c.status === 'Stopped' ?
+            const containerStatus = (c.status || '').toLowerCase();
+            const statusBadge = containerStatus === 'running' ?
+                '<span class="px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>运行中</span>' :
+                containerStatus === 'stopped' ?
                 '<span class="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">已停止</span>' :
-                c.status === 'Frozen' ?
+                containerStatus === 'frozen' ?
                 '<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">已暂停</span>' :
                 '<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">其他</span>';
 
-            const iconColor = c.status === 'Running' ? 'from-green-500 to-green-600' : 'from-gray-500 to-gray-600';
+            const iconColor = containerStatus === 'running' ? 'from-green-500 to-green-600' : 'from-gray-500 to-gray-600';
             $('#containerIconBg').removeClass().addClass(`w-12 h-12 bg-gradient-to-br ${iconColor} rounded-lg flex items-center justify-center`);
             
             $('#containerStatus').html(statusBadge);

@@ -521,6 +521,8 @@
                     '<span class="px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>在线</span>' : 
                     status === 'stopped' ?
                     '<span class="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">离线</span>' :
+                    status === 'frozen' ?
+                    '<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">已暂停</span>' :
                     '<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">其他</span>';
                 
                 const memoryUsedMB = c.memory_usage_raw ? parseFloat(c.memory_usage_raw) / 1024 / 1024 : 0;
@@ -621,6 +623,8 @@
                     '<span class="px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>在线</span>' : 
                     status === 'stopped' ?
                     '<span class="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">离线</span>' :
+                    status === 'frozen' ?
+                    '<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">已暂停</span>' :
                     '<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">其他</span>';
                 
                 const memoryUsedMB = c.memory_usage_raw ? parseFloat(c.memory_usage_raw) / 1024 / 1024 : 0;

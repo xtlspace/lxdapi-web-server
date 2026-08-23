@@ -818,6 +818,9 @@
             } else if (status === 'stopped') {
                 statusHtml = '<div class="badge badge-neutral gap-2">已停止</div>';
                 iconClass = 'from-slate-400 to-slate-500';
+            } else if (status === 'frozen') {
+                statusHtml = '<div class="badge badge-warning gap-2">已暂停</div>';
+                iconClass = 'from-amber-400 to-amber-500';
             } else {
                 statusHtml = `<div class="badge badge-warning gap-2">${status}</div>`;
                 iconClass = 'from-amber-400 to-amber-500';

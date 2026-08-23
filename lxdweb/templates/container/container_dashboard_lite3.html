@@ -1038,6 +1038,9 @@
             } else if (status === 'stopped') {
                 statusHtml = '<span class="md-chip">已停止</span>';
                 iconClass = 'from-gray-500 to-gray-600';
+            } else if (status === 'frozen') {
+                statusHtml = '<span class="md-chip" style="background-color: #fef3c7; color: #92400e;">已暂停</span>';
+                iconClass = 'from-yellow-500 to-yellow-600';
             } else {
                 statusHtml = `<span class="md-chip" style="background-color: #fef3c7; color: #92400e;">${status}</span>`;
                 iconClass = 'from-yellow-500 to-yellow-600';
