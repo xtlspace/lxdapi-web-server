@@ -241,9 +241,6 @@ func main() {
 	task.StartAutoCleanup()
 	logger.OK("自动清理任务已启动")
 
-	task.StartCacheAutoRefresh()
-	logger.OK("缓存自动刷新调度器已启动")
-
 	gin.SetMode(cfg.System.Server.Mode)
 	r := gin.Default()
 
@@ -444,9 +441,6 @@ func main() {
 		adminAPI.GET("/containers/:name/ip", admin.GetContainerIP)
 		adminAPI.POST("/containers/:name/ip/allocate", admin.AllocateContainerIP)
 		adminAPI.GET("/cache/containers", admin.GetContainersCache)
-		adminAPI.POST("/cache/refresh", admin.RefreshCache)
-		adminAPI.GET("/cache/auto-refresh/settings", admin.GetAutoRefreshSettings)
-		adminAPI.PUT("/cache/auto-refresh/settings", admin.UpdateAutoRefreshSettings)
 		adminAPI.GET("/tasks", admin.GetTaskList)
 		adminAPI.GET("/tasks/:id", admin.GetTask)
 		adminAPI.DELETE("/tasks/:id", admin.DeleteTask)
@@ -506,7 +500,6 @@ func main() {
 		userAPI.GET("/containers/:name/dns", user.GetContainerDNS)
 		userAPI.PUT("/containers/:name/dns", user.SetContainerDNS)
 		userAPI.PUT("/containers/:name/remark", user.UpdateContainerRemark)
-		userAPI.POST("/cache/refresh", user.RefreshCache)
 		userAPI.GET("/containers/:name/credential", user.GetContainerCredential)
 		userAPI.POST("/containers/:name/credential/regenerate", user.RegenerateContainerCredential)
 		userAPI.POST("/port-mapping/allocate", user.AllocatePortMapping)

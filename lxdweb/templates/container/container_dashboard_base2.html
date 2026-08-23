@@ -241,23 +241,9 @@
                     <h3 class="text-base font-semibold text-gray-900 mb-5 flex items-center gap-2">
                         <span class="iconify text-blue-500" data-icon="heroicons:presentation-chart-line"></span> 资源趋势
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div>
-                            <p class="text-xs text-center text-gray-500 mb-2">CPU 使用率</p>
-                            <div class="h-32"><canvas id="cpuChart"></canvas></div>
-                        </div>
-                        <div>
-                             <p class="text-xs text-center text-gray-500 mb-2">内存使用率</p>
-                            <div class="h-32"><canvas id="memoryChart"></canvas></div>
-                        </div>
-                        <div>
-                             <p class="text-xs text-center text-gray-500 mb-2">磁盘使用率</p>
-                            <div class="h-32"><canvas id="diskChart"></canvas></div>
-                        </div>
-                        <div>
-                             <p class="text-xs text-center text-gray-500 mb-2">流量使用趋势</p>
-                            <div class="h-32"><canvas id="trafficChart"></canvas></div>
-                        </div>
+                    <div>
+                        <p class="text-xs text-center text-gray-500 mb-2">CPU 使用率</p>
+                        <div class="h-32"><canvas id="cpuChart"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -608,9 +594,9 @@
         }
 
         // Chart Variables
-        let cpuChart, memoryChart, diskChart, trafficChart;
+        let cpuChart;
         const maxDataPoints = 20;
-        const chartData = { labels: [], cpu: [], memory: [], disk: [], traffic: [] };
+        const chartData = { labels: [], cpu: [] };
 
         $(document).ready(function() {
             switchTab('info');
@@ -795,30 +781,22 @@
                 }
             };
             
-            const createChart = (id, color, dataArray) => new Chart(document.getElementById(id), {
+            cpuChart = new Chart(document.getElementById('cpuChart'), {
                 type: 'line',
-                data: { labels: chartData.labels, datasets: [{ data: dataArray, borderColor: color, backgroundColor: color + '20', fill: true }] },
+                data: { labels: chartData.labels, datasets: [{ data: chartData.cpu, borderColor: '#3b82f6', backgroundColor: '#3b82f620', fill: true }] },
                 options: opts
             });
-
-            cpuChart = createChart('cpuChart', '#3b82f6', chartData.cpu);
-            memoryChart = createChart('memoryChart', '#22c55e', chartData.memory);
-            diskChart = createChart('diskChart', '#eab308', chartData.disk);
-            trafficChart = createChart('trafficChart', '#a855f7', chartData.traffic);
         }
 
         function updateChartData(cpu, memUsed, memTotal, diskUsed, diskTotal, trafUsed, trafTotal) {
             chartData.labels.push(new Date().toLocaleTimeString());
             chartData.cpu.push(cpu);
-            chartData.memory.push(memTotal ? (memUsed/memTotal*100) : 0);
-            chartData.disk.push(diskTotal ? (diskUsed/diskTotal*100) : 0);
-            chartData.traffic.push(trafTotal ? (trafUsed/trafTotal*100) : 0);
 
             if(chartData.labels.length > maxDataPoints) {
-                chartData.labels.shift(); chartData.cpu.shift(); chartData.memory.shift(); chartData.disk.shift(); chartData.traffic.shift();
+                chartData.labels.shift(); chartData.cpu.shift();
             }
             
-            cpuChart.update('none'); memoryChart.update('none'); diskChart.update('none'); trafficChart.update('none');
+            cpuChart.update('none');
         }
 
 

@@ -65,23 +65,11 @@
                     </svg>
                     <span id="selectAllText">全选</span>
                 </button>
-                <button onclick="updateContainerList()" class="px-2 lg:px-3 py-1.5 text-xs font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    更新
-                </button>
                 <button onclick="refreshContainers()" class="px-2 lg:px-3 py-1.5 text-xs font-medium text-gray-700 content-box hover:bg-gray-100 border border-gray-200 rounded-lg transition flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
                     刷新
-                </button>
-                <button onclick="showAutoRefreshSettings()" class="px-2 lg:px-3 py-1.5 text-xs font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    自动更新设置
                 </button>
             </div>
         </div>
@@ -138,7 +126,6 @@
                     <button onclick="batchRestart()" class="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded transition">重启</button>
                     <button onclick="batchSuspend()" class="px-3 py-1.5 text-xs font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 rounded transition">暂停</button>
                     <button onclick="batchUnsuspend()" class="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded transition">恢复</button>
-                    <button onclick="batchSync()" class="px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded transition">同步</button>
                     <button onclick="showBatchDeleteModal()" class="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition">批量删除</button>
                 </div>
             </div>
@@ -552,7 +539,6 @@
                             </div>
                             <div class="flex gap-2">
                                 <a href="/admin/containers/${c.name}" class="flex-1 px-2 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition text-center block">详情</a>
-                                <button onclick="syncContainer('${c.name}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded transition text-center">同步</button>
                                 <button onclick="showUpdateConfigModal('${c.name}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded transition text-center">配置</button>
                                 <button onclick="deleteContainer('${c.name}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition text-center">删除</button>
                             </div>
@@ -643,7 +629,6 @@
                         <td>
                             <div class="flex gap-1">
                                 <a href="/admin/containers/${c.name}" class="px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition">详情</a>
-                                <button onclick="syncContainer('${c.name}')" class="px-2 py-1 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded transition">同步</button>
                                 <button onclick="showUpdateConfigModal('${c.name}')" class="px-2 py-1 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded transition">配置</button>
                                 <button onclick="deleteContainer('${c.name}')" class="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition">删除</button>
                             </div>
@@ -733,135 +718,6 @@
 
         function refreshContainers() {
             loadContainers();
-        }
-
-        function showAutoRefreshSettings() {
-            $.ajax({
-                url: '/api/admin/cache/auto-refresh/settings',
-                method: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.code === 200 && response.data) {
-                        const data = response.data;
-                        $('#autoRefreshEnabled').prop('checked', data.enabled === true);
-                        $('#autoRefreshInterval').val(data.interval);
-                        $('#autoRefreshBatchSize').val(data.batch_size);
-                        $('#autoRefreshBatchInterval').val(data.batch_interval);
-                        document.getElementById('autoRefreshSettingsModal').showModal();
-                    } else {
-                        showToast('error', '获取设置失败: ' + (response.msg || '未知错误'));
-                    }
-                },
-                error: function(xhr) {
-                    let msg = '获取设置失败';
-                    if (xhr.responseJSON && xhr.responseJSON.msg) {
-                        msg = xhr.responseJSON.msg;
-                    }
-                    showToast('error', msg);
-                }
-            });
-        }
-
-        function closeAutoRefreshSettings() {
-            document.getElementById('autoRefreshSettingsModal').close();
-        }
-
-        function saveAutoRefreshSettings() {
-            const enabled = $('#autoRefreshEnabled').is(':checked');
-            const interval = parseInt($('#autoRefreshInterval').val());
-            const batchSize = parseInt($('#autoRefreshBatchSize').val());
-            const batchInterval = parseInt($('#autoRefreshBatchInterval').val());
-            
-            if (isNaN(interval) || interval < 1 || interval > 1440) {
-                showToast('error', '刷新间隔必须在1-1440分钟之间');
-                return;
-            }
-            if (isNaN(batchSize) || batchSize < 1 || batchSize > 100) {
-                showToast('error', '批次大小必须在1-100之间');
-                return;
-            }
-            if (isNaN(batchInterval) || batchInterval < 1 || batchInterval > 300) {
-                showToast('error', '批次间隔必须在1-300秒之间');
-                return;
-            }
-            
-            const requestData = {
-                enabled: enabled,
-                interval: interval,
-                batch_size: batchSize,
-                batch_interval: batchInterval
-            };
-            
-            const $submitBtn = $('#autoRefreshForm button[type="submit"]');
-            $submitBtn.prop('disabled', true).html('<span class="loading loading-spinner loading-xs"></span> 保存中...');
-            
-            $.ajax({
-                url: '/api/admin/cache/auto-refresh/settings',
-                method: 'PUT',
-                contentType: 'application/json',
-                data: JSON.stringify(requestData),
-                dataType: 'json',
-                success: function(response) {
-                    if (response.code === 200) {
-                        showToast('success', '配置保存成功');
-                        setTimeout(function() {
-                            closeAutoRefreshSettings();
-                        }, 500);
-                    } else {
-                        showToast('error', response.msg || '保存失败');
-                    }
-                },
-                error: function(xhr) {
-                    let msg = '保存失败';
-                    if (xhr.responseJSON && xhr.responseJSON.msg) {
-                        msg = xhr.responseJSON.msg;
-                    }
-                    showToast('error', msg);
-                },
-                complete: function() {
-                    $submitBtn.prop('disabled', false).text('保存');
-                }
-            });
-        }
-
-        $(document).ready(function() {
-            $('#autoRefreshForm').off('submit').on('submit', function(e) {
-                e.preventDefault();
-                saveAutoRefreshSettings();
-            });
-        });
-
-
-        function updateContainerList() {
-            if (!confirm('确定要从LXD重新获取所有容器并更新缓存吗？任务将在后台执行。')) {
-                return;
-            }
-
-            showToast('info', '正在创建更新任务...');
-
-            $.ajax({
-                url: '/api/admin/cache/refresh',
-                type: 'POST',
-                success: function(result) {
-                    if (result.code === 200) {
-                        const taskId = result.data.task_id;
-                        showToast('info', '缓存更新中...');
-                        pollTaskStatus(taskId, 'system', 'refresh_cache');
-                    } else {
-                        showToast('error', result.msg || '创建更新任务失败');
-                    }
-                },
-                error: function(xhr) {
-                    let errorMsg = '创建更新任务失败';
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        errorMsg = response.msg || errorMsg;
-                    } catch (e) {
-                        errorMsg = xhr.statusText || errorMsg;
-                    }
-                    showToast('error', errorMsg);
-                }
-            });
         }
 
         function formatBytes(bytes) {
@@ -1003,35 +859,6 @@
             batchOperation(containers, 'resume', '恢复');
         }
 
-        function batchSync() {
-            const containers = getSelectedContainers();
-            if (containers.length === 0) return;
-            
-            if (!confirm(`确定要同步选中的 ${containers.length} 个容器的缓存吗？`)) return;
-            
-            batchSyncOperation(containers);
-        }
-
-        function syncContainer(name) {
-            showToast('info', `正在同步容器 ${name} 的缓存...`);
-            
-            $.ajax({
-                url: `/api/admin/cache/refresh?name=${encodeURIComponent(name)}`,
-                type: 'POST',
-                success: function(result) {
-                    if (result.code === 200) {
-                        showToast('success', `容器 ${name} 缓存同步成功`);
-                        setTimeout(() => loadContainers(), 1000);
-                    } else {
-                        showToast('error', `容器 ${name} 缓存同步失败: ${result.msg}`);
-                    }
-                },
-                error: function(xhr) {
-                    showToast('error', `容器 ${name} 缓存同步失败`);
-                }
-            });
-        }
-
         function deleteContainer(name) {
             if (!confirm(`确定要删除容器 ${name} 吗？此操作不可恢复！`)) return;
             
@@ -1051,38 +878,6 @@
                     showToast('error', `删除容器 ${name} 失败`);
                 }
             });
-        }
-
-        async function batchSyncOperation(containers) {
-            let successCount = 0;
-            let failCount = 0;
-            let total = containers.length;
-            
-            showToast('info', `开始批量同步 ${total} 个容器...`);
-            
-            for (let i = 0; i < containers.length; i++) {
-                const name = containers[i];
-                showToast('info', `同步中 (${i+1}/${total}): ${name}`);
-                
-                try {
-                    const result = await $.ajax({
-                        url: `/api/admin/cache/refresh?name=${encodeURIComponent(name)}`,
-                        type: 'POST'
-                    });
-                    if (result.code === 200) {
-                        successCount++;
-                    } else {
-                        failCount++;
-                    }
-                } catch (e) {
-                    failCount++;
-                }
-            }
-            
-            let message = `批量同步完成：成功 ${successCount}，失败 ${failCount}`;
-            showToast(failCount > 0 ? 'warning' : 'success', message);
-            clearSelection();
-            loadContainers();
         }
 
         async function batchOperation(containers, action, actionName) {
@@ -1122,8 +917,7 @@
             const maxPolls = 120;
             const actionNames = {
                 'create': '创建',
-                'update_config': '配置更新',
-                'refresh_cache': '缓存更新'
+                'update_config': '配置更新'
             };
             const actionName = actionNames[action] || action;
             
@@ -1139,35 +933,12 @@
                             
                             if (task.status === 'success') {
                                 clearInterval(pollInterval);
-                                
-                                if (action === 'refresh_cache') {
-                                    let msg = '缓存更新完成';
-                                    if (task.result) {
-                                        try {
-                                            const r = JSON.parse(task.result);
-                                            msg = `缓存更新完成：成功 ${r.success} 个，失败 ${r.failed} 个，共 ${r.total} 个`;
-                                        } catch(e) {}
-                                    }
-                                    showToast('success', msg);
-                                    loadContainers();
-                                } else {
-                                    showToast('success', '容器 ' + containerName + ' ' + actionName + '成功！');
-                                    $.ajax({
-                                        url: `/api/admin/cache/refresh?name=${encodeURIComponent(containerName)}`,
-                                        type: 'POST',
-                                        complete: function() {
-                                            setTimeout(() => loadContainers(), 500);
-                                        }
-                                    });
-                                }
+                                showToast('success', '容器 ' + containerName + ' ' + actionName + '成功！');
+                                setTimeout(() => loadContainers(), 500);
                             } else if (task.status === 'failed') {
                                 clearInterval(pollInterval);
                                 const errorMsg = task.error_msg || actionName + '失败';
-                                if (action === 'refresh_cache') {
-                                    showToast('error', '缓存更新失败：' + errorMsg);
-                                } else {
-                                    showToast('error', '容器 ' + containerName + ' ' + actionName + '失败：' + errorMsg);
-                                }
+                                showToast('error', '容器 ' + containerName + ' ' + actionName + '失败：' + errorMsg);
                                 setTimeout(() => loadContainers(), 1000);
                             }
                         }
@@ -1704,45 +1475,6 @@
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         <span>确认更新</span>
                     </button>
-                </div>
-            </form>
-        </div>
-        <form method="dialog" class="modal-backdrop"><button>关闭</button></form>
-    </dialog>
-
-    <dialog id="autoRefreshSettingsModal" class="modal">
-        <div class="modal-box max-w-md">
-            <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                自动缓存刷新设置
-            </h3>
-            <form id="autoRefreshForm" class="space-y-4">
-                <div class="form-control">
-                    <label class="label cursor-pointer">
-                        <span class="label-text">启用自动刷新</span>
-                        <input type="checkbox" id="autoRefreshEnabled" class="toggle toggle-primary">
-                    </label>
-                </div>
-                <div class="form-control">
-                    <label class="label py-1"><span class="label-text text-xs">刷新间隔 (分钟)</span></label>
-                    <input type="number" id="autoRefreshInterval" min="1" max="1440" required class="input input-bordered input-sm w-full">
-                    <label class="label py-1"><span class="label-text-alt text-xs text-gray-500">最小1分钟，最大1440分钟</span></label>
-                </div>
-                <div class="form-control">
-                    <label class="label py-1"><span class="label-text text-xs">批次大小 (个容器)</span></label>
-                    <input type="number" id="autoRefreshBatchSize" min="1" max="100" required class="input input-bordered input-sm w-full">
-                    <label class="label py-1"><span class="label-text-alt text-xs text-gray-500">每批处理的容器数量</span></label>
-                </div>
-                <div class="form-control">
-                    <label class="label py-1"><span class="label-text text-xs">批次间隔 (秒)</span></label>
-                    <input type="number" id="autoRefreshBatchInterval" min="1" max="300" required class="input input-bordered input-sm w-full">
-                    <label class="label py-1"><span class="label-text-alt text-xs text-gray-500">批次之间的等待时间</span></label>
-                </div>
-                <div class="modal-action pt-2">
-                    <button type="button" onclick="closeAutoRefreshSettings()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded transition">取消</button>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition">保存</button>
                 </div>
             </form>
         </div>

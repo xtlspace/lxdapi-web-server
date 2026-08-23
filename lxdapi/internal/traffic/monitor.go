@@ -18,7 +18,6 @@ import (
 type Monitor struct {
 	lxcClient *lxc.Client
 	interval  time.Duration
-	batchSize int
 }
 
 var GlobalMonitor *Monitor
@@ -33,7 +32,6 @@ func InitMonitor() error {
 	GlobalMonitor = &Monitor{
 		lxcClient: lxc.NewClient(),
 		interval:  time.Duration(cfg.Interval) * time.Second,
-		batchSize: cfg.BatchSize,
 	}
 	
 	logger.OK("流量监控器初始化成功")
@@ -65,9 +63,9 @@ func (m *Monitor) collect() {
 	m.checkAutoReset()
 	m.checkUserTrafficLimits()
 
-	containers, err := m.getRunningContainers()
-	if err != nil {
-		logger.Error("获取运行中容器列表失败: %v", err)
+	var containers []models.Container
+	if err := db.DB.Select("name", "status").Find(&containers).Error; err != nil {
+		logger.Error("获取容器列表失败: %v", err)
 		return
 	}
 
@@ -75,53 +73,49 @@ func (m *Monitor) collect() {
 		return
 	}
 
-	for _, name := range containers {
-		if m.isUserTrafficLocked(name) {
-			m.stopLockedContainer(name)
-			continue
-		}
-
-		if m.isTrafficLocked(name) {
-			m.stopLockedContainer(name)
-			continue
-		}
-
-		stats := m.getContainerNetStats(name)
-		if stats == nil {
-			continue
-		}
-
-		m.updateTraffic(name, stats)
+	type pendingSample struct {
+		name      string
+		cpuUsage  float64
+		sampledAt time.Time
 	}
-}
+	pending := make([]pendingSample, 0, len(containers))
 
-func (m *Monitor) getRunningContainers() ([]string, error) {
-	cmd := exec.Command("lxc", "list", "--format=csv", "--columns=n,s")
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("获取容器列表失败: %v", err)
-	}
-	
-	var containers []string
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	
-	for _, line := range lines {
-		if line == "" {
+	for _, c := range containers {
+		if c.Status != "running" {
 			continue
 		}
-		
-		parts := strings.Split(line, ",")
-		if len(parts) >= 2 {
-			name := strings.TrimSpace(parts[0])
-			status := strings.TrimSpace(parts[1])
-			
-			if status == "RUNNING" {
-				containers = append(containers, name)
-			}
+
+		if m.isUserTrafficLocked(c.Name) {
+			m.stopLockedContainer(c.Name)
+			continue
 		}
+
+		if m.isTrafficLocked(c.Name) {
+			m.stopLockedContainer(c.Name)
+			continue
+		}
+
+		state, err := m.getContainerState(c.Name)
+		if err != nil || state.Status != "Running" {
+			continue
+		}
+
+		pending = append(pending, pendingSample{
+			name:      c.Name,
+			cpuUsage:  state.CPUUsage,
+			sampledAt: time.Now(),
+		})
 	}
-	
-	return containers, nil
+
+	if len(pending) == 0 {
+		return
+	}
+
+	time.Sleep(m.interval)
+
+	for _, p := range pending {
+		m.collectContainerUsage(p.name, p.cpuUsage, p.sampledAt)
+	}
 }
 
 type NetworkCounters struct {
@@ -131,31 +125,99 @@ type NetworkCounters struct {
 	PacketsSent     uint64 `json:"packets_sent"`
 }
 
-type NetworkInterface struct {
-	Counters NetworkCounters `json:"counters"`
+type containerUsageSnapshot struct {
+	Status    string
+	CPUUsage  float64
+	MemUsage  float64
+	DiskUsage float64
+	RxBytes   uint64
+	TxBytes   uint64
 }
 
-type ContainerNetworkState struct {
-	Eth0 NetworkInterface `json:"eth0"`
-}
-
-type ContainerState struct {
-	Network ContainerNetworkState `json:"network"`
-}
-
-func (m *Monitor) getContainerNetStats(name string) *NetworkCounters {
+func (m *Monitor) getContainerState(name string) (*containerUsageSnapshot, error) {
 	cmd := exec.Command("lxc", "query", fmt.Sprintf("/1.0/instances/%s/state", name))
 	output, err := cmd.Output()
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	
-	var state ContainerState
-	if err := json.Unmarshal(output, &state); err != nil {
-		return nil
+
+	var raw struct {
+		Status  string                 `json:"status"`
+		CPU     map[string]interface{} `json:"cpu"`
+		Memory  map[string]interface{} `json:"memory"`
+		Disk    map[string]interface{} `json:"disk"`
+		Network map[string]struct {
+			Counters NetworkCounters `json:"counters"`
+		} `json:"network"`
 	}
-	
-	return &state.Network.Eth0.Counters
+	if err := json.Unmarshal(output, &raw); err != nil {
+		return nil, err
+	}
+
+	snap := &containerUsageSnapshot{Status: raw.Status}
+
+	if v, ok := raw.CPU["usage"].(float64); ok {
+		snap.CPUUsage = v
+	}
+	if v, ok := raw.Memory["usage"].(float64); ok {
+		snap.MemUsage = v
+	}
+	if diskRoot, ok := raw.Disk["root"].(map[string]interface{}); ok {
+		if v, ok := diskRoot["usage"].(float64); ok {
+			snap.DiskUsage = v
+		}
+	}
+	if eth0, ok := raw.Network["eth0"]; ok {
+		snap.RxBytes = eth0.Counters.BytesReceived
+		snap.TxBytes = eth0.Counters.BytesSent
+	}
+
+	return snap, nil
+}
+
+func (m *Monitor) collectContainerUsage(name string, baseCPU float64, sampledAt time.Time) {
+	state, err := m.getContainerState(name)
+	if err != nil || state.Status != "Running" {
+		return
+	}
+
+	m.updateTraffic(name, &NetworkCounters{
+		BytesReceived: state.RxBytes,
+		BytesSent:     state.TxBytes,
+	})
+
+	var container models.Container
+	if err := db.DB.Where("name = ?", name).First(&container).Error; err != nil {
+		return
+	}
+
+	wallSeconds := time.Since(sampledAt).Seconds()
+	cpuPercent := 0.0
+	if wallSeconds > 0 {
+		cpuPercent = (state.CPUUsage - baseCPU) / 1e9 / wallSeconds * 100
+	}
+	if cpuPercent < 0 {
+		cpuPercent = 0
+	}
+	if cpuPercent > 100 {
+		cpuPercent = 100
+	}
+
+	container.CPUUsage = cpuPercent
+	container.MemoryUsageRaw = uint64(state.MemUsage)
+	container.MemoryUsage = formatBytes(uint64(state.MemUsage))
+	container.DiskUsageRaw = uint64(state.DiskUsage)
+	container.DiskUsage = formatBytes(uint64(state.DiskUsage))
+
+	var traffic models.Traffic
+	if err := db.DB.Where("container_name = ?", name).First(&traffic).Error; err == nil {
+		container.TrafficUsageRaw = uint64(traffic.TotalGB)
+		container.TrafficUsage = fmt.Sprintf("%.2f", traffic.TotalGB)
+	}
+
+	container.LastSync = time.Now().Format(time.RFC3339)
+
+	db.DB.Save(&container)
 }
 
 func (m *Monitor) updateTraffic(containerName string, stats *NetworkCounters) {
@@ -294,8 +356,8 @@ func (m *Monitor) checkAutoReset() {
 }
 
 func (m *Monitor) autoResetTraffic(containerName string) {
-	stats := m.getContainerNetStats(containerName)
-	if stats == nil {
+	state, err := m.getContainerState(containerName)
+	if err != nil {
 		return
 	}
 	
@@ -304,8 +366,8 @@ func (m *Monitor) autoResetTraffic(containerName string) {
 		return
 	}
 	
-	traffic.RxBytes = int64(stats.BytesReceived)
-	traffic.TxBytes = int64(stats.BytesSent)
+	traffic.RxBytes = int64(state.RxBytes)
+	traffic.TxBytes = int64(state.TxBytes)
 	traffic.TotalGB = 0
 	traffic.Locked = false
 	traffic.LastUpdate = time.Now()
@@ -319,8 +381,8 @@ func (m *Monitor) autoResetTraffic(containerName string) {
 }
 
 func (m *Monitor) ResetTraffic(containerName string) error {
-	stats := m.getContainerNetStats(containerName)
-	if stats == nil {
+	state, err := m.getContainerState(containerName)
+	if err != nil {
 		return fmt.Errorf("获取容器流量数据失败")
 	}
 	
@@ -337,8 +399,8 @@ func (m *Monitor) ResetTraffic(containerName string) error {
 	
 	traffic := models.Traffic{
 		ContainerName: containerName,
-		RxBytes:       int64(stats.BytesReceived),
-		TxBytes:       int64(stats.BytesSent),
+		RxBytes:       int64(state.RxBytes),
+		TxBytes:       int64(state.TxBytes),
 		TotalGB:       0,
 		LimitGB:       container.TrafficLimit,
 		ResetDay:      1, // 固定每月1号
@@ -477,4 +539,17 @@ func (m *Monitor) ResetUserTraffic(username string) error {
 	db.DB.Model(&user).Update("traffic_locked", false)
 	logger.OK("用户流量已重置: %s", username)
 	return nil
+}
+
+func formatBytes(bytes uint64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := uint64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.2f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }

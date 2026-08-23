@@ -365,23 +365,9 @@
                     <h3 class="text-base font-semibold mb-5 flex items-center gap-2" style="color: var(--md-on-surface);">
                         <span class="iconify w-5 h-5" style="color: var(--md-primary);" data-icon="heroicons:presentation-chart-line"></span> 资源趋势
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div>
-                            <p class="text-xs text-center mb-3 font-medium" style="color: var(--md-on-surface-variant);">CPU 使用率</p>
-                            <div class="h-32"><canvas id="cpuChart"></canvas></div>
-                        </div>
-                        <div>
-                            <p class="text-xs text-center mb-3 font-medium" style="color: var(--md-on-surface-variant);">内存使用率</p>
-                            <div class="h-32"><canvas id="memoryChart"></canvas></div>
-                        </div>
-                        <div>
-                            <p class="text-xs text-center mb-3 font-medium" style="color: var(--md-on-surface-variant);">磁盘使用率</p>
-                            <div class="h-32"><canvas id="diskChart"></canvas></div>
-                        </div>
-                        <div>
-                            <p class="text-xs text-center mb-3 font-medium" style="color: var(--md-on-surface-variant);">流量使用趋势</p>
-                            <div class="h-32"><canvas id="trafficChart"></canvas></div>
-                        </div>
+                    <div>
+                        <p class="text-xs text-center mb-3 font-medium" style="color: var(--md-on-surface-variant);">CPU 使用率</p>
+                        <div class="h-32"><canvas id="cpuChart"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -722,9 +708,9 @@
             }
         }
 
-        let cpuChart, memoryChart, diskChart, trafficChart;
+        let cpuChart;
         const maxDataPoints = 20;
-        const chartData = { labels: [], cpu: [], memory: [], disk: [], traffic: [] };
+        const chartData = { labels: [], cpu: [] };
 
         $(document).ready(function() {
             switchTab('info');
@@ -907,30 +893,22 @@
                 }
             };
             
-            const createChart = (id, color, dataArray) => new Chart(document.getElementById(id), {
+            cpuChart = new Chart(document.getElementById('cpuChart'), {
                 type: 'line',
-                data: { labels: chartData.labels, datasets: [{ data: dataArray, borderColor: color, backgroundColor: color + '20', fill: true }] },
+                data: { labels: chartData.labels, datasets: [{ data: chartData.cpu, borderColor: '#6750A4', backgroundColor: '#6750A420', fill: true }] },
                 options: opts
             });
-
-            cpuChart = createChart('cpuChart', '#6750A4', chartData.cpu);
-            memoryChart = createChart('memoryChart', '#22c55e', chartData.memory);
-            diskChart = createChart('diskChart', '#f59e0b', chartData.disk);
-            trafficChart = createChart('trafficChart', '#7D5260', chartData.traffic);
         }
 
         function updateChartData(cpu, memUsed, memTotal, diskUsed, diskTotal, trafUsed, trafTotal) {
             chartData.labels.push(new Date().toLocaleTimeString());
             chartData.cpu.push(cpu);
-            chartData.memory.push(memTotal ? (memUsed/memTotal*100) : 0);
-            chartData.disk.push(diskTotal ? (diskUsed/diskTotal*100) : 0);
-            chartData.traffic.push(trafTotal ? (trafUsed/trafTotal*100) : 0);
 
             if(chartData.labels.length > maxDataPoints) {
-                chartData.labels.shift(); chartData.cpu.shift(); chartData.memory.shift(); chartData.disk.shift(); chartData.traffic.shift();
+                chartData.labels.shift(); chartData.cpu.shift();
             }
             
-            cpuChart.update('none'); memoryChart.update('none'); diskChart.update('none'); trafficChart.update('none');
+            cpuChart.update('none');
         }
 
         function showAddIPv4PoolModal() { document.getElementById('addIPv4PoolModal').showModal(); }

@@ -106,12 +106,6 @@
                     </svg>
                     <span id="selectAllText">全选</span>
                 </button>
-                <button onclick="updateContainerList()" class="px-3 py-1.5 text-xs font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    更新
-                </button>
                 <button onclick="refreshContainers()" class="px-3 py-1.5 text-xs font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -166,7 +160,6 @@
                     <button onclick="batchStart()" class="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition">启动</button>
                     <button onclick="batchStop()" class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition">停止</button>
                     <button onclick="batchRestart()" class="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition">重启</button>
-                    <button onclick="batchSync()" class="px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition">同步</button>
                 </div>
             </div>
         </div>
@@ -577,7 +570,6 @@
                             </div>
                             <div class="flex gap-2">
                                 <a href="/user/container?name=${c.name}" class="flex-1 px-2 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition text-center block">详情</a>
-                                <button onclick="syncContainer('${c.name}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded transition">同步</button>
                                 <button onclick="showConfigModal('${c.name}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded transition">配置</button>
                                 <button onclick="deleteContainer('${c.name}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition">删除</button>
                             </div>
@@ -667,7 +659,6 @@
                         <td>
                             <div class="flex gap-1">
                                 <a href="/user/container?name=${c.name}" class="px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition">详情</a>
-                                <button onclick="syncContainer('${c.name}')" class="px-2 py-1 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition">同步</button>
                                 <button onclick="showConfigModal('${c.name}')" class="px-2 py-1 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition">配置</button>
                                 <button onclick="deleteContainer('${c.name}')" class="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition">删除</button>
                             </div>
@@ -806,45 +797,6 @@
             }
         }
 
-        function updateContainerList() {
-            if (!confirm('确定要从LXD重新获取所有容器并更新缓存吗？这可能需要一些时间。')) {
-                return;
-            }
-
-            showToast('info', '正在从LXD获取容器列表...');
-
-            $.ajax({
-                url: '/api/user/cache/refresh',
-                type: 'POST',
-                success: function(result) {
-                    if (result.code === 200) {
-                        const data = result.data || {};
-                        const total = data.total || 0;
-                        const success = data.success || 0;
-                        const failed = data.failed || 0;
-                        
-                        if (failed > 0) {
-                            showToast('warning', `容器列表已更新：成功 ${success} 个，失败 ${failed} 个，共 ${total} 个`);
-                        } else {
-                            showToast('success', `容器列表已更新：成功获取 ${success} 个容器`);
-                        }
-                        
-                        setTimeout(() => loadContainers(), 1000);
-                    } else {
-                        showToast('error', result.msg || '更新容器列表失败');
-                    }
-                },
-                error: function(xhr) {
-                    let errorMsg = '更新容器列表失败';
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        errorMsg = response.msg || errorMsg;
-                    } catch (e) {}
-                    showToast('error', errorMsg);
-                }
-            });
-        }
-
         function refreshContainers() {
             loadContainers();
         }
@@ -930,67 +882,6 @@
             if (!confirm(`确定要重启选中的 ${containers.length} 个容器吗？`)) return;
             
             batchOperation(containers, 'restart', '重启');
-        }
-
-        function batchSync() {
-            const containers = getSelectedContainers();
-            if (containers.length === 0) return;
-            
-            if (!confirm(`确定要同步选中的 ${containers.length} 个容器的缓存吗？`)) return;
-            
-            batchSyncOperation(containers);
-        }
-
-        function syncContainer(name) {
-            showToast('info', `正在同步容器 ${name} 的缓存...`);
-            
-            $.ajax({
-                url: `/api/user/cache/refresh?name=${encodeURIComponent(name)}`,
-                type: 'POST',
-                success: function(result) {
-                    if (result.code === 200) {
-                        showToast('success', `容器 ${name} 缓存同步成功`);
-                        setTimeout(() => loadContainers(), 1000);
-                    } else {
-                        showToast('error', `容器 ${name} 缓存同步失败: ${result.msg}`);
-                    }
-                },
-                error: function(xhr) {
-                    showToast('error', `容器 ${name} 缓存同步失败`);
-                }
-            });
-        }
-
-        async function batchSyncOperation(containers) {
-            let successCount = 0;
-            let failCount = 0;
-            let total = containers.length;
-            
-            showToast('info', `开始批量同步 ${total} 个容器...`);
-            
-            for (let i = 0; i < containers.length; i++) {
-                const name = containers[i];
-                showToast('info', `同步中 (${i+1}/${total}): ${name}`);
-                
-                try {
-                    const result = await $.ajax({
-                        url: `/api/user/cache/refresh?name=${encodeURIComponent(name)}`,
-                        type: 'POST'
-                    });
-                    if (result.code === 200) {
-                        successCount++;
-                    } else {
-                        failCount++;
-                    }
-                } catch (e) {
-                    failCount++;
-                }
-            }
-            
-            let message = `批量同步完成：成功 ${successCount}，失败 ${failCount}`;
-            showToast(failCount > 0 ? 'warning' : 'success', message);
-            clearSelection();
-            loadContainers();
         }
 
         async function batchOperation(containers, action, actionName) {

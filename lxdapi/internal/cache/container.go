@@ -107,41 +107,22 @@ func GetContainerCache(name string) (*ContainerCacheJSON, bool) {
 func DeleteContainerCache(name string) {
 }
 
-func RefreshAllContainersCache(ctx context.Context) (int, int, error) {
-	lxcClient := lxc.NewClient()
-	
-	containerNames, err := lxcClient.ListAllContainers(ctx)
-	if err != nil {
-		return 0, 0, fmt.Errorf("获取容器列表失败: %v", err)
-	}
-
-	total := len(containerNames)
-	success := 0
-	failed := 0
-
-	for _, name := range containerNames {
-		if err := RefreshContainerCache(ctx, name); err != nil {
-			logger.Error("刷新容器 %s 缓存失败: %v", name, err)
-			failed++
-		} else {
-			success++
-		}
-	}
-
-	return total, success, nil
-}
-
 func RefreshContainerCache(ctx context.Context, name string) error {
 	lxcClient := lxc.NewClient()
-
-	info, err := lxcClient.GetContainerInfo(ctx, name)
-	if err != nil {
-		return err
-	}
 
 	var container models.Container
 	if err := db.DB.Where("name = ?", name).First(&container).Error; err != nil {
 		return fmt.Errorf("容器不存在于数据库: %s", name)
+	}
+
+	if container.Status == "frozen" {
+		logger.Info("容器 %s 处于暂停状态，跳过缓存刷新", name)
+		return nil
+	}
+
+	info, err := lxcClient.GetContainerInfo(ctx, name)
+	if err != nil {
+		return err
 	}
 
 	container.Status = strings.ToLower(info.Status)
