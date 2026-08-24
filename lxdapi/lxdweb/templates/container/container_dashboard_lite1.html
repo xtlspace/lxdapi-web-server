@@ -14,11 +14,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     {{end}}
-    {{if .UseLocalCDN}}
-    <script src="/static/js/chart.min.js"></script>
-    {{else}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    {{end}}
     <style>
         :root {
             --content-opacity: {{if .ContentOpacity}}{{.ContentOpacity}}{{else}}85{{end}};
@@ -156,14 +151,6 @@
                         <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-3 border border-gray-200">
                             <p class="text-xs text-gray-600">流量</p>
                             <p id="resTraffic" class="text-sm font-medium text-gray-800 mt-0.5">-</p>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <h3 class="text-xs font-semibold text-gray-700 mb-2">CPU使用趋势 (%)</h3>
-                            <div style="height: 150px;">
-                                <canvas id="cpuChart"></canvas>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -573,14 +560,6 @@
         let portRangeConfig = { v4_port_start: 10000, v4_port_end: 65535, v6_port_start: 10000, v6_port_end: 65535 };
         let ipPoolSettings = { allow_container_release_ipv4: false, allow_container_release_ipv6: false };
 
-        let cpuChart = null;
-
-        const maxDataPoints = 60;
-        const chartData = {
-            labels: [],
-            cpu: []
-        };
-
         async function loadIPPoolSettings() {
             try {
                 const response = await fetch('/api/public/ip-pool-settings');
@@ -607,8 +586,6 @@
 
         $(document).ready(function() {
             switchTab('info');
-            initCharts();
-            loadCPUHistory();
             loadIPPoolSettings();
             loadPortRangeConfig();
             loadContainerInfo();
@@ -803,7 +780,6 @@
             $('#containerIPv6').text(c.ipv6 && c.ipv6.length > 0 ? c.ipv6.join('\n') : '无');
 
             // Resources
-            const cpuUsage = c.cpu_usage || 0;
             const memoryUsed = c.memory_usage_raw || 0;
             const memoryTotal = c.memory ? parseMemorySize(c.memory) : 0;
             const diskUsed = c.disk_usage_raw || 0;
@@ -814,117 +790,6 @@
             $('#resMemory').text(formatBytes(memoryUsed) + ' / ' + formatBytes(memoryTotal));
             $('#resDisk').text(formatBytes(diskUsed) + ' / ' + formatBytes(diskTotal));
             $('#resTraffic').text(formatBytes(trafficUsed) + (trafficLimit > 0 ? ' / ' + formatBytes(trafficLimit) : ''));
-
-            updateChartData(cpuUsage, memoryUsed, memoryTotal, diskUsed, diskTotal, trafficUsed, trafficLimit);
-        }
-
-        function initCharts() {
-            const commonOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: {
-                        ticks: {
-                            font: { size: 9 },
-                            maxRotation: 0,
-                            autoSkip: true,
-                            maxTicksLimit: 5
-                        }
-                    },
-                    y: {
-                        ticks: {
-                            font: { size: 9 }
-                        }
-                    }
-                }
-            };
-
-            cpuChart = new Chart(document.getElementById('cpuChart').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [{
-                        label: 'CPU使用率 (%)',
-                        data: chartData.cpu,
-                        borderColor: 'rgb(59, 130, 246)',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    ...commonOptions,
-                    scales: {
-                        ...commonOptions.scales,
-                        y: {
-                            ...commonOptions.scales.y,
-                            min: 0,
-                            max: 100,
-                            ticks: {
-                                ...commonOptions.scales.y.ticks,
-                                stepSize: 25,
-                                callback: function(value) { return value + '%'; }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        let lastCPUValue = null;
-        let lastCPUPushAt = 0;
-
-        function updateChartData(cpuUsage, memoryUsed, memoryTotal, diskUsed, diskTotal, trafficUsed, trafficLimitBytes) {
-            const nowMs = Date.now();
-            if (cpuUsage === lastCPUValue && nowMs - lastCPUPushAt < 55000) {
-                return;
-            }
-            lastCPUValue = cpuUsage;
-            lastCPUPushAt = nowMs;
-
-            const now = new Date().toLocaleTimeString();
-
-            chartData.labels.push(now);
-            chartData.cpu.push(cpuUsage);
-
-            if (chartData.labels.length > maxDataPoints) {
-                chartData.labels.shift();
-                chartData.cpu.shift();
-            }
-
-            if (cpuChart) cpuChart.update('none');
-        }
-
-        function loadCPUHistory() {
-            $.ajax({
-                url: '/api/container/cpuUsage',
-                type: 'GET',
-                headers: headers,
-                success: function(result) {
-                    if (result.code === 200 && Array.isArray(result.data)) {
-                        result.data.forEach(function(item) {
-                            chartData.labels.push(item.time);
-                            chartData.cpu.push(item.cpu_usage);
-                        });
-                        while (chartData.labels.length > maxDataPoints) {
-                            chartData.labels.shift();
-                            chartData.cpu.shift();
-                        }
-                        if (result.data.length > 0) {
-                            lastCPUValue = result.data[result.data.length - 1].cpu_usage;
-                            lastCPUPushAt = Date.now();
-                        }
-                        if (cpuChart) cpuChart.update('none');
-                    }
-                },
-                error: function() {
-                    console.error('加载CPU历史数据失败');
-                }
-            });
         }
 
         function startContainer() {
