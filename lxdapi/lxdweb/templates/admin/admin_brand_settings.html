@@ -218,16 +218,6 @@
                             <input type="text" id="footerText" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="LXD API 容器管理平台" maxlength="200">
                         </div>
 
-                        <div class="content-box border border-gray-200 rounded-lg p-4 shadow-sm">
-                            <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-1.5">
-                                <span class="iconify" data-icon="mdi:cloud-download" data-width="18"></span>
-                                资源加载
-                            </h3>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" id="useLocalCDN" class="toggle toggle-sm">
-                                <span class="text-sm text-gray-700">使用本地资源</span>
-                            </label>
-                        </div>
                     </div>
 
                     <div class="content-box border border-gray-200 rounded-lg p-4 shadow-sm mb-4">
@@ -375,7 +365,6 @@
                         $('#containerNoticeOpacityValue').text((result.data.container_notice_opacity || 85) + '%');
                         $('#faviconUrl').val(result.data.favicon_url || '');
                         $('#footerText').val(result.data.footer_text);
-                        $('#useLocalCDN').prop('checked', result.data.use_local_cdn || false);
                         $('#containerLiteTemplate').val(result.data.container_lite_template || 'lite');
                         $('#containerBaseTemplate').val(result.data.container_base_template || 'base');
                         $('#tlsCertContent').val(result.data.tls_cert_content || '');
@@ -416,7 +405,6 @@
                     container_notice_opacity: parseInt($('#containerNoticeOpacity').val()),
                     favicon_url: $('#faviconUrl').val().trim(),
                     footer_text: $('#footerText').val().trim(),
-                    use_local_cdn: $('#useLocalCDN').is(':checked'),
                     container_lite_template: $('#containerLiteTemplate').val().trim() || 'lite',
                     container_base_template: $('#containerBaseTemplate').val().trim() || 'base',
                     tls_cert_content: $('#tlsCertContent').val().trim(),

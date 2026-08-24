@@ -1,14 +1,10 @@
 {{define "container/container_header.html"}}
-<link href="/static/fonts/inter.css" rel="stylesheet">
 
-<script src="/static/js/iconify.min.js"></script>
-    <script src="/static/js/icons-bundle.js"></script>
 
 
 {{template "container/container_toast.html"}}
 
 <style>
-    body { font-family: 'Inter', sans-serif; }
     @keyframes gentlePulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.85; }
@@ -57,7 +53,7 @@
             </div>
             <div class="flex items-center">
                 <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm font-medium btn-hover shadow-sm flex items-center gap-2">
-                    <span class="iconify" data-icon="mdi:logout" data-width="16"></span>
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="m17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5M4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4z"/></svg>
                     <span class="nav-logout-text">退出</span>
                 </button>
             </div>

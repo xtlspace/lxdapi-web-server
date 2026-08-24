@@ -38,10 +38,7 @@ func MergeTemplateData(c *gin.Context, data gin.H) gin.H {
 	if faviconUrl, exists := c.Get("FaviconUrl"); exists {
 		data["FaviconUrl"] = faviconUrl
 	}
-	if useLocalCDN, exists := c.Get("UseLocalCDN"); exists {
-		data["UseLocalCDN"] = useLocalCDN
-	}
-	
+
 	if _, exists := data["title"]; !exists {
 		path := c.Request.URL.Path
 		svc := service.NewBrandService()
@@ -72,7 +69,6 @@ func MergeTemplateData(c *gin.Context, data gin.H) gin.H {
 			}
 			data["FaviconUrl"] = settings.FaviconUrl
 			data["FooterText"] = settings.FooterText
-			data["UseLocalCDN"] = settings.UseLocalCDN
 		} else {
 			data["SystemName"] = "LXD API - 管理后台"
 			data["title"] = "管理后台 - LXD容器管理系统"
@@ -80,14 +76,5 @@ func MergeTemplateData(c *gin.Context, data gin.H) gin.H {
 			data["FooterText"] = "LXD API 容器管理平台"
 		}
 	}
-	
-	// 确保 UseLocalCDN 始终从数据库获取最新值
-	if _, exists := data["UseLocalCDN"]; !exists {
-		svc := service.NewBrandService()
-		if settings, err := svc.GetSettings(); err == nil {
-			data["UseLocalCDN"] = settings.UseLocalCDN
-		}
-	}
-	
 	return data
 }
