@@ -24,8 +24,7 @@ type Monitor struct {
 }
 
 const (
-	listRefreshInterval = 5 * time.Second
-	maxIdleWait         = time.Second
+	maxIdleWait = time.Second
 )
 
 type sampleState struct {
@@ -73,7 +72,7 @@ func (m *Monitor) Start(ctx context.Context) {
 
 		now := time.Now()
 
-		if now.Sub(m.listAt) >= listRefreshInterval {
+		if now.Sub(m.listAt) >= m.interval {
 			m.refreshSchedule(now)
 			m.listAt = now
 		}
@@ -96,7 +95,7 @@ func (m *Monitor) Start(ctx context.Context) {
 				wait = d
 			}
 		}
-		if d := listRefreshInterval - now.Sub(m.listAt); d < wait {
+		if d := m.interval - now.Sub(m.listAt); d < wait {
 			wait = d
 		}
 		if !periodicAt.IsZero() {
@@ -136,7 +135,7 @@ func (m *Monitor) nextDue(now time.Time) (*sampleState, time.Time) {
 
 func (m *Monitor) refreshSchedule(now time.Time) {
 	var containers []models.Container
-	if err := db.DB.Select("name", "status").Where("status = ?", "running").Find(&containers).Error; err != nil {
+	if err := db.DB.Select("name", "status").Find(&containers).Error; err != nil {
 		logger.Error("获取容器列表失败: %v", err)
 		return
 	}
@@ -176,34 +175,37 @@ func (m *Monitor) refreshSchedule(now time.Time) {
 }
 
 func (m *Monitor) sampleContainer(s *sampleState) {
-	if m.isUserTrafficLocked(s.name) {
-		m.stopLockedContainer(s.name)
-		delete(m.pending, s.name)
-		return
-	}
-
-	if m.isTrafficLocked(s.name) {
-		m.stopLockedContainer(s.name)
-		delete(m.pending, s.name)
-		return
-	}
+	now := time.Now()
+	s.nextDue = now.Add(m.interval)
 
 	state, err := m.getContainerState(s.name)
-	if err != nil || state.Status != "Running" {
-		delete(m.pending, s.name)
+	if err != nil {
 		return
 	}
 
-	now := time.Now()
+	newStatus := strings.ToLower(state.Status)
+	db.DB.Model(&models.Container{}).
+		Where("name = ? AND status <> ? AND status <> ?", s.name, newStatus, "frozen").
+		Update("status", newStatus)
+
+	if state.Status != "Running" {
+		s.hasBase = false
+		return
+	}
+
+	if m.isUserTrafficLocked(s.name) || m.isTrafficLocked(s.name) {
+		m.stopLockedContainer(s.name)
+		s.hasBase = false
+		return
+	}
 
 	if s.hasBase {
 		m.collectContainerUsage(s.name, state, s.baseCPU, s.baseAt)
 	}
 
 	s.baseCPU = state.CPUUsage
-	s.baseAt = now
+	s.baseAt = time.Now()
 	s.hasBase = true
-	s.nextDue = now.Add(m.interval)
 }
 
 type NetworkCounters struct {
