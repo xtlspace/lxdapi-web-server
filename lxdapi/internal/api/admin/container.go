@@ -570,55 +570,6 @@ func AllocateContainerIP(c *gin.Context) {
 	}
 }
 
-func GetContainerDNS(c *gin.Context) {
-	name := c.Param("name")
-	ctx := context.Background()
-	
-	lxcClient := service.NewContainerService().GetLXCClient()
-	dnsServers, err := lxcClient.GetContainerDNS(ctx, name)
-	if err != nil {
-		response.Error(c, 500, err.Error())
-		return
-	}
-	
-	response.Success(c, gin.H{
-		"container": name,
-		"dns":       dnsServers,
-	})
-}
-
-func SetContainerDNS(c *gin.Context) {
-	name := c.Param("name")
-	
-	var req struct {
-		DNS []string `json:"dns" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, 400, "参数错误")
-		return
-	}
-	
-	if len(req.DNS) == 0 {
-		response.Error(c, 400, "DNS服务器列表不能为空")
-		return
-	}
-	
-	ctx := context.Background()
-	lxcClient := service.NewContainerService().GetLXCClient()
-	
-	if err := lxcClient.SetContainerDNS(ctx, name, req.DNS); err != nil {
-		response.Error(c, 500, err.Error())
-		return
-	}
-	
-	logger.OK("容器 %s DNS设置成功: %v", name, req.DNS)
-	response.Success(c, gin.H{
-		"container": name,
-		"dns":       req.DNS,
-		"message":   "DNS设置成功",
-	})
-}
-
 func UpdateContainerRemark(c *gin.Context) {
 	name := c.Param("name")
 	if name == "" {

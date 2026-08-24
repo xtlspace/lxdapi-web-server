@@ -34,8 +34,8 @@ fi
 echo ""
 echo "准备嵌入式资源..."
 rm -rf cmd/lxdapi/templates cmd/lxdapi/docs cmd/lxdapi/static
-cp -r ../lxdweb/templates cmd/lxdapi/
-cp -r ../lxdweb/static cmd/lxdapi/
+cp -r ./lxdweb/templates cmd/lxdapi/
+cp -r ./lxdweb/static cmd/lxdapi/
 cp -r docs cmd/lxdapi/
 echo "✓ 资源文件已准备"
 

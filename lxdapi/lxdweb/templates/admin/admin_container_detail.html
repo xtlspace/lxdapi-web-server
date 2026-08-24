@@ -95,7 +95,7 @@
                 <button onclick="showResetPasswordModal()" class="px-2 py-1 lg:py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded transition whitespace-nowrap">重置密码</button>
                 <button onclick="showReinstallModal()" class="px-2 py-1 lg:py-1.5 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded transition whitespace-nowrap">重装系统</button>
                 <button onclick="showUpdateConfigModal()" class="px-2 py-1 lg:py-1.5 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded transition whitespace-nowrap">更换配置</button>
-                <button onclick="showDNSModal()" class="px-2 py-1 lg:py-1.5 text-xs font-medium text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded transition whitespace-nowrap">DNS设置</button>
+
                 <button onclick="resetTraffic()" class="px-2 py-1 lg:py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition whitespace-nowrap">重置流量</button>
                 <button onclick="deleteContainer()" class="px-2 py-1 lg:py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition whitespace-nowrap">删除容器</button>
             </div>
@@ -735,29 +735,7 @@
         <form method="dialog" class="modal-backdrop"><button>关闭</button></form>
     </dialog>
 
-    <dialog id="dnsModal" class="modal">
-        <div class="modal-box max-w-md">
-            <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-                </svg>
-                DNS设置
-            </h3>
-            <div class="space-y-4">
-                <div class="form-control">
-                    <label class="label"><span class="label-text font-medium">DNS服务器</span></label>
-                    <textarea id="dnsServers" rows="4" class="textarea textarea-bordered w-full text-sm" placeholder="每行一个DNS地址，例如：&#10;8.8.8.8&#10;8.8.4.4"></textarea>
-                    <label class="label"><span class="label-text-alt text-gray-500">每行输入一个DNS服务器地址</span></label>
-                </div>
 
-            </div>
-            <div class="modal-action">
-                <button type="button" onclick="closeDNSModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition">取消</button>
-                <button type="button" onclick="saveDNS()" class="px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition">保存</button>
-            </div>
-        </div>
-        <form method="dialog" class="modal-backdrop"><button>关闭</button></form>
-    </dialog>
 
     <script>
         const containerName = '{{ .container_name }}';
@@ -2867,59 +2845,11 @@
             }, 1000);
         }
 
-        function showDNSModal() {
-            $.get('/api/admin/containers/' + containerName + '/dns', function(result) {
-                if (result.code === 200 && result.data.dns) {
-                    $('#dnsServers').val(result.data.dns.join('\n'));
-                } else {
-                    $('#dnsServers').val('');
-                }
-                document.getElementById('dnsModal').showModal();
-            }).fail(function() {
-                $('#dnsServers').val('');
-                document.getElementById('dnsModal').showModal();
-            });
-        }
 
-        function closeDNSModal() {
-            document.getElementById('dnsModal').close();
-        }
 
-        function saveDNS() {
-            const dnsText = $('#dnsServers').val().trim();
-            if (!dnsText) {
-                showToast('error', 'DNS服务器不能为空');
-                return;
-            }
-            
-            const dnsServers = dnsText.split('\n').map(s => s.trim()).filter(s => s);
-            if (dnsServers.length === 0) {
-                showToast('error', 'DNS服务器不能为空');
-                return;
-            }
-            
-            $.ajax({
-                url: '/api/admin/containers/' + containerName + '/dns',
-                type: 'PUT',
-                contentType: 'application/json',
-                data: JSON.stringify({ dns: dnsServers }),
-                success: function(result) {
-                    if (result.code === 200) {
-                        showToast('success', 'DNS设置成功');
-                        closeDNSModal();
-                    } else {
-                        showToast('error', result.msg || 'DNS设置失败');
-                    }
-                },
-                error: function(xhr) {
-                    let errorMsg = 'DNS设置失败';
-                    if (xhr.responseJSON && xhr.responseJSON.msg) {
-                        errorMsg = xhr.responseJSON.msg;
-                    }
-                    showToast('error', errorMsg);
-                }
-            });
-        }
+
+
+
     </script>
 
         </div>

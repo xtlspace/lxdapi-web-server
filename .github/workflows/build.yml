@@ -42,8 +42,8 @@ jobs:
         run: |
           cd lxdapi
           rm -rf cmd/lxdapi/templates cmd/lxdapi/docs cmd/lxdapi/static
-          cp -r ../lxdweb/templates cmd/lxdapi/
-          cp -r ../lxdweb/static cmd/lxdapi/
+          cp -r ./lxdweb/templates cmd/lxdapi/
+          cp -r ./lxdweb/static cmd/lxdapi/
           cp -r docs cmd/lxdapi/
 
       - name: Build linux/amd64
