@@ -56,8 +56,6 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
-    {{template "container/container_header.html" .}}
-
     <div class="flex-1 relative" style="{{if .BgImage}}background-image: url('{{.BgImage}}'); background-size: cover; background-position: center; background-attachment: fixed;{{else}}background-color: #f9fafb;{{end}}">
         {{if .BgImage}}<div class="absolute inset-0 bg-white pointer-events-none" style="opacity: {{.BgOpacity}}%; z-index: 0;"></div>{{end}}
         <div class="relative container mx-auto px-4 py-8 pb-12 max-w-7xl" style="z-index: 1;">
@@ -252,8 +250,6 @@
         </div>
     </div>
     </div>
-
-    {{template "container/container_footer.html" .}}
 
     <!-- Modals (Preserving IDs and structure for JS compatibility) -->
     
