@@ -642,7 +642,6 @@
             loadIPv6PoolBindings();
             loadIPv6MappingBindings();
             loadReverseProxyRules();
-            setInterval(loadContainerInfo, 10000);
             
             $('#addIPv4PoolForm').submit(function(e) {
                 e.preventDefault();
