@@ -80,7 +80,7 @@
                         <option value="25">25</option>
                         <option value="50">50</option>
                         <option value="100">100</option>
-                        <option value="all">全部</option>
+                        <option value="all" selected>全部</option>
                     </select>
                 </div>
                 <div class="flex items-center gap-2">
@@ -354,7 +354,7 @@
         let containersData = [];
         let filteredData = [];
         
-        let pageSize = all;
+        let pageSize = 'all';
         let currentPage = 1;
         let totalPages = 1;
         
