@@ -1,10 +1,9 @@
 {{define "container/container_header.html"}}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-{{if .UseLocalCDN}}
+<link href="/static/fonts/inter.css" rel="stylesheet">
+
 <script src="/static/js/iconify.min.js"></script>
-{{else}}
-<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
-{{end}}
+    <script src="/static/js/icons-bundle.js"></script>
+
 
 {{template "container/container_toast.html"}}
 
@@ -52,7 +51,7 @@
         <div class="flex justify-between items-center py-3 md:py-4">
             <div class="flex items-center">
                 <div class="flex items-center space-x-2">
-                    <span class="iconify text-blue-600" data-icon="mdi:cube-outline" data-width="28" data-height="28" class="md:w-8 md:h-8"></span>
+                    <svg class="w-7 h-7 text-blue-600" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/></svg>
                     <h1 class="text-lg md:text-2xl font-bold text-blue-600">{{ .SystemName }}</h1>
                 </div>
             </div>
@@ -66,7 +65,7 @@
     </div>
 </nav>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="/static/js/jquery.min.js"></script>
 <script>
 function logout() {
     localStorage.removeItem('container_hash');

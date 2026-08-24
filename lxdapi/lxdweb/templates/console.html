@@ -4,14 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Shell 控制台</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    {{if .UseLocalCDN}}
+    <link href="/static/fonts/inter.css" rel="stylesheet">
+    
     <script src="/static/js/tailwindcss.js"></script>
     <link rel="stylesheet" href="/static/css/xterm.css">
-    {{else}}
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
-    {{end}}
+    
     <style>
         body { font-family: 'Inter', sans-serif; }
         #terminal-container {
@@ -96,13 +93,10 @@
         </div>
     </div>
 
-    {{if .UseLocalCDN}}
+    
     <script src="/static/js/xterm.js"></script>
     <script src="/static/js/xterm-addon-fit.js"></script>
-    {{else}}
-    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
-    {{end}}
+    
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');

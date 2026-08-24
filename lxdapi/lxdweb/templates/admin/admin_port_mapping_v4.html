@@ -7,16 +7,13 @@
     <title>{{ .title }} - IPv4NAT管理</title>
     {{if .FaviconUrl}}
     <link rel="icon" href="{{.FaviconUrl}}">{{end}}
-    {{if .UseLocalCDN}}
+    
     <link href="/static/css/daisyui.min.css" rel="stylesheet">
     <script src="/static/js/tailwindcss.js"></script>
     <script src="/static/js/jquery.min.js"></script>
-    {{else}}
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    {{end}}
-    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    
+    <script src="/static/js/iconify.min.js"></script>
+    <script src="/static/js/icons-bundle.js"></script>
     <style>
         :root {
             --content-opacity: {

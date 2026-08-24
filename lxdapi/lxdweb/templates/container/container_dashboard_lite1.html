@@ -5,25 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }} - 容器控制台</title>
     {{if .FaviconUrl}}<link rel="icon" href="{{.FaviconUrl}}">{{end}}
-    {{if .UseLocalCDN}}
+    
     <link href="/static/css/daisyui.min.css" rel="stylesheet">
     <script src="/static/js/tailwindcss.js"></script>
     <script src="/static/js/jquery.min.js"></script>
-    {{else}}
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    {{end}}
+    
     <style>
         :root {
+            --z-modal-backdrop: 1000;
+            --z-modal-content: 1001;
+            --z-toast: 99999;
             --content-opacity: {{if .ContentOpacity}}{{.ContentOpacity}}{{else}}85{{end}};
-            --container-notice-opacity: {{if .ContainerNoticeOpacity}}{{.ContainerNoticeOpacity}}{{else}}85{{end}};
         }
         .content-box {
             background-color: rgba(255, 255, 255, calc(var(--content-opacity) / 100)) !important;
-        }
-        .notice-box {
-            background-color: rgba(255, 255, 255, calc(var(--container-notice-opacity) / 100)) !important;
         }
         .custom-tab-active {
             background-color: #2563eb !important;
@@ -42,26 +37,37 @@
             border: 1px solid #9ca3af !important;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
         }
+
+        .modal {
+            z-index: var(--z-modal-content) !important;
+            align-items: start !important;
+            padding-top: 5vh;
+        }
+
+        .input { height: 2.5rem !important; min-height: 2.5rem !important; border-radius: 0.375rem !important; }
+        .select { height: 2.5rem !important; min-height: 2.5rem !important; border-radius: 0.375rem !important; }
+        .btn { height: 2.5rem !important; min-height: 2.5rem !important; border-radius: 0.375rem !important; }
+        .textarea { border-radius: 0.375rem !important; }
+        .modal-box { border-radius: 0.5rem !important; }
+        .alert { border-radius: 0.375rem !important; }
+
+        html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        html { scrollbar-width: none; -ms-overflow-style: none; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
-    {{template "container/container_toast.html"}}
+    {{template "container/container_header.html" .}}
 
-    <!-- Background Image Handling -->
-    <div class="fixed inset-0 z-[-1]" style="{{if .BgImage}}background-image: url('{{.BgImage}}'); background-size: cover; background-position: center;{{else}}background-color: #f9fafb;{{end}}">
-        {{if .BgImage}}<div class="absolute inset-0 bg-white" style="opacity: {{.BgOpacity}}%;"></div>{{end}}
-    </div>
-
-    <div class="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl flex flex-col gap-4 sm:gap-6">
+    <div class="flex-1 relative" style="{{if .BgImage}}background-image: url('{{.BgImage}}'); background-size: cover; background-position: center; background-attachment: fixed;{{else}}background-color: #f9fafb;{{end}}">
+        {{if .BgImage}}<div class="absolute inset-0 bg-white pointer-events-none" style="opacity: {{.BgOpacity}}%; z-index: 0;"></div>{{end}}
+        <div class="relative container mx-auto px-4 py-8 pb-12 max-w-7xl" style="z-index: 1;">
         
         <!-- Container Info Card -->
-        <div class="content-box rounded-lg border border-gray-200 p-3 lg:p-4">
+        <div class="content-box rounded-lg p-3 lg:p-4 mb-3 lg:mb-4">
             <div class="flex flex-row items-center justify-between gap-2">
                 <div class="flex items-center gap-2 lg:gap-3">
                     <div id="containerIconBg" class="w-10 lg:w-12 h-10 lg:h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 lg:w-7 h-6 lg:h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-                        </svg>
+                        <svg class="w-6 lg:w-7 h-6 lg:h-7 text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/></svg>
                     </div>
                     <div class="min-w-0 flex-1">
                         <h1 id="containerName" class="text-sm lg:text-base font-semibold text-gray-800 truncate">加载中...</h1>
@@ -78,7 +84,7 @@
         </div>
 
         <!-- Container Operations Card -->
-        <div class="content-box rounded-lg border border-gray-200 p-3 lg:p-4">
+        <div class="content-box rounded-lg border border-gray-200 p-3 lg:p-4 mb-3 lg:mb-4">
             <h2 class="text-sm lg:text-base font-semibold text-gray-800 mb-2 lg:mb-3">容器操作</h2>
             <div class="flex flex-wrap gap-1.5 lg:gap-2">
                 <button onclick="startContainer()" class="px-2 py-1 lg:py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded transition whitespace-nowrap">启动</button>
@@ -87,7 +93,6 @@
                 <button onclick="openConsole()" class="px-2 py-1 lg:py-1.5 text-xs font-medium text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 rounded transition whitespace-nowrap">VNC控制台</button>
                 <button onclick="showResetPasswordModal()" class="px-2 py-1 lg:py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded transition whitespace-nowrap">重置密码</button>
                 <button onclick="showReinstallModal()" class="px-2 py-1 lg:py-1.5 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded transition whitespace-nowrap">重装系统</button>
-
             </div>
         </div>
 
@@ -107,39 +112,37 @@
             <!-- Dashboard / Info Tab -->
             <div id="infoTab" class="space-y-4 sm:space-y-6">
                 <!-- Network Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <!-- IPv4 -->
                     <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-3 border border-gray-200">
                         <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-                            </svg>
-                            <div class="flex-1 min-w-0">
+                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                            <div class="flex-1">
                                 <p class="text-xs text-gray-600">内网 IPv4</p>
-                                <p id="containerIPv4" class="text-sm font-mono font-medium text-gray-800 mt-0.5">-</p>
+                                <p id="containerIPv4" class="text-sm font-mono font-medium text-gray-800 mt-0.5 break-all">-</p>
                             </div>
                         </div>
                     </div>
                     <!-- IPv6 -->
                     <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-3 border border-gray-200">
                         <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-                            </svg>
-                            <div class="flex-1 min-w-0">
+                            <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                            <div class="flex-1">
                                 <p class="text-xs text-gray-600">内网 IPv6</p>
                                 <p id="containerIPv6" class="text-xs font-mono font-medium text-gray-800 break-all mt-0.5">-</p>
                             </div>
                         </div>
                     </div>
-                     <!-- Access Code -->
-
                 </div>
 
-                <!-- Resources -->
-                <div class="content-box rounded-lg border border-gray-200 p-4">
+                <!-- Resources Grid -->
+                <div class="content-box rounded-lg border border-gray-200 p-4 mb-4">
                     <h2 class="text-base font-semibold text-gray-800 mb-3">资源监控</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-3 border border-gray-200">
+                            <p class="text-xs text-gray-600">CPU</p>
+                            <p id="resCPU" class="text-sm font-medium text-gray-800 mt-0.5">-</p>
+                        </div>
                         <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-3 border border-gray-200">
                             <p class="text-xs text-gray-600">内存</p>
                             <p id="resMemory" class="text-sm font-medium text-gray-800 mt-0.5">-</p>
@@ -160,20 +163,17 @@
             <!-- IPv4 Pool Tab -->
             <div id="ipv4PoolTab" style="display: none;">
                 <div class="content-box rounded-lg border border-gray-200 p-4 mb-4">
-                    <div class="flex justify-between items-center mb-3">
+                    <div class="flex justify-between items-center mb-4 sm:mb-6">
                         <div>
                             <h2 class="text-base font-semibold text-gray-800">公网 IP 管理</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">已用 <span id="ipv4PoolCount">0</span> / 限制 <span id="ipv4PoolLimit">0</span></p>
+                            <p class="text-sm text-gray-500">分配公网 IPv4 地址用于容器外部访问。已用 <span id="ipv4PoolCount">0</span> / 限制 <span id="ipv4PoolLimit">0</span></p>
                         </div>
                         <button onclick="showAddIPv4PoolModal()" class="content-box hover:bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            申请 IP
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.5v15m7.5-7.5h-15"/></svg> 申请 IP
                         </button>
                     </div>
-                    <div id="ipv4PoolList">
-                        <p class="text-center text-gray-500 py-4 text-xs">加载中...</p>
+                    <div id="ipv4PoolList" class="min-h-[100px]">
+                        <div class="flex justify-center py-8"><span class="loading loading-spinner loading-md text-gray-400"></span></div>
                     </div>
                 </div>
             </div>
@@ -181,20 +181,17 @@
             <!-- IPv4 Mapping Tab -->
             <div id="ipv4MappingTab" style="display: none;">
                 <div class="content-box rounded-lg border border-gray-200 p-4 mb-4">
-                    <div class="flex justify-between items-center mb-3">
+                    <div class="flex justify-between items-center mb-4 sm:mb-6">
                         <div>
                             <h2 class="text-base font-semibold text-gray-800">端口转发规则</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">已用 <span id="ipv4MappingCount">0</span> / 限制 <span id="ipv4MappingLimit">0</span></p>
+                            <p class="text-sm text-gray-500">将公网端口流量转发到容器内部端口。已用 <span id="ipv4MappingCount">0</span> / 限制 <span id="ipv4MappingLimit">0</span></p>
                         </div>
                         <button onclick="showAddIPv4MappingModal()" class="content-box hover:bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            添加规则
+                             <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.5v15m7.5-7.5h-15"/></svg> 添加规则
                         </button>
                     </div>
-                    <div id="ipv4MappingList">
-                        <p class="text-center text-gray-500 py-4 text-xs">加载中...</p>
+                    <div id="ipv4MappingList" class="min-h-[100px]">
+                         <div class="flex justify-center py-8"><span class="loading loading-spinner loading-md text-gray-400"></span></div>
                     </div>
                 </div>
             </div>
@@ -202,67 +199,61 @@
             <!-- IPv6 Pool Tab -->
             <div id="ipv6PoolTab" style="display: none;">
                 <div class="content-box rounded-lg border border-gray-200 p-4 mb-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <div>
+                    <div class="flex justify-between items-center mb-4 sm:mb-6">
+                         <div>
                             <h2 class="text-base font-semibold text-gray-800">IPv6 地址管理</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">已用 <span id="ipv6PoolCount">0</span> / 限制 <span id="ipv6PoolLimit">0</span></p>
+                            <p class="text-sm text-gray-500">分配公网 IPv6 地址用于容器外部访问。已用 <span id="ipv6PoolCount">0</span> / 限制 <span id="ipv6PoolLimit">0</span></p>
                         </div>
                         <button onclick="showAddIPv6PoolModal()" class="content-box hover:bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            申请 IPv6
+                             <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.5v15m7.5-7.5h-15"/></svg> 申请 IPv6
                         </button>
                     </div>
-                    <div id="ipv6PoolList">
-                        <p class="text-center text-gray-500 py-4 text-xs">加载中...</p>
+                    <div id="ipv6PoolList" class="min-h-[100px]">
+                        <div class="flex justify-center py-8"><span class="loading loading-spinner loading-md text-gray-400"></span></div>
                     </div>
                 </div>
             </div>
 
             <!-- IPv6 Mapping Tab -->
             <div id="ipv6MappingTab" style="display: none;">
-                <div class="content-box rounded-lg border border-gray-200 p-4 mb-4">
-                    <div class="flex justify-between items-center mb-3">
+                 <div class="content-box rounded-lg border border-gray-200 p-4 mb-4">
+                    <div class="flex justify-between items-center mb-4 sm:mb-6">
                         <div>
                             <h2 class="text-base font-semibold text-gray-800">IPv6 端口转发</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">已用 <span id="ipv6MappingCount">0</span> / 限制 <span id="ipv6MappingLimit">0</span></p>
+                            <p class="text-sm text-gray-500">将公网端口流量转发到容器内部端口。已用 <span id="ipv6MappingCount">0</span> / 限制 <span id="ipv6MappingLimit">0</span></p>
                         </div>
                         <button onclick="showAddIPv6MappingModal()" class="content-box hover:bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            添加规则
+                             <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.5v15m7.5-7.5h-15"/></svg> 添加规则
                         </button>
                     </div>
-                    <div id="ipv6MappingList">
-                        <p class="text-center text-gray-500 py-4 text-xs">加载中...</p>
+                    <div id="ipv6MappingList" class="min-h-[100px]">
+                         <div class="flex justify-center py-8"><span class="loading loading-spinner loading-md text-gray-400"></span></div>
                     </div>
                 </div>
             </div>
 
             <!-- Reverse Proxy Tab -->
             <div id="reverseProxyTab" style="display: none;">
-                <div class="content-box rounded-lg border border-gray-200 p-4 mb-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <div>
+                 <div class="content-box rounded-lg border border-gray-200 p-4 mb-4">
+                    <div class="flex justify-between items-center mb-4 sm:mb-6">
+                         <div>
                             <h2 class="text-base font-semibold text-gray-800">域名绑定</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">已用 <span id="reverseProxyCount">0</span> / 限制 <span id="reverseProxyLimit">0</span></p>
+                            <p class="text-sm text-gray-500">绑定域名并自动申请 SSL 证书。已用 <span id="reverseProxyCount">0</span> / 限制 <span id="reverseProxyLimit">0</span></p>
                         </div>
                         <button onclick="showAddReverseProxyModal()" class="content-box hover:bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            绑定新域名
+                             <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.5v15m7.5-7.5h-15"/></svg> 绑定新域名
                         </button>
                     </div>
-                    <div id="reverseProxyList">
-                        <p class="text-center text-gray-500 py-4 text-xs">加载中...</p>
+                    <div id="reverseProxyList" class="min-h-[100px]">
+                        <div class="flex justify-center py-8"><span class="loading loading-spinner loading-md text-gray-400"></span></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    </div>
+
+    {{template "container/container_footer.html" .}}
 
     <!-- Modals (Preserving IDs and structure for JS compatibility) -->
     
@@ -270,14 +261,14 @@
     <dialog id="addIPv4PoolModal" class="modal">
         <div class="modal-box">
             <h3 class="font-bold text-lg mb-4">申请公网 IPv4</h3>
-            <form id="addIPv4PoolForm" class="space-y-3">
-                <div class="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="text-sm text-blue-800">系统将随机分配一个可用的公网 IPv4 地址。</span>
+            <form id="addIPv4PoolForm" class="space-y-4">
+                <div class="alert text-sm py-2" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0m-9-3.75h.008v.008H12z"/></svg>
+                    <span>系统将随机分配一个可用的公网 IPv4 地址。</span>
                 </div>
                 <div class="modal-action">
-                    <button type="button" onclick="closeAddIPv4PoolModal()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition">取消</button>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition">确认分配</button>
+                    <button type="button" onclick="closeAddIPv4PoolModal()" class="btn btn-sm">取消</button>
+                    <button type="submit" class="btn btn-sm btn-outline btn-primary content-box">确认申请</button>
                 </div>
             </form>
         </div>
@@ -288,31 +279,31 @@
     <dialog id="addIPv4MappingModal" class="modal">
         <div class="modal-box">
             <h3 class="font-bold text-lg mb-4">添加端口映射规则</h3>
-            <form id="addIPv4MappingForm" class="space-y-3">
-                <div class="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="text-sm text-blue-800">系统将自动在所有绑定的公网 IP 上创建此规则。</span>
+            <form id="addIPv4MappingForm" class="space-y-4">
+                <div class="alert text-sm py-2" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0m-9-3.75h.008v.008H12z"/></svg>
+                    <span>系统将自动在所有绑定的公网 IP 上创建此规则。</span>
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text">公网端口 <span class="text-gray-400 text-xs">(留空随机)</span></span></label>
-                    <input type="number" id="ipv4MappingPublicPort" min="10000" max="65535" class="input input-bordered input-sm" placeholder="10000-65535">
+                    <label class="label"><span class="label-text font-medium">公网端口 <span class="text-gray-400 text-xs">(留空随机)</span></span></label>
+                    <input type="number" id="ipv4MappingPublicPort" min="10000" max="65535" class="input input-bordered w-full" placeholder="留空随机分配">
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text">容器端口 *</span></label>
-                    <input type="number" id="ipv4MappingContainerPort" required min="1" max="65535" class="input input-bordered input-sm" placeholder="例如: 80">
+                    <label class="label"><span class="label-text font-medium">容器端口 <span class="text-error">*</span></span></label>
+                    <input type="number" id="ipv4MappingContainerPort" required min="1" max="65535" class="input input-bordered w-full" placeholder="例如: 80, 443, 3306">
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text">端口数量</span></label>
-                    <input type="number" id="ipv4MappingPortCount" required min="1" max="100" value="1" class="input input-bordered input-sm" placeholder="默认为 1">
+                    <label class="label"><span class="label-text font-medium">端口数量</span></label>
+                    <input type="number" id="ipv4MappingPortCount" required min="1" max="100" value="1" class="input input-bordered w-full" placeholder="默认为 1">
                     <label class="label"><span class="label-text-alt text-gray-500">大于 1 表示连续端口段</span></label>
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text">描述</span></label>
-                    <input type="text" id="ipv4MappingDescription" class="input input-bordered input-sm" placeholder="规则描述">
+                    <label class="label"><span class="label-text font-medium">备注说明</span></label>
+                    <input type="text" id="ipv4MappingDescription" class="input input-bordered w-full" placeholder="例如: Web 服务">
                 </div>
                 <div class="modal-action">
-                    <button type="button" onclick="closeAddIPv4MappingModal()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition">取消</button>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition">添加规则</button>
+                    <button type="button" onclick="closeAddIPv4MappingModal()" class="btn btn-sm">取消</button>
+                    <button type="submit" class="btn btn-sm btn-outline btn-primary content-box">确认添加</button>
                 </div>
             </form>
         </div>
@@ -323,14 +314,14 @@
     <dialog id="addIPv6PoolModal" class="modal">
         <div class="modal-box">
             <h3 class="font-bold text-lg mb-4">申请公网 IPv6</h3>
-            <form id="addIPv6PoolForm" class="space-y-3">
-                <div class="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="text-sm text-blue-800">系统将自动分配一个 IPv6 地址。</span>
+            <form id="addIPv6PoolForm" class="space-y-4">
+                <div class="alert text-sm py-2" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0m-9-3.75h.008v.008H12z"/></svg>
+                    <span>系统将自动分配一个 IPv6 地址。</span>
                 </div>
                 <div class="modal-action">
-                    <button type="button" onclick="closeAddIPv6PoolModal()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition">取消</button>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition">确认分配</button>
+                    <button type="button" onclick="closeAddIPv6PoolModal()" class="btn btn-sm">取消</button>
+                    <button type="submit" class="btn btn-sm btn-outline btn-primary content-box">确认申请</button>
                 </div>
             </form>
         </div>
@@ -341,31 +332,31 @@
     <dialog id="addIPv6MappingModal" class="modal">
         <div class="modal-box">
             <h3 class="font-bold text-lg mb-4">添加 IPv6 端口映射</h3>
-            <form id="addIPv6MappingForm" class="space-y-3">
-                <div class="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="text-sm text-blue-800">系统将自动在所有绑定的公网 IPv6 上创建此规则。</span>
+            <form id="addIPv6MappingForm" class="space-y-4">
+                <div class="alert text-sm py-2" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0m-9-3.75h.008v.008H12z"/></svg>
+                    <span>系统将自动在所有绑定的公网 IPv6 上创建此规则。</span>
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text">公网端口 <span class="text-gray-400 text-xs">(留空随机)</span></span></label>
-                    <input type="number" id="ipv6MappingPublicPort" min="10000" max="65535" class="input input-bordered input-sm" placeholder="10000-65535">
+                    <label class="label"><span class="label-text font-medium">公网端口 <span class="text-gray-400 text-xs">(留空随机)</span></span></label>
+                    <input type="number" id="ipv6MappingPublicPort" min="10000" max="65535" class="input input-bordered w-full" placeholder="留空随机分配">
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text">容器端口 *</span></label>
-                    <input type="number" id="ipv6MappingContainerPort" required min="1" max="65535" class="input input-bordered input-sm" placeholder="例如: 80">
+                    <label class="label"><span class="label-text font-medium">容器端口 <span class="text-error">*</span></span></label>
+                    <input type="number" id="ipv6MappingContainerPort" required min="1" max="65535" class="input input-bordered w-full" placeholder="例如: 80, 443, 3306">
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text">端口数量</span></label>
-                    <input type="number" id="ipv6MappingPortCount" required min="1" max="100" value="1" class="input input-bordered input-sm" placeholder="默认为 1">
+                    <label class="label"><span class="label-text font-medium">端口数量</span></label>
+                    <input type="number" id="ipv6MappingPortCount" required min="1" max="100" value="1" class="input input-bordered w-full" placeholder="默认为 1">
                     <label class="label"><span class="label-text-alt text-gray-500">大于 1 表示连续端口段</span></label>
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text">描述</span></label>
-                    <input type="text" id="ipv6MappingDescription" class="input input-bordered input-sm" placeholder="规则描述">
+                    <label class="label"><span class="label-text font-medium">备注说明</span></label>
+                    <input type="text" id="ipv6MappingDescription" class="input input-bordered w-full" placeholder="例如: Web 服务">
                 </div>
                 <div class="modal-action">
-                    <button type="button" onclick="closeAddIPv6MappingModal()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition">取消</button>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition">添加规则</button>
+                    <button type="button" onclick="closeAddIPv6MappingModal()" class="btn btn-sm">取消</button>
+                    <button type="submit" class="btn btn-sm btn-outline btn-primary content-box">确认添加</button>
                 </div>
             </form>
         </div>
@@ -380,48 +371,46 @@
     <dialog id="addReverseProxyModal" class="modal">
         <div class="modal-box">
             <h3 class="font-bold text-lg mb-4">添加域名绑定</h3>
-            <form id="addReverseProxyForm" class="space-y-3">
-                <div class="form-control">
-                    <label class="label"><span class="label-text">域名 *</span></label>
-                    <input type="text" id="reverseProxyDomain" required class="input input-bordered input-sm" placeholder="example.com">
+            <form id="addReverseProxyForm" class="space-y-4">
+                <div class="alert text-sm py-2" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0m-9-3.75h.008v.008H12z"/></svg>
+                    <span>绑定域名并自动申请 SSL 证书，请确保域名已解析到当前服务器。</span>
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text">容器端口 *</span></label>
-                    <input type="number" id="reverseProxyTargetPort" required class="input input-bordered input-sm" placeholder="80">
+                    <label class="label"><span class="label-text font-medium">域名 <span class="text-error">*</span></span></label>
+                    <input type="text" id="reverseProxyDomain" required class="input input-bordered w-full" placeholder="例如: www.example.com">
+                    <label class="label"><span class="label-text-alt text-gray-500">请确保域名已解析到当前服务器 IP</span></label>
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text">描述</span></label>
-                    <input type="text" id="reverseProxyDescription" class="input input-bordered input-sm" placeholder="规则描述">
+                    <label class="label"><span class="label-text font-medium">目标端口 <span class="text-error">*</span></span></label>
+                    <input type="number" id="reverseProxyTargetPort" required class="input input-bordered w-full" placeholder="例如: 80">
                 </div>
-                <hr class="my-3">
                 <div class="form-control">
-                    <label class="label cursor-pointer">
-                        <span class="label-text font-semibold">启用 HTTPS</span>
-                        <input type="checkbox" id="reverseProxySSLEnabled" class="checkbox checkbox-primary checkbox-sm">
+                    <label class="label cursor-pointer justify-start gap-4">
+                        <span class="label-text font-medium">启用 HTTPS</span>
+                        <input type="checkbox" id="reverseProxySSLEnabled" class="checkbox checkbox-primary">
                     </label>
                 </div>
-                <div id="reverseProxySSLOptions" style="display:none;" class="space-y-3">
+                <div id="reverseProxySSLOptions" style="display:none;" class="pl-4 border-l-2 border-green-100 space-y-3">
                     <div class="form-control">
-                        <label class="label"><span class="label-text">SSL 证书类型</span></label>
-                        <select id="reverseProxySSLType" class="select select-bordered select-sm">
-                            <option value="self-signed">自动生成自签名证书</option>
-                            <option value="custom">手动填写证书内容</option>
+                        <label class="label"><span class="label-text">SSL 证书来源</span></label>
+                        <select id="reverseProxySSLType" class="select select-bordered w-full select-sm">
+                            <option value="self-signed">自动申请</option>
+                            <option value="custom">手动输入证书</option>
                         </select>
                     </div>
                     <div id="reverseProxyCustomCertFields" style="display:none;" class="space-y-2">
-                        <div class="form-control">
-                            <label class="label"><span class="label-text text-xs">SSL 证书内容 *</span></label>
-                            <textarea id="reverseProxySSLCert" class="textarea textarea-bordered textarea-sm" rows="3" placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"></textarea>
-                        </div>
-                        <div class="form-control">
-                            <label class="label"><span class="label-text text-xs">SSL 私钥内容 *</span></label>
-                            <textarea id="reverseProxySSLKey" class="textarea textarea-bordered textarea-sm" rows="3" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"></textarea>
-                        </div>
+                        <textarea id="reverseProxySSLCert" class="textarea textarea-bordered w-full text-xs font-mono" rows="3" placeholder="证书内容 PEM 格式"></textarea>
+                        <textarea id="reverseProxySSLKey" class="textarea textarea-bordered w-full text-xs font-mono" rows="3" placeholder="私钥内容 KEY 格式"></textarea>
                     </div>
                 </div>
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">备注说明</span></label>
+                    <input type="text" id="reverseProxyDescription" class="input input-bordered w-full" placeholder="例如: 网站托管">
+                </div>
                 <div class="modal-action">
-                    <button type="button" onclick="closeAddReverseProxyModal()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition">取消</button>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition">添加</button>
+                    <button type="button" onclick="closeAddReverseProxyModal()" class="btn btn-sm">取消</button>
+                    <button type="submit" class="btn btn-sm btn-outline btn-primary content-box">确认添加</button>
                 </div>
             </form>
         </div>
@@ -429,36 +418,24 @@
     </dialog>
 
     <dialog id="resetPasswordModal" class="modal">
-        <div class="modal-box max-w-lg">
-            <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                </svg>
-                重置root密码
-            </h3>
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">重置 Root 密码</h3>
             <form id="resetPasswordForm" class="space-y-4">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">新密码 <span class="text-red-500">*</span></span>
-                    </label>
-                    <div class="flex gap-2">
-                        <input type="text" id="newPassword" required class="input input-bordered input-sm flex-1 outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="请输入新密码">
-                        <button type="button" onclick="generateResetPassword()" class="px-3 py-1 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded transition whitespace-nowrap">
-                            生成
-                        </button>
-                    </div>
-                    <label class="label">
-                        <span class="label-text-alt text-gray-500">输入新密码或点击生成按钮自动生成强密码</span>
-                    </label>
+                <div class="alert text-sm py-2" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0m-9-3.75h.008v.008H12z"/></svg>
+                    <span>重置容器的 root 用户密码。</span>
                 </div>
-                <div class="modal-action pt-2">
-                    <button type="button" onclick="closeResetPasswordModal()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition flex items-center gap-2">取消</button>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                        </svg>
-                        确认重置
-                    </button>
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-medium">新密码 <span class="text-error">*</span></span></label>
+                    <div class="flex gap-2 items-center">
+                        <input type="text" id="newPassword" required class="input input-bordered flex-1" placeholder="请输入新密码">
+                        <button type="button" onclick="generateResetPassword()" class="btn btn-outline btn-primary content-box whitespace-nowrap">生成</button>
+                    </div>
+                    <label class="label"><span class="label-text-alt text-gray-500">输入新密码或点击生成按钮自动生成强密码</span></label>
+                </div>
+                <div class="modal-action">
+                    <button type="button" onclick="closeResetPasswordModal()" class="btn btn-sm">取消</button>
+                    <button type="submit" class="btn btn-sm btn-outline btn-primary content-box">确认重置</button>
                 </div>
             </form>
         </div>
@@ -466,64 +443,40 @@
     </dialog>
 
     <dialog id="reinstallModal" class="modal">
-        <div class="modal-box max-w-lg">
-            <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
-                重装系统
-            </h3>
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">重装系统</h3>
             <form id="reinstallForm" class="space-y-4">
-                <div class="flex items-start gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                    <span class="text-sm font-medium text-orange-800">重装系统将删除容器所有数据！</span>
+                <div class="alert alert-warning text-sm py-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0zM12 15.75h.007v.008H12z"/></svg>
+                    <span>重装系统将删除容器所有数据！</span>
                 </div>
                 <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">操作系统镜像 <span class="text-red-500">*</span></span>
-                    </label>
-                    <select id="reinstallImage" required class="select select-bordered select-sm w-full outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    <label class="label"><span class="label-text font-medium">选择镜像 <span class="text-error">*</span></span></label>
+                    <select id="reinstallImage" required class="select select-bordered w-full">
                         <option value="">加载中...</option>
                     </select>
                 </div>
                 <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Root密码</span>
-                    </label>
-                    <div class="flex gap-2">
-                        <input type="text" id="reinstallPassword" class="input input-bordered input-sm flex-1 outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="留空则使用随机密码">
-                        <button type="button" onclick="generateReinstallPassword()" class="px-3 py-1 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded transition whitespace-nowrap">
-                            生成
-                        </button>
+                    <label class="label"><span class="label-text font-medium">Root 密码</span></label>
+                    <div class="flex gap-2 items-center">
+                        <input type="text" id="reinstallPassword" class="input input-bordered flex-1" placeholder="留空则使用随机密码">
+                        <button type="button" onclick="generateReinstallPassword()" class="btn btn-outline btn-primary content-box whitespace-nowrap">生成</button>
                     </div>
-                    <label class="label">
-                        <span class="label-text-alt text-gray-500">留空则使用随机密码，输入新密码或点击生成按钮设置新密码</span>
-                    </label>
                 </div>
-                <div class="modal-action pt-2">
-                    <button type="button" onclick="closeReinstallModal()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition">取消</button>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition flex items-center gap-2">
-                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        <span>确认重装</span>
-                    </button>
+                <div class="modal-action">
+                    <button type="button" onclick="closeReinstallModal()" class="btn btn-sm">取消</button>
+                    <button type="submit" class="btn btn-sm btn-outline btn-error content-box">确认重装</button>
                 </div>
             </form>
         </div>
         <form method="dialog" class="modal-backdrop"><button>关闭</button></form>
     </dialog>
 
-
-
     <!-- JS Logic -->
-    {{if .UseLocalCDN}}
+    
     <script src="/static/js/marked.min.js"></script>
     <script src="/static/js/dompurify.min.js"></script>
-    {{else}}
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
-    {{end}}
+    
 
     <script>
         // Initialization & Common Logic
@@ -594,6 +547,7 @@
             loadIPv6PoolBindings();
             loadIPv6MappingBindings();
             loadReverseProxyRules();
+            setInterval(loadContainerInfo, 10000);
 
             $('#addIPv4PoolForm').submit(e => { e.preventDefault(); submitAddIPv4Pool(); });
             $('#addIPv6PoolForm').submit(e => { e.preventDefault(); submitAddIPv6Pool(); });
@@ -759,18 +713,25 @@
             
             // Status Badge
             const status = (c.status || '').toLowerCase();
-            const statusHtml = status === 'running' ?
-                '<span class="px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>运行中</span>' :
-                status === 'stopped' ?
-                '<span class="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">已停止</span>' :
-                status === 'frozen' ?
-                '<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">已暂停</span>' :
-                `<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">${status}</span>`;
-
-            const iconClass = status === 'running' ? 'from-green-500 to-green-600' : 'from-gray-500 to-gray-600';
-
+            let statusHtml = '';
+            let iconClass = 'bg-gray-500';
+            
+            if (status === 'running') {
+                statusHtml = '<span class="px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>运行中</span>';
+                iconClass = 'from-green-500 to-green-600';
+            } else if (status === 'stopped') {
+                statusHtml = '<span class="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">已停止</span>';
+                iconClass = 'from-gray-500 to-gray-600';
+            } else if (status === 'frozen') {
+                statusHtml = '<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">已暂停</span>';
+                iconClass = 'from-yellow-500 to-yellow-600';
+            } else {
+                statusHtml = `<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">${status}</span>`;
+                iconClass = 'from-yellow-500 to-yellow-600';
+            }
+            
             $('#containerStatus').html(statusHtml);
-            $('#containerIconBg').removeClass('from-green-500 to-green-600 from-gray-500 to-gray-600').addClass('bg-gradient-to-br ' + iconClass);
+            $('#containerIconBg').removeClass('from-blue-500 to-blue-600 from-green-500 to-green-600 from-gray-500 to-gray-600 from-yellow-500 to-yellow-600').addClass('bg-gradient-to-br ' + iconClass);
             
             $('#containerImage').text(c.image || '未知镜像');
             $('#containerPassword').text(c.password || '-');
@@ -780,6 +741,8 @@
             $('#containerIPv6').text(c.ipv6 && c.ipv6.length > 0 ? c.ipv6.join('\n') : '无');
 
             // Resources
+            const cpuUsage = c.cpu_usage || 0;
+            const cpuCores = c.cpu || 0;
             const memoryUsed = c.memory_usage_raw || 0;
             const memoryTotal = c.memory ? parseMemorySize(c.memory) : 0;
             const diskUsed = c.disk_usage_raw || 0;
@@ -787,6 +750,7 @@
             const trafficUsed = (c.traffic_usage_raw || 0) * 1024 * 1024 * 1024;
             const trafficLimit = c.traffic_limit > 0 ? (c.traffic_limit * 1024 * 1024 * 1024) : 0;
 
+            $('#resCPU').text(cpuUsage.toFixed(1) + '% / ' + cpuCores + ' 核');
             $('#resMemory').text(formatBytes(memoryUsed) + ' / ' + formatBytes(memoryTotal));
             $('#resDisk').text(formatBytes(diskUsed) + ' / ' + formatBytes(diskTotal));
             $('#resTraffic').text(formatBytes(trafficUsed) + (trafficLimit > 0 ? ' / ' + formatBytes(trafficLimit) : ''));
@@ -887,36 +851,6 @@
             document.getElementById('reinstallModal').close();
         }
 
-
-
-
-
-
-
-        function loadReinstallTemplates() {
-            $.ajax({
-                url: '/api/container/templates',
-                type: 'GET',
-                headers: headers,
-                success: function(result) {
-                    if (result.code === 200 && result.data.templates) {
-                        const templates = result.data.templates;
-                        let options = '<option value="">请选择镜像</option>';
-                        templates.forEach(t => {
-                            const label = t.alias || t.fingerprint.substring(0, 12);
-                            const osInfo = t.os && t.release ? ` (${t.os} ${t.release})` : '';
-                            options += `<option value="${t.alias || t.fingerprint}">${label}${osInfo}</option>`;
-                        });
-                        $('#reinstallImage').html(options);
-                    }
-                },
-                error: function(xhr) {
-                    handleAuthError(xhr);
-                    $('#reinstallImage').html('<option value="">加载镜像列表失败</option>');
-                }
-            });
-        }
-
         function generateReinstallPassword() {
             const length = 16;
             const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -956,8 +890,6 @@
                         const list = res.data.ipv4 || [];
                         const limit = containerData?.ipv4_pool_limit || containerData?.IPv4PoolLimit || 0;
                         $('#ipv4PoolCount').text(list.length);
-                        const usage = $('#ipv4PoolUsage');
-                        usage.css('background', (limit > 0 && list.length < limit) ? '#10b981' : '#ef4444');
                         let html = '<div class="overflow-x-auto"><table class="table table-sm w-full"><thead><tr><th>公网IP</th><th>状态</th>' + (ipPoolSettings.allow_container_release_ipv4 ? '<th>操作</th>' : '') + '</tr></thead><tbody>';
                         list.forEach(i => {
                             const ipEncoded = encodeURIComponent(i.IPAddress || i.ip_address);
@@ -1061,8 +993,6 @@
                         });
                         
                         $('#ipv4MappingCount').text(totalPorts);
-                        const usage = $('#ipv4MappingUsage');
-                        usage.css('background', (limit > 0 && totalPorts < limit) ? '#10b981' : '#ef4444');
                         
                         if(groupArray.length === 0) {
                             $('#ipv4MappingList').html('<p class="text-center text-gray-400 py-4">无规则</p>');
@@ -1095,7 +1025,7 @@
                                 <td>${protocolDisplay}</td>
                                 <td>${portCount}</td>
                                 <td class="text-right">
-                                    <button onclick="deleteIPv4MappingGroup('${idsStr}')" class="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition">删除</button>
+                                    <button onclick="deleteIPv4MappingGroup('${idsStr}')" class="btn btn-xs btn-outline btn-error content-box">删除</button>
                                 </td>
                             </tr>`;
                         });
@@ -1142,8 +1072,6 @@
                      const list = res.data.ipv6 || [];
                      const limit = containerData?.ipv6_pool_limit || containerData?.IPv6PoolLimit || 0;
                      $('#ipv6PoolCount').text(list.length);
-                     const usage = $('#ipv6PoolUsage');
-                     usage.css('background', (limit > 0 && list.length < limit) ? '#10b981' : '#ef4444');
                      renderIPv6PoolList(list);
                  }
              }});
@@ -1240,8 +1168,6 @@
                      });
                      
                      $('#ipv6MappingCount').text(totalPorts);
-                     const usage = $('#ipv6MappingUsage');
-                     usage.css('background', (limit > 0 && totalPorts < limit) ? '#10b981' : '#ef4444');
                      renderMappingList('#ipv6MappingList', groupArray, 'v6');
                  }
              }});
@@ -1278,7 +1204,7 @@
                       <td>${protocolDisplay}</td>
                       <td>${portCount}</td>
                       <td class="text-right">
-                          <button onclick="delete${type==='v4'?'IPv4':'IPv6'}MappingGroup('${idsStr}')" class="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition">删除</button>
+                          <button onclick="delete${type==='v4'?'IPv4':'IPv6'}MappingGroup('${idsStr}')" class="btn btn-xs btn-outline btn-error content-box">删除</button>
                       </td>
                   </tr>`;
              });
@@ -1322,8 +1248,6 @@
                      const list = res.data || [];
                      const limit = containerData?.reverse_proxy_limit || containerData?.ReverseProxyLimit || 0;
                      $('#reverseProxyCount').text(list.length);
-                     const usage = $('#reverseProxyUsage');
-                     usage.css('background', (limit > 0 && list.length < limit) ? '#10b981' : '#ef4444');
                      renderReverseProxyList(list);
                  }
              }});
@@ -1338,7 +1262,7 @@
                       <td><a href="${r.protocol}://${r.domain}" target="_blank" class="link link-primary font-mono text-xs">${r.domain}</a></td>
                       <td>${r.target_port}</td>
                       <td>${sslBadge}</td>
-                      <td><button onclick="deleteReverseProxy(${r.id})" class="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition">删除</button></td>
+                      <td class="text-right"><button onclick="deleteReverseProxy(${r.id})" class="btn btn-xs btn-outline btn-error content-box">删除</button></td>
                   </tr>`;
              });
              html += '</tbody></table></div>';
@@ -1350,10 +1274,6 @@
         }
 
         // Utils
-
-
-
-
         function parseMemorySize(s) { if(!s)return 0; const m=String(s).match(/^(\d+(?:\.\d+)?)\s*(MB|GB|KB|B)?$/i); if(!m)return 0; const v=parseFloat(m[1]), u=(m[2]||'B').toUpperCase(); const ks={'B':1,'KB':1024,'MB':1024**2,'GB':1024**3}; return v*(ks[u]||1); }
         function formatBytes(b) { if(b===0)return '0 B'; const k=1024, s=['B','KB','MB','GB','TB'], i=Math.floor(Math.log(b)/Math.log(k)); return parseFloat((b/Math.pow(k,i)).toFixed(2))+' '+s[i]; }
         function loadBrandSettings() { /* Stub */ }

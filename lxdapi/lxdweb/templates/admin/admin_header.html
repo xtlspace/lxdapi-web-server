@@ -1,10 +1,9 @@
 {{define "admin/admin_header.html"}}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-{{if .UseLocalCDN}}
+<link href="/static/fonts/inter.css" rel="stylesheet">
+
 <script src="/static/js/iconify.min.js"></script>
-{{else}}
-<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
-{{end}}
+    <script src="/static/js/icons-bundle.js"></script>
+
 
 {{template "admin/admin_toast.html"}}
 

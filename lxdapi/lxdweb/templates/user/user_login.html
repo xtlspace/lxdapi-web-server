@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }} - 用户登录</title>
     {{if .FaviconUrl}}<link rel="icon" href="{{.FaviconUrl}}">{{end}}
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    {{if .UseLocalCDN}}
+    <link href="/static/fonts/inter.css" rel="stylesheet">
+    
     <script src="/static/js/tailwindcss.js"></script>
     <script src="/static/js/iconify.min.js"></script>
-    {{else}}
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
-    {{end}}
+    <script src="/static/js/icons-bundle.js"></script>
+    
     <style>
         body { font-family: 'Inter', sans-serif; }
         :root {
