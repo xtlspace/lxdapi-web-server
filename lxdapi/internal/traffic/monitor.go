@@ -78,7 +78,7 @@ func (m *Monitor) Start(ctx context.Context) {
 		}
 
 		if periodicAt.IsZero() || now.Sub(periodicAt) >= m.interval {
-			m.checkAutoReset()
+			m.autoResetTraffic()
 			m.checkUserTrafficLimits()
 			periodicAt = now
 		}
@@ -312,7 +312,7 @@ func (m *Monitor) collectContainerUsage(name string, snap *containerUsageSnapsho
 func (m *Monitor) updateTraffic(containerName string, stats *NetworkCounters) {
 	var traffic models.Traffic
 	err := db.DB.Where("container_name = ?", containerName).First(&traffic).Error
-	
+
 	if err != nil {
 		traffic = models.Traffic{
 			ContainerName: containerName,
@@ -324,35 +324,35 @@ func (m *Monitor) updateTraffic(containerName string, stats *NetworkCounters) {
 		db.DB.Create(&traffic)
 		return
 	}
-	
+
 	newRx := stats.BytesReceived
 	newTx := stats.BytesSent
-	
+
 	var deltaRx, deltaTx uint64
-	
+
 	if newRx >= uint64(traffic.RxBytes) {
 		deltaRx = newRx - uint64(traffic.RxBytes)
 	} else {
 		deltaRx = newRx
 	}
-	
+
 	if newTx >= uint64(traffic.TxBytes) {
 		deltaTx = newTx - uint64(traffic.TxBytes)
 	} else {
 		deltaTx = newTx
 	}
-	
+
 	if deltaRx > 0 || deltaTx > 0 {
 		incrementGB := float64(deltaRx+deltaTx) / (1024 * 1024 * 1024)
 		totalGB := traffic.TotalGB + incrementGB
-		
+
 		traffic.RxBytes = int64(newRx)
 		traffic.TxBytes = int64(newTx)
 		traffic.TotalGB = totalGB
 		traffic.LastUpdate = time.Now()
-		
+
 		db.DB.Save(&traffic)
-		
+
 		if traffic.LimitGB > 0 && totalGB >= float64(traffic.LimitGB) {
 			logger.Warn("容器 %s 流量超限: %.2fGB / %dGB", containerName, totalGB, traffic.LimitGB)
 			m.handleOverLimit(containerName, totalGB, traffic.LimitGB)
@@ -362,17 +362,17 @@ func (m *Monitor) updateTraffic(containerName string, stats *NetworkCounters) {
 
 func (m *Monitor) handleOverLimit(containerName string, current float64, limit int) {
 	db.DB.Model(&models.Traffic{}).Where("container_name = ?", containerName).Update("locked", true)
-	
+
 	ctx := context.Background()
-	
+
 	if err := m.lxcClient.StopContainer(ctx, containerName); err != nil {
 		logger.Error("自动停止超限容器失败 %s: %v", containerName, err)
 		return
 	}
-	
+
 	db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "frozen")
 	logger.OK("容器因流量超限已锁定并停止: %s", containerName)
-	
+
 	if mgr := plugin.GetManager(); mgr != nil {
 		mgr.GetHookManager().TriggerAsync(plugin.HookTrafficOverLimit, ctx, map[string]interface{}{
 			"name":    containerName,
@@ -387,7 +387,7 @@ func (m *Monitor) isTrafficLocked(containerName string) bool {
 	if err := db.DB.Where("container_name = ?", containerName).First(&traffic).Error; err != nil {
 		return false
 	}
-	
+
 	if traffic.Locked {
 		if traffic.LimitGB == 0 || traffic.TotalGB < float64(traffic.LimitGB) {
 			db.DB.Model(&models.Traffic{}).Where("container_name = ?", containerName).Update("locked", false)
@@ -395,7 +395,7 @@ func (m *Monitor) isTrafficLocked(containerName string) bool {
 			return false
 		}
 	}
-	
+
 	return traffic.Locked
 }
 
@@ -404,11 +404,11 @@ func (m *Monitor) stopLockedContainer(containerName string) {
 	if err := db.DB.Where("name = ?", containerName).First(&container).Error; err != nil {
 		return
 	}
-	
+
 	if container.Status == "stopped" {
 		return
 	}
-	
+
 	ctx := context.Background()
 	if err := m.lxcClient.StopContainer(ctx, containerName); err == nil {
 		db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "frozen")
@@ -425,48 +425,52 @@ func (m *Monitor) GetTraffic(containerName string) (*models.Traffic, error) {
 	return &traffic, nil
 }
 
-
-
-func (m *Monitor) checkAutoReset() {
+func (m *Monitor) autoResetTraffic() {
 	now := time.Now()
 	if now.Day() != 1 {
 		return
 	}
-	
-	var traffics []models.Traffic
-	firstDayOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
-	if err := db.DB.Where("last_reset < ? OR last_reset IS NULL", firstDayOfMonth).Find(&traffics).Error; err != nil {
-		return
-	}
-	
-	for _, traffic := range traffics {
-		m.autoResetTraffic(traffic.ContainerName)
-	}
-}
 
-func (m *Monitor) autoResetTraffic(containerName string) {
-	state, err := m.getContainerState(containerName)
-	if err != nil {
+	firstDayOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+
+	var traffics []models.Traffic
+	if err := db.DB.Where("last_reset < ? OR last_reset IS NULL", firstDayOfMonth).Find(&traffics).Error; err != nil {
+		logger.Error("查询待重置流量记录失败: %v", err)
 		return
 	}
-	
-	var traffic models.Traffic
-	if err := db.DB.Where("container_name = ?", containerName).First(&traffic).Error; err != nil {
-		return
+
+	for _, traffic := range traffics {
+		var container models.Container
+		if err := db.DB.Where("name = ?", traffic.ContainerName).First(&container).Error; err != nil {
+			continue
+		}
+
+		// 过滤规则：跳过 frozen 状态但不是因为流量超限被锁定的容器
+		if container.Status == "frozen" && !traffic.Locked {
+			continue
+		}
+
+		state, err := m.getContainerState(traffic.ContainerName)
+		if err != nil {
+			logger.Error("重置容器流量时获取网卡状态失败 %s: %v", traffic.ContainerName, err)
+			continue
+		}
+
+		traffic.RxBytes = int64(state.RxBytes)
+		traffic.TxBytes = int64(state.TxBytes)
+		traffic.TotalGB = 0
+		traffic.Locked = false
+		traffic.LastUpdate = now
+		traffic.LastReset = now
+		db.DB.Save(&traffic)
+
+		// 若此前因超限处于 frozen，重置后恢复为 stopped
+		if container.Status == "frozen" {
+			db.DB.Model(&models.Container{}).Where("name = ?", traffic.ContainerName).Update("status", "stopped")
+		}
+
+		logger.OK("容器流量已按月自动重置并解除锁定: %s", traffic.ContainerName)
 	}
-	
-	traffic.RxBytes = int64(state.RxBytes)
-	traffic.TxBytes = int64(state.TxBytes)
-	traffic.TotalGB = 0
-	traffic.Locked = false
-	traffic.LastUpdate = time.Now()
-	traffic.LastReset = time.Now()
-	
-	db.DB.Save(&traffic)
-	
-	db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "stopped")
-	
-	logger.OK("流量已自动重置并解锁: %s", containerName)
 }
 
 func (m *Monitor) ResetTraffic(containerName string) error {
@@ -474,18 +478,18 @@ func (m *Monitor) ResetTraffic(containerName string) error {
 	if err != nil {
 		return fmt.Errorf("获取容器流量数据失败")
 	}
-	
+
 	var container models.Container
 	if err := db.DB.Where("name = ?", containerName).First(&container).Error; err != nil {
 		return fmt.Errorf("容器不存在: %v", err)
 	}
-	
+
 	if err := db.DB.Unscoped().Where("container_name = ?", containerName).Delete(&models.Traffic{}).Error; err != nil {
 		return fmt.Errorf("重置流量统计失败: %v", err)
 	}
-	
+
 	resetDay := container.CreatedAt.Day()
-	
+
 	traffic := models.Traffic{
 		ContainerName: containerName,
 		RxBytes:       int64(state.RxBytes),
@@ -497,7 +501,7 @@ func (m *Monitor) ResetTraffic(containerName string) error {
 		LastUpdate:    time.Now(),
 		LastReset:     time.Now(),
 	}
-	
+
 	if err := db.DB.Create(&traffic).Error; err != nil {
 		return fmt.Errorf("创建重置基准记录失败: %v", err)
 	}
@@ -525,13 +529,13 @@ func (m *Monitor) checkUserTrafficLimits() {
 	if err := db.DB.Where("traffic_limit > 0 AND traffic_locked = ?", false).Find(&users).Error; err != nil {
 		return
 	}
-	
+
 	for _, user := range users {
 		var containers []models.Container
 		if err := db.DB.Where("user_id = ?", user.Username).Find(&containers).Error; err != nil {
 			continue
 		}
-		
+
 		totalUsage := user.TrafficUsed
 		for _, c := range containers {
 			var traffic models.Traffic
@@ -539,7 +543,7 @@ func (m *Monitor) checkUserTrafficLimits() {
 				totalUsage += traffic.TotalGB
 			}
 		}
-		
+
 		if totalUsage >= float64(user.TrafficLimit) {
 			m.handleUserOverLimit(&user, containers, totalUsage)
 		}
@@ -548,7 +552,7 @@ func (m *Monitor) checkUserTrafficLimits() {
 
 func (m *Monitor) handleUserOverLimit(user *models.User, containers []models.Container, currentUsage float64) {
 	db.DB.Model(user).Update("traffic_locked", true)
-	
+
 	ctx := context.Background()
 	for _, c := range containers {
 		if c.Status == "stopped" || c.Status == "frozen" {
@@ -560,9 +564,9 @@ func (m *Monitor) handleUserOverLimit(user *models.User, containers []models.Con
 		}
 		db.DB.Model(&models.Container{}).Where("name = ?", c.Name).Update("status", "frozen")
 	}
-	
+
 	logger.Warn("用户 %s 流量超限: %.2fGB / %dGB，已停止所有容器", user.Username, currentUsage, user.TrafficLimit)
-	
+
 	if mgr := plugin.GetManager(); mgr != nil {
 		mgr.GetHookManager().TriggerAsync(plugin.HookTrafficOverLimit, ctx, map[string]interface{}{
 			"type":     "user",
@@ -578,22 +582,22 @@ func (m *Monitor) isUserTrafficLocked(containerName string) bool {
 	if err := db.DB.Where("name = ?", containerName).First(&container).Error; err != nil {
 		return false
 	}
-	
+
 	var user models.User
 	if err := db.DB.Where("username = ?", container.UserID).First(&user).Error; err != nil {
 		return false
 	}
-	
+
 	if user.TrafficLocked {
 		if user.TrafficLimit == 0 {
 			db.DB.Model(&user).Update("traffic_locked", false)
 			logger.OK("用户 %s 无流量限制，自动解锁", user.Username)
 			return false
 		}
-		
+
 		var containers []models.Container
 		db.DB.Where("user_id = ?", user.Username).Find(&containers)
-		
+
 		totalUsage := user.TrafficUsed
 		for _, c := range containers {
 			var traffic models.Traffic
@@ -601,14 +605,14 @@ func (m *Monitor) isUserTrafficLocked(containerName string) bool {
 				totalUsage += traffic.TotalGB
 			}
 		}
-		
+
 		if totalUsage < float64(user.TrafficLimit) {
 			db.DB.Model(&user).Update("traffic_locked", false)
 			logger.OK("用户 %s 流量已恢复正常，自动解锁 (使用: %.2fGB / 限制: %dGB)", user.Username, totalUsage, user.TrafficLimit)
 			return false
 		}
 	}
-	
+
 	return user.TrafficLocked
 }
 
@@ -617,14 +621,14 @@ func (m *Monitor) ResetUserTraffic(username string) error {
 	if err := db.DB.Where("username = ?", username).First(&user).Error; err != nil {
 		return fmt.Errorf("用户不存在: %v", err)
 	}
-	
+
 	var containers []models.Container
 	db.DB.Where("user_id = ?", username).Find(&containers)
-	
+
 	for _, c := range containers {
 		m.ResetTraffic(c.Name)
 	}
-	
+
 	db.DB.Model(&user).Update("traffic_locked", false)
 	logger.OK("用户流量已重置: %s", username)
 	return nil
