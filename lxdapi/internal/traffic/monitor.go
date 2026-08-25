@@ -14,6 +14,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Monitor struct {
@@ -85,7 +87,10 @@ func (m *Monitor) Start(ctx context.Context) {
 
 		due, next := m.nextDue(now)
 		if due != nil {
-			m.sampleContainer(due)
+			// 立即更新下次执行时间，防止主循环重复拾取
+			due.nextDue = now.Add(m.interval)
+			// 异步执行采样，避免阻塞监控主线程
+			go m.sampleContainer(due)
 			continue
 		}
 
@@ -175,10 +180,11 @@ func (m *Monitor) refreshSchedule(now time.Time) {
 }
 
 func (m *Monitor) sampleContainer(s *sampleState) {
-	now := time.Now()
-	s.nextDue = now.Add(m.interval)
+	// 设置单次采样超时，防止 lxc 命令卡死
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	state, err := m.getContainerState(s.name)
+	state, err := m.getContainerState(ctx, s.name)
 	if err != nil {
 		return
 	}
@@ -209,10 +215,10 @@ func (m *Monitor) sampleContainer(s *sampleState) {
 }
 
 type NetworkCounters struct {
-	BytesReceived   uint64 `json:"bytes_received"`
-	BytesSent       uint64 `json:"bytes_sent"`
+	BytesReceived  uint64 `json:"bytes_received"`
+	BytesSent      uint64 `json:"bytes_sent"`
 	PacketsReceived uint64 `json:"packets_received"`
-	PacketsSent     uint64 `json:"packets_sent"`
+	PacketsSent    uint64 `json:"packets_sent"`
 }
 
 type containerUsageSnapshot struct {
@@ -224,8 +230,9 @@ type containerUsageSnapshot struct {
 	TxBytes   uint64
 }
 
-func (m *Monitor) getContainerState(name string) (*containerUsageSnapshot, error) {
-	cmd := exec.Command("lxc", "query", fmt.Sprintf("/1.0/instances/%s/state", name))
+func (m *Monitor) getContainerState(ctx context.Context, name string) (*containerUsageSnapshot, error) {
+	// 引入 Context，随主线程退出或超时自动 kill 孤儿进程
+	cmd := exec.CommandContext(ctx, "lxc", "query", fmt.Sprintf("/1.0/instances/%s/state", name))
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -271,11 +278,6 @@ func (m *Monitor) collectContainerUsage(name string, snap *containerUsageSnapsho
 		BytesSent:     snap.TxBytes,
 	})
 
-	var container models.Container
-	if err := db.DB.Where("name = ?", name).First(&container).Error; err != nil {
-		return
-	}
-
 	wallSeconds := time.Since(sampledAt).Seconds()
 	cpuPercent := 0.0
 	if wallSeconds > 0 {
@@ -284,29 +286,33 @@ func (m *Monitor) collectContainerUsage(name string, snap *containerUsageSnapsho
 	if cpuPercent < 0 {
 		cpuPercent = 0
 	}
-	if cpuPercent > 100 {
-		cpuPercent = 100
-	}
 
-	db.DB.Create(&models.CPUMetric{
-		Name:     name,
-		CPUUsage: cpuPercent,
-	})
+	// 异步记录 CPU Metric，避免阻塞主 DB 连接
+	go func(cName string, cPercent float64) {
+		db.DB.Create(&models.CPUMetric{
+			Name:     cName,
+			CPUUsage: cPercent,
+		})
+	}(name, cpuPercent)
 
-	container.MemoryUsageRaw = uint64(snap.MemUsage)
-	container.MemoryUsage = formatBytes(uint64(snap.MemUsage))
-	container.DiskUsageRaw = uint64(snap.DiskUsage)
-	container.DiskUsage = formatBytes(uint64(snap.DiskUsage))
-
+	var trafficUsageRaw uint64
+	var trafficUsage string
 	var traffic models.Traffic
 	if err := db.DB.Where("container_name = ?", name).First(&traffic).Error; err == nil {
-		container.TrafficUsageRaw = uint64(traffic.TotalGB)
-		container.TrafficUsage = fmt.Sprintf("%.2f", traffic.TotalGB)
+		trafficUsageRaw = uint64(traffic.TotalGB)
+		trafficUsage = fmt.Sprintf("%.2f", traffic.TotalGB)
 	}
 
-	container.LastSync = time.Now().Format(time.RFC3339)
-
-	db.DB.Save(&container)
+	// 仅更新变更字段，极大减轻数据库 I/O 压力
+	db.DB.Model(&models.Container{}).Where("name = ?", name).Updates(map[string]interface{}{
+		"memory_usage_raw":  uint64(snap.MemUsage),
+		"memory_usage":      formatBytes(uint64(snap.MemUsage)),
+		"disk_usage_raw":    uint64(snap.DiskUsage),
+		"disk_usage":        formatBytes(uint64(snap.DiskUsage)),
+		"traffic_usage_raw": trafficUsageRaw,
+		"traffic_usage":     trafficUsage,
+		"last_sync":         time.Now().Format(time.RFC3339),
+	})
 }
 
 func (m *Monitor) updateTraffic(containerName string, stats *NetworkCounters) {
@@ -327,7 +333,6 @@ func (m *Monitor) updateTraffic(containerName string, stats *NetworkCounters) {
 
 	newRx := stats.BytesReceived
 	newTx := stats.BytesSent
-
 	var deltaRx, deltaTx uint64
 
 	if newRx >= uint64(traffic.RxBytes) {
@@ -346,12 +351,13 @@ func (m *Monitor) updateTraffic(containerName string, stats *NetworkCounters) {
 		incrementGB := float64(deltaRx+deltaTx) / (1024 * 1024 * 1024)
 		totalGB := traffic.TotalGB + incrementGB
 
-		traffic.RxBytes = int64(newRx)
-		traffic.TxBytes = int64(newTx)
-		traffic.TotalGB = totalGB
-		traffic.LastUpdate = time.Now()
-
-		db.DB.Save(&traffic)
+		// 局部更新优化
+		db.DB.Model(&traffic).Updates(map[string]interface{}{
+			"rx_bytes":    int64(newRx),
+			"tx_bytes":    int64(newTx),
+			"total_gb":    totalGB,
+			"last_update": time.Now(),
+		})
 
 		if traffic.LimitGB > 0 && totalGB >= float64(traffic.LimitGB) {
 			logger.Warn("容器 %s 流量超限: %.2fGB / %dGB", containerName, totalGB, traffic.LimitGB)
@@ -361,16 +367,22 @@ func (m *Monitor) updateTraffic(containerName string, stats *NetworkCounters) {
 }
 
 func (m *Monitor) handleOverLimit(containerName string, current float64, limit int) {
-	db.DB.Model(&models.Traffic{}).Where("container_name = ?", containerName).Update("locked", true)
+	db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.Traffic{}).Where("container_name = ?", containerName).Update("locked", true).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "frozen").Error; err != nil {
+			return err
+		}
+		return nil
+	})
 
 	ctx := context.Background()
-
 	if err := m.lxcClient.StopContainer(ctx, containerName); err != nil {
 		logger.Error("自动停止超限容器失败 %s: %v", containerName, err)
 		return
 	}
 
-	db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "frozen")
 	logger.OK("容器因流量超限已锁定并停止: %s", containerName)
 
 	if mgr := plugin.GetManager(); mgr != nil {
@@ -395,7 +407,6 @@ func (m *Monitor) isTrafficLocked(containerName string) bool {
 			return false
 		}
 	}
-
 	return traffic.Locked
 }
 
@@ -427,13 +438,10 @@ func (m *Monitor) GetTraffic(containerName string) (*models.Traffic, error) {
 
 func (m *Monitor) autoResetTraffic() {
 	now := time.Now()
-	if now.Day() != 1 {
-		return
-	}
-
 	firstDayOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 
 	var traffics []models.Traffic
+	// 修复重置逻辑，具备补偿机制
 	if err := db.DB.Where("last_reset < ? OR last_reset IS NULL", firstDayOfMonth).Find(&traffics).Error; err != nil {
 		logger.Error("查询待重置流量记录失败: %v", err)
 		return
@@ -445,36 +453,45 @@ func (m *Monitor) autoResetTraffic() {
 			continue
 		}
 
-		// 过滤规则：跳过 frozen 状态但不是因为流量超限被锁定的容器
 		if container.Status == "frozen" && !traffic.Locked {
 			continue
 		}
 
-		state, err := m.getContainerState(traffic.ContainerName)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		state, err := m.getContainerState(ctx, traffic.ContainerName)
+		cancel()
+
 		if err != nil {
 			logger.Error("重置容器流量时获取网卡状态失败 %s: %v", traffic.ContainerName, err)
 			continue
 		}
 
-		traffic.RxBytes = int64(state.RxBytes)
-		traffic.TxBytes = int64(state.TxBytes)
-		traffic.TotalGB = 0
-		traffic.Locked = false
-		traffic.LastUpdate = now
-		traffic.LastReset = now
-		db.DB.Save(&traffic)
+		db.DB.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Model(&traffic).Updates(map[string]interface{}{
+				"rx_bytes":    int64(state.RxBytes),
+				"tx_bytes":    int64(state.TxBytes),
+				"total_gb":    0,
+				"locked":      false,
+				"last_update": now,
+				"last_reset":  now,
+			}).Error; err != nil {
+				return err
+			}
 
-		// 若此前因超限处于 frozen，重置后恢复为 stopped
-		if container.Status == "frozen" {
-			db.DB.Model(&models.Container{}).Where("name = ?", traffic.ContainerName).Update("status", "stopped")
-		}
+			if container.Status == "frozen" {
+				tx.Model(&models.Container{}).Where("name = ?", traffic.ContainerName).Update("status", "stopped")
+			}
+			return nil
+		})
 
 		logger.OK("容器流量已按月自动重置并解除锁定: %s", traffic.ContainerName)
 	}
 }
 
 func (m *Monitor) ResetTraffic(containerName string) error {
-	state, err := m.getContainerState(containerName)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	state, err := m.getContainerState(ctx, containerName)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("获取容器流量数据失败")
 	}
@@ -484,30 +501,35 @@ func (m *Monitor) ResetTraffic(containerName string) error {
 		return fmt.Errorf("容器不存在: %v", err)
 	}
 
-	if err := db.DB.Unscoped().Where("container_name = ?", containerName).Delete(&models.Traffic{}).Error; err != nil {
-		return fmt.Errorf("重置流量统计失败: %v", err)
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Unscoped().Where("container_name = ?", containerName).Delete(&models.Traffic{}).Error; err != nil {
+			return fmt.Errorf("重置流量统计失败: %v", err)
+		}
+
+		traffic := models.Traffic{
+			ContainerName: containerName,
+			RxBytes:       int64(state.RxBytes),
+			TxBytes:       int64(state.TxBytes),
+			TotalGB:       0,
+			LimitGB:       container.TrafficLimit,
+			ResetDay:      1,
+			Locked:        false,
+			LastUpdate:    time.Now(),
+			LastReset:     time.Now(),
+		}
+
+		if err := tx.Create(&traffic).Error; err != nil {
+			return fmt.Errorf("创建重置基准记录失败: %v", err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return err
 	}
 
-	resetDay := container.CreatedAt.Day()
-
-	traffic := models.Traffic{
-		ContainerName: containerName,
-		RxBytes:       int64(state.RxBytes),
-		TxBytes:       int64(state.TxBytes),
-		TotalGB:       0,
-		LimitGB:       container.TrafficLimit,
-		ResetDay:      1, // 固定每月1号
-		Locked:        false,
-		LastUpdate:    time.Now(),
-		LastReset:     time.Now(),
-	}
-
-	if err := db.DB.Create(&traffic).Error; err != nil {
-		return fmt.Errorf("创建重置基准记录失败: %v", err)
-	}
-
-	ctx := context.Background()
-	if err := m.lxcClient.StartContainer(ctx, containerName); err != nil {
+	runCtx := context.Background()
+	if err := m.lxcClient.StartContainer(runCtx, containerName); err != nil {
 		if strings.Contains(err.Error(), "already running") {
 			db.DB.Model(&models.Container{}).Where("name = ?", containerName).Update("status", "running")
 			logger.Info("容器已在运行中，跳过自动开机: %s", containerName)
@@ -520,7 +542,7 @@ func (m *Monitor) ResetTraffic(containerName string) error {
 		logger.OK("重置流量后已自动开机: %s", containerName)
 	}
 
-	logger.OK("流量统计已重置: %s (重置日期: 每月%d号)", containerName, resetDay)
+	logger.OK("流量统计已重置: %s (重置日期: 每月1号)", containerName)
 	return nil
 }
 
