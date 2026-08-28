@@ -111,7 +111,7 @@ func (s *ContainerService) Create(ctx context.Context, req *models.CreateContain
 	}
 	cpuAllowance := ""
 	if req.CPUAllowance > 0 {
-		cpuAllowance = fmt.Sprintf("%d%%", req.CPUAllowance)
+		cpuAllowance = fmt.Sprintf("%dms/100ms", req.CPUAllowance)
 	}
 	ioRead := ""
 	if req.IORead > 0 {
@@ -889,7 +889,7 @@ func (s *ContainerService) UpdateConfig(ctx context.Context, name string, req *m
 	}
 
 	if req.CPUAllowance != nil && *req.CPUAllowance > 0 {
-		cpuAllowance = fmt.Sprintf("%d%%", *req.CPUAllowance)
+		cpuAllowance = fmt.Sprintf("%dms/100ms", *req.CPUAllowance)
 		dbUpdates["cpu_allowance"] = *req.CPUAllowance
 		updated = append(updated, "cpu_allowance")
 	}
