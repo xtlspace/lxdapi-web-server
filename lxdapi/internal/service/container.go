@@ -322,7 +322,7 @@ func (s *ContainerService) Restart(ctx context.Context, name string) error {
 }
 
 func (s *ContainerService) Pause(ctx context.Context, name string) error {
-	if err := s.lxcClient.PauseContainer(ctx, name); err != nil {
+	if err := s.lxcClient.StopContainer(ctx, name); err != nil {
 		return err
 	}
 	db.DB.Model(&models.Container{}).Where("name = ?", name).Update("status", "frozen")
@@ -331,10 +331,12 @@ func (s *ContainerService) Pause(ctx context.Context, name string) error {
 }
 
 func (s *ContainerService) Resume(ctx context.Context, name string) error {
-	if err := s.lxcClient.ResumeContainer(ctx, name); err != nil {
+	// 先落库标记 running，即使启动失败也不影响数据库变更
+	db.DB.Model(&models.Container{}).Where("name = ?", name).Update("status", "running")
+	if err := s.lxcClient.StartContainer(ctx, name); err != nil {
+		logger.Warn("恢复容器启动失败，但数据库已更新为running: %s: %v", name, err)
 		return err
 	}
-	db.DB.Model(&models.Container{}).Where("name = ?", name).Update("status", "running")
 	cache.RefreshContainerCache(ctx, name)
 	return nil
 }
