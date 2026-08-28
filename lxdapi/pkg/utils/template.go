@@ -26,9 +26,6 @@ func MergeTemplateData(c *gin.Context, data gin.H) gin.H {
 	if contentOpacity, exists := c.Get("ContentOpacity"); exists {
 		data["ContentOpacity"] = contentOpacity
 	}
-	if userNoticeOpacity, exists := c.Get("UserNoticeOpacity"); exists {
-		data["UserNoticeOpacity"] = userNoticeOpacity
-	}
 	if containerNoticeOpacity, exists := c.Get("ContainerNoticeOpacity"); exists {
 		data["ContainerNoticeOpacity"] = containerNoticeOpacity
 	}
@@ -50,14 +47,6 @@ func MergeTemplateData(c *gin.Context, data gin.H) gin.H {
 				data["BgImage"] = settings.AdminBgImage
 				data["BgOpacity"] = settings.AdminBgOpacity
 				data["ContentOpacity"] = settings.AdminContentOpacity
-			} else if len(path) >= 5 && path[:5] == "/user" {
-				data["SystemName"] = settings.UserSystemName
-				data["title"] = settings.UserSystemTitle
-				data["LoginTitle"] = settings.UserLoginTitle
-				data["BgImage"] = settings.UserBgImage
-				data["BgOpacity"] = settings.UserBgOpacity
-				data["ContentOpacity"] = settings.UserContentOpacity
-				data["UserNoticeOpacity"] = settings.UserNoticeOpacity
 			} else if len(path) >= 10 && path[:10] == "/container" {
 				data["SystemName"] = settings.ContainerSystemName
 				data["title"] = settings.ContainerSystemTitle

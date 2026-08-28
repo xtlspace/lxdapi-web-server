@@ -17,7 +17,6 @@ import (
 	"lxdapi/internal/api/container"
 	"lxdapi/internal/api/public"
 	"lxdapi/internal/api/system"
-	"lxdapi/internal/api/user"
 	"lxdapi/internal/core"
 	"lxdapi/internal/db"
 	"lxdapi/internal/executor"
@@ -125,7 +124,6 @@ func main() {
 
 	system.InitContainerService(containerService)
 	system.InitIPv4Service(ipv4Service)
-	user.InitContainerService(containerService)
 	container.InitContainerService(containerService)
 	admin.InitBrandService()
 	admin.SetEmbeddedFS(embeddedFiles)
@@ -267,7 +265,6 @@ func main() {
 		patterns := []string{
 			"templates/*.html",
 			"templates/admin/*.html",
-			"templates/user/*.html",
 			"templates/container/*.html",
 		}
 		
@@ -372,20 +369,6 @@ func main() {
 	r.POST("/api/admin/logout", admin.Logout)
 	r.GET("/admin/logout", handlers.AdminLogout)
 	
-	r.GET("/api/user/captcha", user.GetCaptcha)
-	r.POST("/api/user/login", user.Login)
-	r.POST("/api/user/logout", user.Logout)
-
-	r.GET("/user/login", handlers.UserLogin)
-	
-	userPages := r.Group("/user")
-	userPages.Use(middleware.UserPageAuth())
-	{
-		userPages.GET("/dashboard", handlers.UserDashboard)
-		userPages.GET("/containers", handlers.UserContainers)
-		userPages.GET("/container", handlers.UserContainerDetail)
-	}
-
 	r.GET("/container/login", handlers.ContainerLogin)
 	r.GET("/container/dashboard", handlers.ContainerDashboard)
 
@@ -417,7 +400,6 @@ func main() {
 		systemAPI.POST("/containers/:name/credential/regenerate", system.RegenerateContainerCredential)
 		systemAPI.POST("/console/create-token", console.CreateToken)
 		systemAPI.GET("/admin/access-token", system.GetAdminAccessToken)
-		systemAPI.GET("/users/:username/access-token", system.GetUserAccessToken)
 	}
 
 	r.GET("/api/port-range/config", admin.GetPortRangeConfig)
@@ -483,32 +465,6 @@ func main() {
 		adminAPI.POST("/console/create-token", console.CreateToken)
 		adminAPI.GET("/network/nat", admin.GetNetworkNATStatus)
 		adminAPI.POST("/network/nat", admin.SetNetworkNATStatus)
-	}
-
-	userAPI := r.Group("/api/user")
-	userAPI.Use(middleware.UserAuthOrBasic())
-	{
-		userAPI.GET("/info", user.GetUserInfo)
-		userAPI.POST("/containers", user.CreateContainer)
-		userAPI.GET("/containers", user.ListContainers)
-		userAPI.GET("/containers/:name", user.GetContainer)
-		userAPI.GET("/containers/:name/cpuUsage", user.GetContainerCPUUsage)
-		userAPI.DELETE("/containers/:name", user.DeleteContainer)
-		userAPI.POST("/containers/:name/action", user.ContainerAction)
-		userAPI.GET("/containers/:name/config", user.GetContainerConfig)
-		userAPI.PUT("/containers/:name/config", user.UpdateContainerConfig)
-		userAPI.PUT("/containers/:name/remark", user.UpdateContainerRemark)
-		userAPI.GET("/containers/:name/credential", user.GetContainerCredential)
-		userAPI.POST("/containers/:name/credential/regenerate", user.RegenerateContainerCredential)
-		userAPI.POST("/port-mapping/allocate", user.AllocatePortMapping)
-		userAPI.POST("/port-mapping/release", user.ReleasePortMapping)
-		userAPI.GET("/port-mapping", user.ListPortMappings)
-		userAPI.GET("/containers/:name/ip", user.GetContainerIP)
-		userAPI.POST("/containers/:name/ip/allocate", user.AllocateContainerIP)
-		userAPI.POST("/containers/:name/ip/release", user.ReleaseContainerIP)
-		userAPI.GET("/templates", user.GetTemplateList)
-		userAPI.GET("/tasks/:id", user.GetTask)
-		userAPI.POST("/console/create-token", console.CreateToken)
 	}
 
 	r.GET("/api/public/brand-settings", public.GetBrandSettings)

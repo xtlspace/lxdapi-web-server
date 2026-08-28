@@ -19,10 +19,6 @@ func BrandMiddleware() gin.HandlerFunc {
 				c.Set("SystemName", "LXD API - 管理后台")
 				c.Set("SystemTitle", "管理后台 - LXD容器管理系统")
 				c.Set("LoginTitle", "管理员登录")
-			} else if len(path) >= 5 && path[:5] == "/user" {
-				c.Set("SystemName", "LXD API - 用户中心")
-				c.Set("SystemTitle", "用户中心 - LXD容器管理系统")
-				c.Set("LoginTitle", "用户登录")
 			} else if len(path) >= 10 && path[:10] == "/container" {
 				c.Set("SystemName", "容器控制面板")
 				c.Set("SystemTitle", "容器管理 - LXD容器管理系统")
@@ -38,14 +34,6 @@ func BrandMiddleware() gin.HandlerFunc {
 				c.Set("BgImage", settings.AdminBgImage)
 				c.Set("BgOpacity", settings.AdminBgOpacity)
 				c.Set("ContentOpacity", settings.AdminContentOpacity)
-			} else if len(path) >= 5 && path[:5] == "/user" {
-				c.Set("SystemName", settings.UserSystemName)
-				c.Set("SystemTitle", settings.UserSystemTitle)
-				c.Set("LoginTitle", settings.UserLoginTitle)
-				c.Set("BgImage", settings.UserBgImage)
-				c.Set("BgOpacity", settings.UserBgOpacity)
-				c.Set("ContentOpacity", settings.UserContentOpacity)
-				c.Set("UserNoticeOpacity", settings.UserNoticeOpacity)
 			} else if len(path) >= 10 && path[:10] == "/container" {
 				c.Set("SystemName", settings.ContainerSystemName)
 				c.Set("SystemTitle", settings.ContainerSystemTitle)
