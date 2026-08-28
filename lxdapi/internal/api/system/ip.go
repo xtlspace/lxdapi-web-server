@@ -3,20 +3,14 @@ package system
 import (
 	"github.com/gin-gonic/gin"
 	"lxdapi/internal/ipv4"
-	"lxdapi/internal/ipv6"
 	"lxdapi/internal/service"
 	"lxdapi/pkg/response"
 )
 
 var ipv4Service *service.IPv4Service
-var ipv6Service *service.IPv6Service
 
 func InitIPv4Service(svc *service.IPv4Service) {
 	ipv4Service = svc
-}
-
-func InitIPv6Service(svc *service.IPv6Service) {
-	ipv6Service = svc
 }
 
 // GetContainerIP 获取容器IP地址（统一接口）
@@ -40,52 +34,26 @@ func GetContainerIP(c *gin.Context) {
 	}
 
 	version := c.DefaultQuery("version", "all")
+
+	if version == "v6" {
+		response.Error(c, 400, "IPv6地址池功能已移除")
+		return
+	}
+
 	result := gin.H{"container": name}
 
 	if version == "v4" || version == "all" {
 		if ipv4.GlobalManager == nil {
-			if version == "v4" {
-				response.Error(c, 500, "IPv4功能未启用")
-				return
-			}
 			result["ipv4"] = []string{}
 			result["ipv4_count"] = 0
 		} else {
 			ips, err := ipv4.GlobalManager.GetContainerIPs(name)
 			if err != nil {
-				if version == "v4" {
-					response.Error(c, 500, err.Error())
-					return
-				}
 				result["ipv4"] = []string{}
 				result["ipv4_count"] = 0
 			} else {
 				result["ipv4"] = ips
 				result["ipv4_count"] = len(ips)
-			}
-		}
-	}
-
-	if version == "v6" || version == "all" {
-		if ipv6.GlobalManager == nil {
-			if version == "v6" {
-				response.Error(c, 500, "IPv6功能未启用")
-				return
-			}
-			result["ipv6"] = []string{}
-			result["ipv6_count"] = 0
-		} else {
-			ips, err := ipv6.GlobalManager.GetContainerIPs(name)
-			if err != nil {
-				if version == "v6" {
-					response.Error(c, 500, err.Error())
-					return
-				}
-				result["ipv6"] = []string{}
-				result["ipv6_count"] = 0
-			} else {
-				result["ipv6"] = ips
-				result["ipv6_count"] = len(ips)
 			}
 		}
 	}
@@ -108,8 +76,12 @@ func GetContainerIP(c *gin.Context) {
 // @Router /api/system/ip/allocate [post]
 func AllocateIP(c *gin.Context) {
 	version := c.Query("version")
-	if version != "v4" && version != "v6" {
-		response.Error(c, 400, "version参数必须是v4或v6")
+	if version != "v4" {
+		if version == "v6" {
+			response.Error(c, 400, "IPv6地址池功能已移除")
+			return
+		}
+		response.Error(c, 400, "version参数必须是v4")
 		return
 	}
 
@@ -130,29 +102,16 @@ func AllocateIP(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	if version == "v4" {
-		ips, err := ipv4Service.AllocateIPv4(ctx, req.Name, req.UserID, req.Count)
-		if err != nil {
-			response.Error(c, 500, err.Error())
-			return
-		}
-		response.Success(c, gin.H{
-			"container": req.Name,
-			"ipv4":      ips,
-			"count":     len(ips),
-		})
-	} else {
-		ips, err := ipv6Service.AllocateIPv6(ctx, req.Name, req.UserID, req.Count)
-		if err != nil {
-			response.Error(c, 500, err.Error())
-			return
-		}
-		response.Success(c, gin.H{
-			"container": req.Name,
-			"ipv6":      ips,
-			"count":     len(ips),
-		})
+	ips, err := ipv4Service.AllocateIPv4(ctx, req.Name, req.UserID, req.Count)
+	if err != nil {
+		response.Error(c, 500, err.Error())
+		return
 	}
+	response.Success(c, gin.H{
+		"container": req.Name,
+		"ipv4":      ips,
+		"count":     len(ips),
+	})
 }
 
 // ReleaseIP 释放IP地址（统一接口）
@@ -170,8 +129,12 @@ func AllocateIP(c *gin.Context) {
 // @Router /api/system/ip/release [post]
 func ReleaseIP(c *gin.Context) {
 	version := c.Query("version")
-	if version != "v4" && version != "v6" {
-		response.Error(c, 400, "version参数必须是v4或v6")
+	if version != "v4" {
+		if version == "v6" {
+			response.Error(c, 400, "IPv6地址池功能已移除")
+			return
+		}
+		response.Error(c, 400, "version参数必须是v4")
 		return
 	}
 
@@ -185,17 +148,9 @@ func ReleaseIP(c *gin.Context) {
 		return
 	}
 
-	if version == "v4" {
-		if err := ipv4Service.ReleaseIPv4(req.Name, req.IP); err != nil {
-			response.Error(c, 500, err.Error())
-			return
-		}
-		response.Success(c, "IPv4释放成功")
-	} else {
-		if err := ipv6Service.ReleaseIPv6(req.Name, req.IP); err != nil {
-			response.Error(c, 500, err.Error())
-			return
-		}
-		response.Success(c, "IPv6释放成功")
+	if err := ipv4Service.ReleaseIPv4(req.Name, req.IP); err != nil {
+		response.Error(c, 500, err.Error())
+		return
 	}
+	response.Success(c, "IPv4释放成功")
 }

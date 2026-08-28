@@ -2,15 +2,15 @@ package traffic
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"lxdapi/internal/core"
 	"lxdapi/internal/db"
+	"lxdapi/internal/ipv6"
 	"lxdapi/internal/lxc"
 	"lxdapi/models"
+	"lxdapi/pkg/format"
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/plugin"
-	"os/exec"
 	"sort"
 	"strings"
 	"time"
@@ -41,13 +41,9 @@ var GlobalMonitor *Monitor
 
 func InitMonitor() error {
 	cfg := core.GlobalConfig.Traffic
-	if !cfg.Enabled {
-		logger.Info("流量监控未启用")
-		return nil
-	}
 
 	GlobalMonitor = &Monitor{
-		lxcClient: lxc.NewClient(),
+		lxcClient: lxc.DefaultClient(),
 		interval:  time.Duration(cfg.Interval) * time.Second,
 		pending:   make(map[string]*sampleState),
 	}
@@ -199,6 +195,8 @@ func (m *Monitor) sampleContainer(s *sampleState) {
 		return
 	}
 
+	m.handleIPv6NeighborRequests(s.name, state)
+
 	if m.isUserTrafficLocked(s.name) || m.isTrafficLocked(s.name) {
 		m.stopLockedContainer(s.name)
 		s.hasBase = false
@@ -212,6 +210,43 @@ func (m *Monitor) sampleContainer(s *sampleState) {
 	s.baseCPU = state.CPUUsage
 	s.baseAt = time.Now()
 	s.hasBase = true
+}
+
+// handleIPv6NeighborRequests sends IPv6 Neighbor Solicitation packets to the
+// gateway for every running container IPv6 address matching the configured
+// prefix, when the IPv6 neighbor request feature is enabled.
+func (m *Monitor) handleIPv6NeighborRequests(containerName string, state *containerUsageSnapshot) {
+	if len(state.IPv6s) == 0 {
+		return
+	}
+
+	var cfg models.IPv6NeighborConfig
+	if err := db.DB.First(&cfg).Error; err != nil {
+		return
+	}
+	if !cfg.Enabled {
+		return
+	}
+	if cfg.Iface == "" || cfg.Gateway == "" || cfg.Prefix == "" {
+		return
+	}
+
+	seen := make(map[string]bool)
+	for _, ip := range state.IPv6s {
+		if !strings.HasPrefix(ip, cfg.Prefix) {
+			continue
+		}
+		if seen[ip] {
+			continue
+		}
+		seen[ip] = true
+
+		if err := ipv6.NserIPv6(cfg.Iface, ip, cfg.Gateway); err != nil {
+			logger.Warn("容器 %s IPv6邻居请求发送失败 %s -> %s: %v", containerName, ip, cfg.Gateway, err)
+			continue
+		}
+		logger.OK("容器 %s IPv6邻居请求已发送: %s -> 网关 %s", containerName, ip, cfg.Gateway)
+	}
 }
 
 type NetworkCounters struct {
@@ -228,26 +263,24 @@ type containerUsageSnapshot struct {
 	DiskUsage float64
 	RxBytes   uint64
 	TxBytes   uint64
+	IPv6s     []string
 }
 
 func (m *Monitor) getContainerState(ctx context.Context, name string) (*containerUsageSnapshot, error) {
-	// 引入 Context，随主线程退出或超时自动 kill 孤儿进程
-	cmd := exec.CommandContext(ctx, "lxc", "query", fmt.Sprintf("/1.0/instances/%s/state", name))
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-
 	var raw struct {
 		Status  string                 `json:"status"`
 		CPU     map[string]interface{} `json:"cpu"`
 		Memory  map[string]interface{} `json:"memory"`
 		Disk    map[string]interface{} `json:"disk"`
 		Network map[string]struct {
-			Counters NetworkCounters `json:"counters"`
+			Counters  NetworkCounters `json:"counters"`
+			Addresses []struct {
+				Family  string `json:"family"`
+				Address string `json:"address"`
+			} `json:"addresses"`
 		} `json:"network"`
 	}
-	if err := json.Unmarshal(output, &raw); err != nil {
+	if err := m.lxcClient.Get(ctx, fmt.Sprintf("/1.0/instances/%s/state", name), &raw); err != nil {
 		return nil, err
 	}
 
@@ -267,6 +300,12 @@ func (m *Monitor) getContainerState(ctx context.Context, name string) (*containe
 	if eth0, ok := raw.Network["eth0"]; ok {
 		snap.RxBytes = eth0.Counters.BytesReceived
 		snap.TxBytes = eth0.Counters.BytesSent
+
+		for _, addr := range eth0.Addresses {
+			if addr.Family == "inet6" && addr.Address != "" && !strings.HasPrefix(addr.Address, "fe80:") {
+				snap.IPv6s = append(snap.IPv6s, addr.Address)
+			}
+		}
 	}
 
 	return snap, nil
@@ -306,12 +345,12 @@ func (m *Monitor) collectContainerUsage(name string, snap *containerUsageSnapsho
 	// 仅更新变更字段，极大减轻数据库 I/O 压力
 	db.DB.Model(&models.Container{}).Where("name = ?", name).Updates(map[string]interface{}{
 		"memory_usage_raw":  uint64(snap.MemUsage),
-		"memory_usage":      formatBytes(uint64(snap.MemUsage)),
+		"memory_usage":      format.BytesUint64(uint64(snap.MemUsage)),
 		"disk_usage_raw":    uint64(snap.DiskUsage),
-		"disk_usage":        formatBytes(uint64(snap.DiskUsage)),
+		"disk_usage":        format.BytesUint64(uint64(snap.DiskUsage)),
 		"traffic_usage_raw": trafficUsageRaw,
 		"traffic_usage":     trafficUsage,
-		"last_sync":         time.Now().Format(time.RFC3339),
+		"last_sync":         time.Now(),
 	})
 }
 
@@ -552,24 +591,47 @@ func (m *Monitor) checkUserTrafficLimits() {
 		return
 	}
 
-	for _, user := range users {
-		var containers []models.Container
-		if err := db.DB.Where("user_id = ?", user.Username).Find(&containers).Error; err != nil {
-			continue
-		}
+	if len(users) == 0 {
+		return
+	}
 
-		totalUsage := user.TrafficUsed
-		for _, c := range containers {
-			var traffic models.Traffic
-			if err := db.DB.Where("container_name = ?", c.Name).First(&traffic).Error; err == nil {
-				totalUsage += traffic.TotalGB
-			}
-		}
+	type containerTraffic struct {
+		ContainerName string
+		UserID        string
+		TotalGB       float64
+	}
+	var rows []containerTraffic
+	db.DB.Table("containers").
+		Select("containers.name as container_name, containers.user_id, COALESCE(traffics.total_gb, 0) as total_gb").
+		Joins("LEFT JOIN traffics ON traffics.container_name = containers.name").
+		Where("containers.user_id IN ?", userNames(users)).
+		Scan(&rows)
 
+	trafficByUser := make(map[string]float64)
+	containersByUser := make(map[string][]models.Container)
+	for _, row := range rows {
+		trafficByUser[row.UserID] += row.TotalGB
+		containersByUser[row.UserID] = append(containersByUser[row.UserID], models.Container{
+			Name:   row.ContainerName,
+			UserID: row.UserID,
+		})
+	}
+
+	for i := range users {
+		user := &users[i]
+		totalUsage := user.TrafficUsed + trafficByUser[user.Username]
 		if totalUsage >= float64(user.TrafficLimit) {
-			m.handleUserOverLimit(&user, containers, totalUsage)
+			m.handleUserOverLimit(user, containersByUser[user.Username], totalUsage)
 		}
 	}
+}
+
+func userNames(users []models.User) []string {
+	names := make([]string, len(users))
+	for i, u := range users {
+		names[i] = u.Username
+	}
+	return names
 }
 
 func (m *Monitor) handleUserOverLimit(user *models.User, containers []models.Container, currentUsage float64) {
@@ -617,16 +679,14 @@ func (m *Monitor) isUserTrafficLocked(containerName string) bool {
 			return false
 		}
 
-		var containers []models.Container
-		db.DB.Where("user_id = ?", user.Username).Find(&containers)
-
 		totalUsage := user.TrafficUsed
-		for _, c := range containers {
-			var traffic models.Traffic
-			if err := db.DB.Where("container_name = ?", c.Name).First(&traffic).Error; err == nil {
-				totalUsage += traffic.TotalGB
-			}
-		}
+		var containerTrafficSum float64
+		db.DB.Model(&models.Traffic{}).
+			Joins("JOIN containers ON containers.name = traffics.container_name").
+			Where("containers.user_id = ?", user.Username).
+			Select("COALESCE(SUM(traffics.total_gb), 0)").
+			Scan(&containerTrafficSum)
+		totalUsage += containerTrafficSum
 
 		if totalUsage < float64(user.TrafficLimit) {
 			db.DB.Model(&user).Update("traffic_locked", false)
@@ -654,17 +714,4 @@ func (m *Monitor) ResetUserTraffic(username string) error {
 	db.DB.Model(&user).Update("traffic_locked", false)
 	logger.OK("用户流量已重置: %s", username)
 	return nil
-}
-
-func formatBytes(bytes uint64) string {
-	const unit = 1024
-	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
-	}
-	div, exp := uint64(unit), 0
-	for n := bytes / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.2f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }

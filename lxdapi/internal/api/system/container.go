@@ -49,7 +49,6 @@ func CreateContainer(c *gin.Context) {
 		"username":           req.Username,
 		"ipv4_pool_limit":    req.IPv4PoolLimit,
 		"ipv4_mapping_limit": req.IPv4MappingLimit,
-		"ipv6_pool_limit":    req.IPv6PoolLimit,
 		"ipv6_mapping_limit": req.IPv6MappingLimit,
 		"password":           req.Password,
 		"cpu_allowance":      req.CPUAllowance,

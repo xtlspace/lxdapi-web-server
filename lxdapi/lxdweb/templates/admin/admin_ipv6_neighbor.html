@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .title }} - 网络配置</title>
+    {{if .FaviconUrl}}<link rel="icon" href="{{.FaviconUrl}}">{{end}}
+
+    <link href="/static/css/daisyui.min.css" rel="stylesheet">
+    <script src="/static/js/tailwindcss.js"></script>
+    <script src="/static/js/jquery.min.js"></script>
+
+    <style>
+        :root {
+            --content-opacity: {{if .ContentOpacity}}{{.ContentOpacity}}{{else}}85{{end}};
+        }
+        .content-box {
+            background-color: rgba(255, 255, 255, calc(var(--content-opacity) / 100)) !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    {{template "admin/admin_header.html" .}}
+
+    <div class="flex-1 relative" style="{{if .BgImage}}background-image: url('{{.BgImage}}'); background-size: cover; background-position: center; background-attachment: fixed;{{else}}background-color: #f9fafb;{{end}}">
+        {{if .BgImage}}<div class="absolute inset-0 bg-white pointer-events-none" style="opacity: {{.BgOpacity}}%;"></div>{{end}}
+        <div class="relative container mx-auto px-4 py-8 pb-12">
+        <div class="mb-4 lg:mb-6 inline-block px-4 py-3 rounded-lg shadow-sm" style="background-color: rgba(255, 255, 255, 0.85);">
+            <h1 class="text-2xl lg:text-3xl font-bold text-gray-800 flex items-center gap-3">
+                <span class="iconify text-blue-600" data-icon="mdi:access-point-network" data-width="28"></span>
+                IPv6邻居请求
+            </h1>
+            <p class="text-sm lg:text-base text-gray-600 mt-1">通过发送IPv6邻居请求(Neighbor Solicitation)，让网关学习并转发容器的IPv6流量</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="content-box border border-gray-200 rounded-lg p-4 shadow-sm lg:col-span-2">
+                <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-1.5">
+                    <span class="iconify" data-icon="mdi:tune" data-width="18"></span>
+                    邻居请求配置
+                </h3>
+
+                <div class="p-3 mb-4 bg-orange-50 border border-orange-200 rounded-lg text-xs text-orange-700">
+                    该功能需要以root权限运行本服务（使用原始套接字发送IPv6邻居请求），且需设置内核参数
+                    net.ipv6.ip_nonlocal_bind 与 net.ipv6.conf.all.proxy_ndp。
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" id="enabled" class="toggle toggle-sm toggle-primary" style="height: 1.25rem; width: 2.5rem;">
+                        <div>
+                            <div class="text-sm font-medium text-gray-800">启用IPv6邻居请求</div>
+                            <div class="text-xs text-gray-500">开启后将随流量监控轮询，对匹配前缀的容器IPv6发送邻居请求</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">网卡接口 (iface)</label>
+                        <input type="text" id="iface" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500" placeholder="例如: eth0" maxlength="64">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">IPv6前缀 (prefix)</label>
+                        <input type="text" id="prefix" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500" placeholder="例如: 2001:db8:1::" maxlength="64">
+                        <div class="text-xs text-gray-500 mt-1">仅对以此前缀开头的容器IPv6地址发送邻居请求</div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">网关地址 (gateway)</label>
+                        <input type="text" id="gateway" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500" placeholder="例如: 2001:db8:1::1" maxlength="64">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="saveConfig()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        保存配置
+                    </button>
+                    <button type="button" onclick="loadConfig()" class="px-6 py-2 content-box text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        重新加载
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-box border border-gray-200 rounded-lg p-4 shadow-sm">
+                <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-1.5">
+                    <span class="iconify" data-icon="mdi:information-outline" data-width="18"></span>
+                    说明
+                </h3>
+                <ul class="text-xs text-gray-600 space-y-2 list-disc pl-4">
+                    <li>启用后，本服务每隔一个流量监控采集周期，对每个运行中容器中匹配前缀的IPv6地址发送邻居请求。</li>
+                    <li>请求目标为配置的网关地址，使网关学习到该IPv6对应的邻居转发关系。</li>
+                    <li>发送的源地址为容器自身的IPv6地址。</li>
+                    <li>关闭开关后停止发送（不执行内核参数设置）。</li>
+                </ul>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    {{template "admin/admin_footer.html" .}}
+
+    <script>
+        function loadConfig() {
+            $.get('/api/admin/nserIPv6/settings', function(result) {
+                if (result.code === 200 && result.data) {
+                    $('#enabled').prop('checked', !!result.data.enabled);
+                    $('#iface').val(result.data.iface || '');
+                    $('#prefix').val(result.data.prefix || '');
+                    $('#gateway').val(result.data.gateway || '');
+                } else {
+                    alert('加载配置失败: ' + (result.msg || '未知错误'));
+                }
+            });
+        }
+
+        function saveConfig() {
+            const enabled = $('#enabled').is(':checked');
+            const iface = $('#iface').val().trim();
+            const prefix = $('#prefix').val().trim();
+            const gateway = $('#gateway').val().trim();
+
+            if (enabled) {
+                if (!iface) { alert('网卡接口不能为空'); return; }
+                if (!prefix) { alert('IPv6前缀不能为空'); return; }
+                if (!gateway) { alert('网关地址不能为空'); return; }
+            }
+
+            $.ajax({
+                url: '/api/admin/nserIPv6/settings',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ enabled: enabled, iface: iface, prefix: prefix, gateway: gateway }),
+                success: function(result) {
+                    if (result.code === 200) {
+                        alert('保存成功！');
+                    } else {
+                        alert('保存失败: ' + (result.msg || '未知错误'));
+                    }
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            loadConfig();
+        });
+    </script>
+
+</body>
+</html>

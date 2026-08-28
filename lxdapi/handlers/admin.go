@@ -72,23 +72,9 @@ func AdminIPv4(c *gin.Context) {
 	}))
 }
 
-func AdminIPv6(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/admin_ipv6.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "IPv6端口映射 - LXD API 管理",
-		"username": "admin",
-	}))
-}
-
 func AdminIPPoolV4(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_ip_pool_v4.html", utils.MergeTemplateData(c, gin.H{
 		"title":    "IPv4地址池 - LXD API 管理",
-		"username": "admin",
-	}))
-}
-
-func AdminIPPoolV6(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/admin_ip_pool_v6.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "IPv6地址池 - LXD API 管理",
 		"username": "admin",
 	}))
 }
@@ -107,12 +93,20 @@ func AdminPortMappingV6(c *gin.Context) {
 	}))
 }
 
+func AdminIPv6Neighbor(c *gin.Context) {
+	c.HTML(http.StatusOK, "admin/admin_ipv6_neighbor.html", utils.MergeTemplateData(c, gin.H{
+		"title":    "IPv6邻居请求 - LXD API 管理",
+		"username": "admin",
+	}))
+}
+
 func AdminTemplates(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_templates.html", utils.MergeTemplateData(c, gin.H{
 		"title":    "模板管理 - LXD API 管理",
 		"username": "admin",
 	}))
 }
+
 
 func AdminUsers(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_users.html", utils.MergeTemplateData(c, gin.H{
@@ -138,13 +132,6 @@ func AdminFirewall(c *gin.Context) {
 func AdminNginx(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_nginx.html", utils.MergeTemplateData(c, gin.H{
 		"title":    "Nginx反向代理 - LXD API 管理",
-		"username": "admin",
-	}))
-}
-
-func AdminStoragePools(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/storage_pools.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "存储池管理 - LXD API 管理",
 		"username": "admin",
 	}))
 }

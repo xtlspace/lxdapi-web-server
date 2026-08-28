@@ -16,7 +16,6 @@ type User struct {
 	TrafficLocked     bool    `gorm:"default:false"`
 	IPv4PoolLimit     int
 	IPv4MappingLimit  int
-	IPv6PoolLimit     int
 	IPv6MappingLimit  int
 	ReverseProxyLimit int
 	Ingress           int

@@ -18,7 +18,6 @@ func CreateUser(c *gin.Context) {
 		TrafficLimit       int    `json:"traffic_limit"`
 		IPv4PoolLimit      int    `json:"ipv4_pool_limit"`
 		IPv4MappingLimit   int    `json:"ipv4_mapping_limit"`
-		IPv6PoolLimit      int    `json:"ipv6_pool_limit"`
 		IPv6MappingLimit   int    `json:"ipv6_mapping_limit"`
 		ReverseProxyLimit  int    `json:"reverse_proxy_limit"`
 		Ingress            int    `json:"ingress"`
@@ -66,7 +65,7 @@ func CreateUser(c *gin.Context) {
 
 	user, err := service.CreateUser(req.Username, req.Password,
 		req.CPUQuota, req.MemoryQuota, req.DiskQuota, req.MaxCPUPerContainer, req.TrafficLimit,
-		req.IPv4PoolLimit, req.IPv4MappingLimit, req.IPv6PoolLimit, req.IPv6MappingLimit,
+		req.IPv4PoolLimit, req.IPv4MappingLimit, req.IPv6MappingLimit,
 		req.ReverseProxyLimit, req.Ingress, req.Egress, req.CPUAllowance,
 		req.IORead, req.IOWrite, req.ProcessesLimit, allowNesting, memorySwap)
 	if err != nil {
@@ -110,7 +109,6 @@ func GetUsers(c *gin.Context) {
 				"traffic_limit":       user.TrafficLimit,
 				"ipv4_pool_limit":     user.IPv4PoolLimit,
 				"ipv4_mapping_limit":  user.IPv4MappingLimit,
-				"ipv6_pool_limit":     user.IPv6PoolLimit,
 				"ipv6_mapping_limit":  user.IPv6MappingLimit,
 				"reverse_proxy_limit": user.ReverseProxyLimit,
 				"container_count":     containerCount,
@@ -128,8 +126,9 @@ func GetUsers(c *gin.Context) {
 	}
 
 	var result []gin.H
+	allCounts := service.GetAllUsersContainerCount()
 	for _, user := range users {
-		containerCount := service.GetUserContainerCount(user.Username)
+		containerCount := allCounts[user.Username]
 		result = append(result, gin.H{
 			"id":              user.ID,
 			"username":        user.Username,
@@ -160,7 +159,6 @@ func UpdateUser(c *gin.Context) {
 		TrafficLimit      *int  `json:"traffic_limit"`
 		IPv4PoolLimit     *int  `json:"ipv4_pool_limit"`
 		IPv4MappingLimit  *int  `json:"ipv4_mapping_limit"`
-		IPv6PoolLimit     *int  `json:"ipv6_pool_limit"`
 		IPv6MappingLimit  *int  `json:"ipv6_mapping_limit"`
 		ReverseProxyLimit *int  `json:"reverse_proxy_limit"`
 		Ingress           *int  `json:"ingress"`
@@ -197,9 +195,6 @@ func UpdateUser(c *gin.Context) {
 	}
 	if req.IPv4MappingLimit != nil {
 		updates["ipv4_mapping_limit"] = *req.IPv4MappingLimit
-	}
-	if req.IPv6PoolLimit != nil {
-		updates["ipv6_pool_limit"] = *req.IPv6PoolLimit
 	}
 	if req.IPv6MappingLimit != nil {
 		updates["ipv6_mapping_limit"] = *req.IPv6MappingLimit

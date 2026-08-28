@@ -223,7 +223,6 @@ func GetUserInfo(c *gin.Context) {
 			"traffic_locked":        user.TrafficLocked,
 			"ipv4_pool_limit":       user.IPv4PoolLimit,
 			"ipv4_mapping_limit":    user.IPv4MappingLimit,
-			"ipv6_pool_limit":       user.IPv6PoolLimit,
 			"ipv6_mapping_limit":    user.IPv6MappingLimit,
 			"reverse_proxy_limit":   user.ReverseProxyLimit,
 		},

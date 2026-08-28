@@ -32,7 +32,6 @@ type UserCreateContainerRequest struct {
 	TrafficLimit      int    `json:"traffic_limit"`
 	IPv4PoolLimit     int    `json:"ipv4_pool_limit"`
 	IPv4MappingLimit  int    `json:"ipv4_mapping_limit"`
-	IPv6PoolLimit     int    `json:"ipv6_pool_limit"`
 	IPv6MappingLimit  int    `json:"ipv6_mapping_limit"`
 	ReverseProxyLimit int    `json:"reverse_proxy_limit"`
 }
@@ -90,10 +89,6 @@ func CreateContainer(c *gin.Context) {
 		response.Error(c, 400, "IPv4端口映射限制超过配额")
 		return
 	}
-	if user.IPv6PoolLimit > 0 && req.IPv6PoolLimit > user.IPv6PoolLimit {
-		response.Error(c, 400, "IPv6地址池限制超过配额")
-		return
-	}
 	if user.IPv6MappingLimit > 0 && req.IPv6MappingLimit > user.IPv6MappingLimit {
 		response.Error(c, 400, "IPv6端口映射限制超过配额")
 		return
@@ -113,7 +108,6 @@ func CreateContainer(c *gin.Context) {
 		TrafficLimit:      req.TrafficLimit,
 		IPv4PoolLimit:     req.IPv4PoolLimit,
 		IPv4MappingLimit:  req.IPv4MappingLimit,
-		IPv6PoolLimit:     req.IPv6PoolLimit,
 		IPv6MappingLimit:  req.IPv6MappingLimit,
 		ReverseProxyLimit: req.ReverseProxyLimit,
 		Username:          username.(string),
@@ -143,7 +137,6 @@ func CreateContainer(c *gin.Context) {
 		"username":           createReq.Username,
 		"ipv4_pool_limit":    createReq.IPv4PoolLimit,
 		"ipv4_mapping_limit": createReq.IPv4MappingLimit,
-		"ipv6_pool_limit":    createReq.IPv6PoolLimit,
 		"ipv6_mapping_limit": createReq.IPv6MappingLimit,
 		"password":           createReq.Password,
 		"cpu_allowance":      createReq.CPUAllowance,
@@ -240,8 +233,7 @@ func ListContainers(c *gin.Context) {
 	
 	userContainers := []cache.ContainerCacheJSON{}
 	for _, container := range allContainers {
-		dbContainer, err := containerService.Get(container.Name)
-		if err == nil && dbContainer.UserID == username.(string) {
+		if container.UserID == username.(string) {
 			userContainers = append(userContainers, container)
 		}
 	}
@@ -648,20 +640,6 @@ func UpdateContainerConfig(c *gin.Context) {
 		}
 	}
 
-	if req.IPv6PoolLimit != nil {
-		var containerIPv6PoolUsed int64
-		db.DB.Model(&models.IPv6Binding{}).Where("container_name = ?", name).Count(&containerIPv6PoolUsed)
-		if *req.IPv6PoolLimit < int(containerIPv6PoolUsed) {
-			response.Error(c, 400, fmt.Sprintf("IPv6地址池配额不能小于当前使用量(%d)", containerIPv6PoolUsed))
-			return
-		}
-		ipv6PoolDiff := *req.IPv6PoolLimit - container.IPv6PoolLimit
-		if user.IPv6PoolLimit > 0 && stats.UsedIPv6Pool+int64(ipv6PoolDiff) > int64(user.IPv6PoolLimit) {
-			response.Error(c, 400, "IPv6地址池配额不足")
-			return
-		}
-	}
-
 	if req.IPv6MappingLimit != nil {
 		var containerIPv6MapUsed int64
 		db.DB.Model(&models.PortMappingV6{}).Where("container_name = ?", name).Count(&containerIPv6MapUsed)
@@ -859,19 +837,6 @@ func GetContainerIP(c *gin.Context) {
 		result["ipv4_count"] = len(bindings)
 	}
 
-	if version == "v6" || version == "all" {
-		var bindings []models.IPv6Binding
-		if err := db.DB.Where("container_name = ?", name).Find(&bindings).Error; err != nil {
-			if version == "v6" {
-				response.Error(c, 500, err.Error())
-				return
-			}
-			bindings = []models.IPv6Binding{}
-		}
-		result["ipv6"] = bindings
-		result["ipv6_count"] = len(bindings)
-	}
-
 	response.Success(c, result)
 }
 
@@ -942,19 +907,8 @@ func AllocateContainerIP(c *gin.Context) {
 			"count":     len(ips),
 		})
 	} else {
-		ipv6Svc := service.NewIPv6Service()
-		ips, err := ipv6Svc.AllocateIPv6(ctx, name, container.UserID, req.Count)
-		if err != nil {
-			logger.Error("分配IPv6失败: %v", err)
-			response.Error(c, 500, err.Error())
-			return
-		}
-		logger.OK("用户 %s 为容器 %s 分配IPv6成功: %v", username, name, ips)
-		response.Success(c, gin.H{
-			"container": name,
-			"ipv6":      ips,
-			"count":     len(ips),
-		})
+		response.Error(c, 400, "IPv6地址池分配已移除，仅支持IPv4")
+		return
 	}
 }
 
@@ -994,10 +948,6 @@ func ReleaseContainerIP(c *gin.Context) {
 		response.Error(c, 403, "管理员未开放用户释放IPv4权限")
 		return
 	}
-	if version == "v6" && !settings.AllowUserReleaseIPv6 {
-		response.Error(c, 403, "管理员未开放用户释放IPv6权限")
-		return
-	}
 
 	username, _ := c.Get("username")
 
@@ -1034,18 +984,8 @@ func ReleaseContainerIP(c *gin.Context) {
 			"message":   "IPv4释放成功",
 		})
 	} else {
-		ipv6Svc := service.NewIPv6Service()
-		if err := ipv6Svc.ReleaseIPv6(name, req.IP); err != nil {
-			logger.Error("释放IPv6失败: %v", err)
-			response.Error(c, 500, err.Error())
-			return
-		}
-		logger.OK("用户 %s 释放容器 %s IPv6成功: %s", username, name, req.IP)
-		response.Success(c, gin.H{
-			"container": name,
-			"ip":        req.IP,
-			"message":   "IPv6释放成功",
-		})
+		response.Error(c, 400, "IPv6地址池释放已移除，仅支持IPv4")
+		return
 	}
 }
 

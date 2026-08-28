@@ -1,6 +1,10 @@
 package cache
 
-import "testing"
+import (
+	"testing"
+
+	"lxdapi/pkg/format"
+)
 
 func TestParseCPULimit(t *testing.T) {
 	cases := []struct {
@@ -32,8 +36,8 @@ func TestFormatBytes(t *testing.T) {
 		{1099511627776, "1.00 TB"},
 	}
 	for _, c := range cases {
-		if got := formatBytes(c.in); got != c.want {
-			t.Errorf("formatBytes(%d) = %q, want %q", c.in, got, c.want)
+		if got := format.BytesUint64(c.in); got != c.want {
+			t.Errorf("FormatBytesUint64(%d) = %q, want %q", c.in, got, c.want)
 		}
 	}
 }

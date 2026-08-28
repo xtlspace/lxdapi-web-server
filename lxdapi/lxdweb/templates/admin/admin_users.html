@@ -185,10 +185,7 @@
                                 <label class="block text-xs text-gray-600 mb-1">IPv4映射</label>
                                 <input type="number" name="ipv4_mapping_limit" min="0" value="0" class="input input-bordered input-sm w-full">
                             </div>
-                            <div>
-                                <label class="block text-xs text-gray-600 mb-1">IPv6地址池</label>
-                                <input type="number" name="ipv6_pool_limit" min="0" value="0" class="input input-bordered input-sm w-full">
-                            </div>
+
                             <div>
                                 <label class="block text-xs text-gray-600 mb-1">IPv6映射</label>
                                 <input type="number" name="ipv6_mapping_limit" min="0" value="0" class="input input-bordered input-sm w-full">
@@ -324,10 +321,7 @@
                                 <label class="block text-xs text-gray-600 mb-1">IPv4映射</label>
                                 <input type="number" name="ipv4_mapping_limit" min="0" class="input input-bordered input-sm w-full">
                             </div>
-                            <div>
-                                <label class="block text-xs text-gray-600 mb-1">IPv6地址池</label>
-                                <input type="number" name="ipv6_pool_limit" min="0" class="input input-bordered input-sm w-full">
-                            </div>
+
                             <div>
                                 <label class="block text-xs text-gray-600 mb-1">IPv6映射</label>
                                 <input type="number" name="ipv6_mapping_limit" min="0" class="input input-bordered input-sm w-full">
@@ -661,7 +655,6 @@
             $('#editForm input[name="traffic_limit"]').val(user.TrafficLimit || 0);
             $('#editForm input[name="ipv4_pool_limit"]').val(user.IPv4PoolLimit || 0);
             $('#editForm input[name="ipv4_mapping_limit"]').val(user.IPv4MappingLimit || 0);
-            $('#editForm input[name="ipv6_pool_limit"]').val(user.IPv6PoolLimit || 0);
             $('#editForm input[name="ipv6_mapping_limit"]').val(user.IPv6MappingLimit || 0);
             $('#editForm input[name="reverse_proxy_limit"]').val(user.ReverseProxyLimit || 0);
             $('#editForm input[name="ingress"]').val(user.Ingress || 0);
@@ -728,7 +721,6 @@
                 traffic_limit: parseInt($('#editForm input[name="traffic_limit"]').val()) || 0,
                 ipv4_pool_limit: parseInt($('#editForm input[name="ipv4_pool_limit"]').val()) || 0,
                 ipv4_mapping_limit: parseInt($('#editForm input[name="ipv4_mapping_limit"]').val()) || 0,
-                ipv6_pool_limit: parseInt($('#editForm input[name="ipv6_pool_limit"]').val()) || 0,
                 ipv6_mapping_limit: parseInt($('#editForm input[name="ipv6_mapping_limit"]').val()) || 0,
                 reverse_proxy_limit: parseInt($('#editForm input[name="reverse_proxy_limit"]').val()) || 0,
                 ingress: parseInt($('#editForm input[name="ingress"]').val()) || 0,
@@ -775,7 +767,6 @@
                 traffic_limit: parseInt($('#createForm input[name="traffic_limit"]').val()) || 0,
                 ipv4_pool_limit: parseInt($('#createForm input[name="ipv4_pool_limit"]').val()) || 0,
                 ipv4_mapping_limit: parseInt($('#createForm input[name="ipv4_mapping_limit"]').val()) || 0,
-                ipv6_pool_limit: parseInt($('#createForm input[name="ipv6_pool_limit"]').val()) || 0,
                 ipv6_mapping_limit: parseInt($('#createForm input[name="ipv6_mapping_limit"]').val()) || 0,
                 reverse_proxy_limit: parseInt($('#createForm input[name="reverse_proxy_limit"]').val()) || 0,
                 ingress: parseInt($('#createForm input[name="ingress"]').val()) || 0,

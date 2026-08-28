@@ -39,7 +39,7 @@ func CreateSession(containerName string, conn *websocket.Conn) (*Session, error)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	cmd := exec.CommandContext(ctx, "lxc", "exec", containerName,
+	cmd := exec.CommandContext(ctx, "incus", "exec", containerName,
 		"-t",
 		"--env", "TERM=xterm-256color",
 		"--env", "COLORTERM=truecolor",
@@ -221,4 +221,3 @@ func (s *Session) Close() {
 	delete(sessionManager.sessions, s.ID)
 	sessionManager.mutex.Unlock()
 }
-

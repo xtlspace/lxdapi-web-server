@@ -54,14 +54,14 @@ system:
       database: "__POSTGRES_DATABASE__"
       sslmode: "__POSTGRES_SSLMODE__"
 
-# LXC配置
+# Incus配置
 lxc:
-  # LXD Socket路径
-  socket: "/var/snap/lxd/common/lxd/unix.socket"
+  # Incus Socket路径
+  socket: "/var/lib/incus/unix.socket"
   # 命令超时(秒)
   timeout: 300
-  # 默认存储池
-  default_storage: "default"
+  # 默认存储池(留空则使用 default)
+  storage: "default"
 
 # 网络配置
 network:
@@ -70,8 +70,6 @@ network:
 
 # 流量监控配置
 traffic:
-  # 启用流量监控
-  enabled: true
   # 采集间隔(秒)
   interval: __TRAFFIC_INTERVAL__
 
@@ -98,8 +96,6 @@ task:
 
 # 管理员配置
 admin:
-  # 启用管理面板
-  enabled: true
   # 管理员用户名
   username: "__ADMIN_USER__"
   # 管理员密码(首次使用请修改)

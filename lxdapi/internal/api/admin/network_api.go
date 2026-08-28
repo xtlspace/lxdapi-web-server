@@ -2,11 +2,12 @@ package admin
 
 import (
 	"context"
-	"os/exec"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"lxdapi/internal/lxc"
 	"lxdapi/pkg/response"
 )
 
@@ -14,20 +15,21 @@ func GetNetworkNATStatus(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	client := lxc.DefaultClient()
 	result := gin.H{}
 
-	v4Output, err := exec.CommandContext(ctx, "lxc", "network", "get", "lxdbr0", "ipv4.nat").Output()
+	var v4Config map[string]interface{}
+	err := client.Get(ctx, "/1.0/networks/lxdbr0", &v4Config)
 	if err != nil {
 		result["ipv4_nat"] = false
-	} else {
-		result["ipv4_nat"] = strings.TrimSpace(string(v4Output)) == "true"
-	}
-
-	v6Output, err := exec.CommandContext(ctx, "lxc", "network", "get", "lxdbr0", "ipv6.nat").Output()
-	if err != nil {
 		result["ipv6_nat"] = false
 	} else {
-		result["ipv6_nat"] = strings.TrimSpace(string(v6Output)) == "true"
+		config, ok := v4Config["config"].(map[string]interface{})
+		if !ok {
+			config = make(map[string]interface{})
+		}
+		result["ipv4_nat"] = config["ipv4.nat"] == "true"
+		result["ipv6_nat"] = config["ipv6.nat"] == "true"
 	}
 
 	response.Success(c, result)
@@ -47,13 +49,18 @@ func SetNetworkNATStatus(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	client := lxc.DefaultClient()
+
 	if req.IPv4NAT != nil {
 		value := "false"
 		if *req.IPv4NAT {
 			value = "true"
 		}
-		if err := exec.CommandContext(ctx, "lxc", "network", "set", "lxdbr0", "ipv4.nat", value).Run(); err != nil {
-			response.Error(c, 500, "设置IPv4 NAT失败: "+err.Error())
+		err := client.Patch(ctx, "/1.0/networks/lxdbr0", map[string]interface{}{
+			"config": map[string]interface{}{"ipv4.nat": value},
+		})
+		if err != nil {
+			response.Error(c, 500, fmt.Sprintf("设置IPv4 NAT失败: %v", err))
 			return
 		}
 	}
@@ -63,11 +70,29 @@ func SetNetworkNATStatus(c *gin.Context) {
 		if *req.IPv6NAT {
 			value = "true"
 		}
-		if err := exec.CommandContext(ctx, "lxc", "network", "set", "lxdbr0", "ipv6.nat", value).Run(); err != nil {
-			response.Error(c, 500, "设置IPv6 NAT失败: "+err.Error())
+		err := client.Patch(ctx, "/1.0/networks/lxdbr0", map[string]interface{}{
+			"config": map[string]interface{}{"ipv6.nat": value},
+		})
+		if err != nil {
+			response.Error(c, 500, fmt.Sprintf("设置IPv6 NAT失败: %v", err))
 			return
 		}
 	}
 
 	response.Success(c, "设置成功")
+}
+
+func FormatNetworkStatus(v4nat, v6nat bool) string {
+	var parts []string
+	if v4nat {
+		parts = append(parts, "IPv4 NAT: ON")
+	} else {
+		parts = append(parts, "IPv4 NAT: OFF")
+	}
+	if v6nat {
+		parts = append(parts, "IPv6 NAT: ON")
+	} else {
+		parts = append(parts, "IPv6 NAT: OFF")
+	}
+	return strings.Join(parts, " | ")
 }

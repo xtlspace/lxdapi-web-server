@@ -17,7 +17,6 @@ type CreateUserRequest struct {
 	TrafficLimit       int    `json:"traffic_limit"`
 	IPv4PoolLimit      int    `json:"ipv4_pool_limit"`
 	IPv4MappingLimit   int    `json:"ipv4_mapping_limit"`
-	IPv6PoolLimit      int    `json:"ipv6_pool_limit"`
 	IPv6MappingLimit   int    `json:"ipv6_mapping_limit"`
 	ReverseProxyLimit  int    `json:"reverse_proxy_limit"`
 	Ingress            int    `json:"ingress"`
@@ -51,7 +50,7 @@ func CreateUser(c *gin.Context) {
 
 	user, err := service.CreateUser(req.Username, "", req.CPUQuota, req.MemoryQuota, req.DiskQuota,
 		req.MaxCPUPerContainer, req.TrafficLimit, req.IPv4PoolLimit, req.IPv4MappingLimit,
-		req.IPv6PoolLimit, req.IPv6MappingLimit, req.ReverseProxyLimit,
+		req.IPv6MappingLimit, req.ReverseProxyLimit,
 		req.Ingress, req.Egress, req.CPUAllowance, req.IORead, req.IOWrite, req.ProcessesLimit,
 		req.AllowNesting, req.MemorySwap)
 	if err != nil {
@@ -117,14 +116,15 @@ func GetUsers(c *gin.Context) {
 	}
 	
 	usersWithCount := make([]UserWithCount, len(users))
+	allStats := service.GetAllUsersContainerStats()
 	for i, user := range users {
-		count, usedCPU, usedMemory, usedDisk := service.GetUserContainerStats(user.Username)
+		s := allStats[user.Username]
 		usersWithCount[i] = UserWithCount{
 			User:           &user,
-			ContainerCount: count,
-			UsedCPU:        usedCPU,
-			UsedMemory:     usedMemory,
-			UsedDisk:       usedDisk,
+			ContainerCount: s.Count,
+			UsedCPU:        s.UsedCPU,
+			UsedMemory:     s.UsedMem,
+			UsedDisk:       s.UsedDisk,
 		}
 	}
 
@@ -143,7 +143,6 @@ type UpdateUserRequest struct {
 	TrafficLimit       *int    `json:"traffic_limit"`
 	IPv4PoolLimit      *int    `json:"ipv4_pool_limit"`
 	IPv4MappingLimit   *int    `json:"ipv4_mapping_limit"`
-	IPv6PoolLimit      *int    `json:"ipv6_pool_limit"`
 	IPv6MappingLimit   *int    `json:"ipv6_mapping_limit"`
 	ReverseProxyLimit  *int    `json:"reverse_proxy_limit"`
 	Ingress            *int    `json:"ingress"`
@@ -206,9 +205,6 @@ func UpdateUser(c *gin.Context) {
 	}
 	if req.IPv4MappingLimit != nil {
 		updates["ipv4_mapping_limit"] = *req.IPv4MappingLimit
-	}
-	if req.IPv6PoolLimit != nil {
-		updates["ipv6_pool_limit"] = *req.IPv6PoolLimit
 	}
 	if req.IPv6MappingLimit != nil {
 		updates["ipv6_mapping_limit"] = *req.IPv6MappingLimit

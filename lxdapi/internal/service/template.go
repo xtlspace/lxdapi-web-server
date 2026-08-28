@@ -7,7 +7,15 @@ import (
 	"lxdapi/internal/lxc"
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
+	"time"
 )
+
+func parseTimePtr(s string) *time.Time {
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return &t
+	}
+	return nil
+}
 
 type TemplateService struct {
 	lxcClient *lxc.Client
@@ -15,7 +23,7 @@ type TemplateService struct {
 
 func NewTemplateService() *TemplateService {
 	return &TemplateService{
-		lxcClient: lxc.NewClient(),
+		lxcClient: lxc.DefaultClient(),
 	}
 }
 
@@ -96,7 +104,7 @@ func (s *TemplateService) SyncFromLXD(ctx context.Context) (int, int, int, error
 			Size:         img.Size,
 			Public:       img.Public,
 			AutoUpdate:   img.AutoUpdate,
-			UploadedAt:   img.UploadedAt,
+			UploadedAt:   parseTimePtr(img.UploadedAt),
 		}
 		
 		if err != nil {

@@ -5,16 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"lxdapi/internal/db"
 	"lxdapi/internal/lxc"
 	"lxdapi/models"
+	"lxdapi/pkg/format"
 	"lxdapi/pkg/logger"
 )
 
 type ContainerCacheJSON struct {
 	Name            string                 `json:"name"`
+	UserID          string                 `json:"user_id"`
 	Status          string                 `json:"status"`
 	Image           string                 `json:"image"`
 	CPU             int                    `json:"cpu"`
@@ -29,86 +32,84 @@ type ContainerCacheJSON struct {
 	TrafficUsageRaw uint64                 `json:"traffic_usage_raw"`
 	TrafficLimit    int                    `json:"traffic_limit"`
 	Config          map[string]interface{} `json:"config"`
-	CreatedAt       string                 `json:"created_at"`
-	LastSync        string                 `json:"last_sync"`
+	CreatedAt       *time.Time             `json:"created_at"`
+	LastSync        *time.Time             `json:"last_sync"`
 	Remark          string                 `json:"remark"`
 }
 
+var (
+	containerCache   = make(map[string]*ContainerCacheJSON)
+	containerCacheMu sync.RWMutex
+)
+
 func GetAllContainersCache() []ContainerCacheJSON {
-	var containers []models.Container
-	db.DB.Find(&containers)
-
-	result := make([]ContainerCacheJSON, 0, len(containers))
-	cpuUsages := getLatestCPUUsages()
-	for _, c := range containers {
-		cacheData := ContainerCacheJSON{
-			Name:            c.Name,
-			Status:          c.Status,
-			Image:           c.Image,
-			CPU:             c.CPU,
-			Memory:          formatMBToString(c.Memory),
-			Disk:            formatMBToString(c.Disk),
-			CPUUsage:        cpuUsages[c.Name],
-			MemoryUsage:     c.MemoryUsage,
-			MemoryUsageRaw:  c.MemoryUsageRaw,
-			DiskUsage:       c.DiskUsage,
-			DiskUsageRaw:    c.DiskUsageRaw,
-			TrafficUsage:    c.TrafficUsage,
-			TrafficUsageRaw: c.TrafficUsageRaw,
-			TrafficLimit:    c.TrafficLimit,
-			CreatedAt:       c.CreatedAtLXD,
-			LastSync:        c.LastSync,
-			Remark:          c.Remark,
-		}
-
-		if c.ConfigJSON != "" {
-			json.Unmarshal([]byte(c.ConfigJSON), &cacheData.Config)
-		}
-
-		result = append(result, cacheData)
+	containerCacheMu.RLock()
+	result := make([]ContainerCacheJSON, 0, len(containerCache))
+	for _, v := range containerCache {
+		result = append(result, *v)
+	}
+	containerCacheMu.RUnlock()
+	if len(result) > 0 {
+		return result
 	}
 
+	RefreshAllCache()
+	containerCacheMu.RLock()
+	result = make([]ContainerCacheJSON, 0, len(containerCache))
+	for _, v := range containerCache {
+		result = append(result, *v)
+	}
+	containerCacheMu.RUnlock()
 	return result
 }
 
 func GetContainerCache(name string) (*ContainerCacheJSON, bool) {
+	containerCacheMu.RLock()
+	v, ok := containerCache[name]
+	containerCacheMu.RUnlock()
+	if ok {
+		return v, true
+	}
+
 	var container models.Container
 	if err := db.DB.Where("name = ?", name).First(&container).Error; err != nil {
 		return nil, false
 	}
 
-	cacheData := &ContainerCacheJSON{
-		Name:            container.Name,
-		Status:          container.Status,
-		Image:           container.Image,
-		CPU:             container.CPU,
-		Memory:          formatMBToString(container.Memory),
-		Disk:            formatMBToString(container.Disk),
-		CPUUsage:        GetLatestCPUUsage(container.Name),
-		MemoryUsage:     container.MemoryUsage,
-		MemoryUsageRaw:  container.MemoryUsageRaw,
-		DiskUsage:       container.DiskUsage,
-		DiskUsageRaw:    container.DiskUsageRaw,
-		TrafficUsage:    container.TrafficUsage,
-		TrafficUsageRaw: container.TrafficUsageRaw,
-		TrafficLimit:    container.TrafficLimit,
-		CreatedAt:       container.CreatedAtLXD,
-		LastSync:        container.LastSync,
-		Remark:          container.Remark,
-	}
+	cacheData := buildCacheEntry(container, GetLatestCPUUsage(container.Name))
 
-	if container.ConfigJSON != "" {
-		json.Unmarshal([]byte(container.ConfigJSON), &cacheData.Config)
-	}
+	containerCacheMu.Lock()
+	containerCache[name] = cacheData
+	containerCacheMu.Unlock()
 
 	return cacheData, true
 }
 
 func DeleteContainerCache(name string) {
+	containerCacheMu.Lock()
+	delete(containerCache, name)
+	containerCacheMu.Unlock()
+}
+
+func RefreshAllCache() {
+	var containers []models.Container
+	db.DB.Find(&containers)
+
+	cpuUsages := getLatestCPUUsages()
+
+	newCache := make(map[string]*ContainerCacheJSON, len(containers))
+	for _, c := range containers {
+		entry := buildCacheEntry(c, cpuUsages[c.Name])
+		newCache[c.Name] = entry
+	}
+
+	containerCacheMu.Lock()
+	containerCache = newCache
+	containerCacheMu.Unlock()
 }
 
 func RefreshContainerCache(ctx context.Context, name string) error {
-	lxcClient := lxc.NewClient()
+	lxcClient := lxc.DefaultClient()
 
 	var container models.Container
 	if err := db.DB.Where("name = ?", name).First(&container).Error; err != nil {
@@ -126,8 +127,11 @@ func RefreshContainerCache(ctx context.Context, name string) error {
 	}
 
 	container.Status = strings.ToLower(info.Status)
-	container.LastSync = time.Now().Format(time.RFC3339)
-	container.CreatedAtLXD = info.Created
+	now := time.Now()
+	container.LastSync = &now
+	if t, err := time.Parse(time.RFC3339, info.Created); err == nil {
+		container.CreatedAtLXD = &t
+	}
 
 	if image, ok := info.Config["image.description"].(string); ok {
 		container.Image = image
@@ -162,13 +166,13 @@ func RefreshContainerCache(ctx context.Context, name string) error {
 	if info.State != nil && info.Status == "Running" {
 		if memUsage, ok := info.State.Memory["usage"].(float64); ok {
 			container.MemoryUsageRaw = uint64(memUsage)
-			container.MemoryUsage = formatBytes(uint64(memUsage))
+			container.MemoryUsage = format.BytesUint64(uint64(memUsage))
 		}
 
 		if diskUsage, ok := info.State.Disk["root"].(map[string]interface{}); ok {
 			if usage, ok := diskUsage["usage"].(float64); ok {
 				container.DiskUsageRaw = uint64(usage)
-				container.DiskUsage = formatBytes(uint64(usage))
+				container.DiskUsage = format.BytesUint64(uint64(usage))
 			}
 		}
 	}
@@ -182,8 +186,42 @@ func RefreshContainerCache(ctx context.Context, name string) error {
 		return fmt.Errorf("更新容器缓存失败: %v", err)
 	}
 
+	entry := buildCacheEntry(container, GetLatestCPUUsage(container.Name))
+	containerCacheMu.Lock()
+	containerCache[name] = entry
+	containerCacheMu.Unlock()
+
 	logger.Info("刷新容器 %s 缓存成功", name)
 	return nil
+}
+
+func buildCacheEntry(c models.Container, cpuUsage float64) *ContainerCacheJSON {
+	cacheData := &ContainerCacheJSON{
+		Name:            c.Name,
+		UserID:          c.UserID,
+		Status:          c.Status,
+		Image:           c.Image,
+		CPU:             c.CPU,
+		Memory:          formatMBToString(c.Memory),
+		Disk:            formatMBToString(c.Disk),
+		CPUUsage:        cpuUsage,
+		MemoryUsage:     c.MemoryUsage,
+		MemoryUsageRaw:  c.MemoryUsageRaw,
+		DiskUsage:       c.DiskUsage,
+		DiskUsageRaw:    c.DiskUsageRaw,
+		TrafficUsage:    c.TrafficUsage,
+		TrafficUsageRaw: c.TrafficUsageRaw,
+		TrafficLimit:    c.TrafficLimit,
+		CreatedAt:       c.CreatedAtLXD,
+		LastSync:        c.LastSync,
+		Remark:          c.Remark,
+	}
+
+	if c.ConfigJSON != "" {
+		json.Unmarshal([]byte(c.ConfigJSON), &cacheData.Config)
+	}
+
+	return cacheData
 }
 
 func parseCPULimit(limit string) int {
@@ -219,19 +257,6 @@ func GetRecentCPUMetrics(name string, since time.Time) []models.CPUMetric {
 	var metrics []models.CPUMetric
 	db.DB.Where("name = ? AND created_at >= ?", name, since).Order("created_at ASC").Find(&metrics)
 	return metrics
-}
-
-func formatBytes(bytes uint64) string {
-	const unit = 1024
-	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
-	}
-	div, exp := uint64(unit), 0
-	for n := bytes / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.2f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
 
 func parseMemoryStringToMB(memStr string) int {

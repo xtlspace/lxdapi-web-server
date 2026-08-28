@@ -1,6 +1,7 @@
 package system
 
 import (
+	"lxdapi/pkg/format"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -147,9 +148,9 @@ func getMemoryStats() (MemoryStats, error) {
 			stats.UsagePercent = float64(stats.Used) / float64(stats.Total) * 100
 		}
 		
-		stats.TotalStr = formatBytes(stats.Total)
-		stats.UsedStr = formatBytes(stats.Used)
-		stats.FreeStr = formatBytes(stats.Free)
+		stats.TotalStr = format.BytesUint64(stats.Total)
+		stats.UsedStr = format.BytesUint64(stats.Used)
+		stats.FreeStr = format.BytesUint64(stats.Free)
 	}
 	
 	return stats, nil
@@ -228,8 +229,8 @@ func getDisksStats() ([]DiskInfo, error) {
 			Used:         used,
 			Free:         free,
 			UsagePercent: usagePercent,
-			TotalStr:     formatBytes(size),
-			UsedStr:      formatBytes(used),
+			TotalStr:     format.BytesUint64(size),
+			UsedStr:      format.BytesUint64(used),
 		})
 	}
 
@@ -299,8 +300,8 @@ func getNetworkStats() (NetworkStats, error) {
 
 	stats.RxBytes = totalRx
 	stats.TxBytes = totalTx
-	stats.RxBytesStr = formatBytes(totalRx)
-	stats.TxBytesStr = formatBytes(totalTx)
+	stats.RxBytesStr = format.BytesUint64(totalRx)
+	stats.TxBytesStr = format.BytesUint64(totalTx)
 
 	// 计算速率
 	now := time.Now()
@@ -309,8 +310,8 @@ func getNetworkStats() (NetworkStats, error) {
 		if duration > 0 {
 			stats.RxSpeed = uint64(float64(totalRx-lastRxBytes) / duration)
 			stats.TxSpeed = uint64(float64(totalTx-lastTxBytes) / duration)
-			stats.RxSpeedStr = formatBytes(stats.RxSpeed) + "/s"
-			stats.TxSpeedStr = formatBytes(stats.TxSpeed) + "/s"
+			stats.RxSpeedStr = format.BytesUint64(stats.RxSpeed) + "/s"
+			stats.TxSpeedStr = format.BytesUint64(stats.TxSpeed) + "/s"
 		}
 	}
 	lastRxBytes = totalRx
@@ -351,17 +352,4 @@ func getUptime() string {
 		return strconv.Itoa(hours) + "小时 " + strconv.Itoa(minutes) + "分钟"
 	}
 	return strconv.Itoa(minutes) + "分钟"
-}
-
-func formatBytes(bytes uint64) string {
-	const unit = 1024
-	if bytes < unit {
-		return strconv.FormatUint(bytes, 10) + " B"
-	}
-	div, exp := uint64(unit), 0
-	for n := bytes / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return strconv.FormatFloat(float64(bytes)/float64(div), 'f', 2, 64) + " " + "KMGTPE"[exp:exp+1] + "B"
 }

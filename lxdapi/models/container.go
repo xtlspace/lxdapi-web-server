@@ -1,6 +1,27 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"fmt"
+	"regexp"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+var containerNameRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
+
+func ValidateContainerName(name string) error {
+	if len(name) == 0 {
+		return fmt.Errorf("容器名不能为空")
+	}
+	if len(name) > 63 {
+		return fmt.Errorf("容器名长度不能超过63个字符")
+	}
+	if !containerNameRegex.MatchString(name) {
+		return fmt.Errorf("容器名只允许字母、数字、下划线和连字符，且必须以字母或数字开头")
+	}
+	return nil
+}
 
 type Container struct {
 	gorm.Model
@@ -37,13 +58,12 @@ type Container struct {
 	TrafficUsageRaw uint64
 	IPv4PoolLimit   int
 	IPv4MappingLimit int
-	IPv6PoolLimit   int
 	IPv6MappingLimit int
 	ReverseProxyLimit int
 	NetworkMode     string  `gorm:"size:50"`
 	ConfigJSON      string  `gorm:"type:text"`
-	CreatedAtLXD    string  `gorm:"size:100"`
-	LastSync        string  `gorm:"size:100"`
+	CreatedAtLXD    *time.Time
+	LastSync        *time.Time
 }
 
 type CreateContainerRequest struct {
@@ -63,7 +83,6 @@ type CreateContainerRequest struct {
 	Remark          string `json:"remark"`
 	IPv4PoolLimit    int    `json:"ipv4_pool_limit"`
 	IPv4MappingLimit int    `json:"ipv4_mapping_limit"`
-	IPv6PoolLimit    int    `json:"ipv6_pool_limit"`
 	IPv6MappingLimit int    `json:"ipv6_mapping_limit"`
 	ReverseProxyLimit int   `json:"reverse_proxy_limit"`
 	CPUAllowance     int    `json:"cpu_allowance"`
@@ -85,7 +104,6 @@ type UpdateContainerConfigRequest struct {
 	TrafficLimit      *int    `json:"traffic_limit"`
 	IPv4PoolLimit     *int    `json:"ipv4_pool_limit"`
 	IPv4MappingLimit  *int    `json:"ipv4_mapping_limit"`
-	IPv6PoolLimit     *int    `json:"ipv6_pool_limit"`
 	IPv6MappingLimit  *int    `json:"ipv6_mapping_limit"`
 	ReverseProxyLimit *int    `json:"reverse_proxy_limit"`
 	Remark            *string `json:"remark"`

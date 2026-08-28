@@ -12,9 +12,6 @@ import (
 	"io/fs"
 	"net/http"
 	"lxdapi/handlers"
-	_ "lxdapi/docs"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"lxdapi/internal/api/admin"
 	"lxdapi/internal/api/console"
 	"lxdapi/internal/api/container"
@@ -44,7 +41,7 @@ import (
 	"path/filepath"
 )
 
-//go:embed templates docs static
+//go:embed templates static
 var embeddedFiles embed.FS
 
 func main() {
@@ -125,11 +122,9 @@ func main() {
 
 	containerService := service.NewContainerService()
 	ipv4Service := service.NewIPv4Service()
-	ipv6Service := service.NewIPv6Service()
 
 	system.InitContainerService(containerService)
 	system.InitIPv4Service(ipv4Service)
-	system.InitIPv6Service(ipv6Service)
 	user.InitContainerService(containerService)
 	container.InitContainerService(containerService)
 	admin.InitBrandService()
@@ -184,7 +179,6 @@ func main() {
 			Username:          getString("username"),
 			IPv4PoolLimit:     getInt("ipv4_pool_limit"),
 			IPv4MappingLimit:  getInt("ipv4_mapping_limit"),
-			IPv6PoolLimit:     getInt("ipv6_pool_limit"),
 			IPv6MappingLimit:  getInt("ipv6_mapping_limit"),
 			ReverseProxyLimit: getInt("reverse_proxy_limit"),
 			CPUAllowance:      getInt("cpu_allowance"),
@@ -240,6 +234,17 @@ func main() {
 
 	task.StartAutoCleanup()
 	logger.OK("自动清理任务已启动")
+
+	go func() {
+		logger.Info("启动时自动同步镜像模板...")
+		svc := service.NewTemplateService()
+		added, updated, deleted, err := svc.SyncFromLXD(context.Background())
+		if err != nil {
+			logger.Error("启动时同步模板失败: %v", err)
+			return
+		}
+		logger.OK("启动模板同步完成: 新增 %d, 更新 %d, 删除 %d", added, updated, deleted)
+	}()
 
 	gin.SetMode(cfg.System.Server.Mode)
 	r := gin.Default()
@@ -323,7 +328,6 @@ func main() {
 			"description":  "主流财务系统对接支持，提供完整的Web管理界面与RESTful API",
 			"version":      version.Version,
 			"name":         sysInfo.Name,
-			"docs":         sysInfo.Docs,
 			"os":           sysInfo.OS,
 			"arch":         sysInfo.Arch,
 			"lxd_version":  sysInfo.LXDVersion,
@@ -332,8 +336,6 @@ func main() {
 		})
 	})
 	
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
 	staticFS, err := fs.Sub(embeddedFiles, "static")
 	if err == nil {
 		r.StaticFS("/static", http.FS(staticFS))
@@ -358,14 +360,13 @@ func main() {
 		adminPages.GET("/users/:id", handlers.AdminUserDetail)
 		adminPages.GET("/tasks", handlers.AdminTasks)
 		adminPages.GET("/ip-pool/v4", handlers.AdminIPPoolV4)
-		adminPages.GET("/ip-pool/v6", handlers.AdminIPPoolV6)
 		adminPages.GET("/port-mapping/v4", handlers.AdminPortMappingV4)
 		adminPages.GET("/port-mapping/v6", handlers.AdminPortMappingV6)
 		adminPages.GET("/templates", handlers.AdminTemplates)
 		adminPages.GET("/brand-settings", handlers.AdminBrandSettings)
 		adminPages.GET("/firewall", handlers.AdminFirewall)
 		adminPages.GET("/nginx", handlers.AdminNginx)
-		adminPages.GET("/storage-pools", handlers.AdminStoragePools)
+		adminPages.GET("/nserIPv6", handlers.AdminIPv6Neighbor)
 	}
 	
 	r.POST("/api/admin/logout", admin.Logout)
@@ -475,12 +476,11 @@ func main() {
 		adminAPI.GET("/container-templates", admin.GetContainerTemplates)
 		adminAPI.GET("/port-range/config", admin.GetPortRangeConfig)
 		adminAPI.POST("/port-range/config", admin.SavePortRangeConfig)
+		adminAPI.GET("/nserIPv6/settings", admin.GetIPv6NeighborConfig)
+		adminAPI.PUT("/nserIPv6/settings", admin.SaveIPv6NeighborConfig)
 		adminAPI.GET("/ip-pool/settings", admin.GetIPPoolSettings)
 		adminAPI.PUT("/ip-pool/settings", admin.UpdateIPPoolSettings)
 		adminAPI.POST("/console/create-token", console.CreateToken)
-		adminAPI.GET("/storage-pools", admin.GetStoragePools)
-		adminAPI.POST("/storage-pools/sync", admin.SyncStoragePools)
-		adminAPI.PUT("/storage-pools/:name/priority", admin.SetStoragePoolPriority)
 		adminAPI.GET("/network/nat", admin.GetNetworkNATStatus)
 		adminAPI.POST("/network/nat", admin.SetNetworkNATStatus)
 	}

@@ -18,7 +18,7 @@ func generateAPIKey() (string, error) {
 }
 
 func CreateUser(username, password string, cpuQuota, memoryQuota, diskQuota, maxCPUPerContainer, trafficLimit,
-	ipv4PoolLimit, ipv4MappingLimit, ipv6PoolLimit, ipv6MappingLimit, reverseProxyLimit,
+	ipv4PoolLimit, ipv4MappingLimit, ipv6MappingLimit, reverseProxyLimit,
 	ingress, egress, cpuAllowance, ioRead, ioWrite, processesLimit int,
 	allowNesting, memorySwap bool) (*models.User, error) {
 	var existing models.User
@@ -46,7 +46,6 @@ func CreateUser(username, password string, cpuQuota, memoryQuota, diskQuota, max
 		TrafficLimit:       trafficLimit,
 		IPv4PoolLimit:      ipv4PoolLimit,
 		IPv4MappingLimit:   ipv4MappingLimit,
-		IPv6PoolLimit:      ipv6PoolLimit,
 		IPv6MappingLimit:   ipv6MappingLimit,
 		ReverseProxyLimit:  reverseProxyLimit,
 		Ingress:            ingress,
@@ -123,21 +122,63 @@ type UserResourceStats struct {
 	UsedTraffic    uint64 `json:"used_traffic"`
 	UsedIPv4Pool   int64  `json:"used_ipv4_pool"`
 	UsedIPv4Map    int64  `json:"used_ipv4_map"`
-	UsedIPv6Pool   int64  `json:"used_ipv6_pool"`
 	UsedIPv6Map    int64  `json:"used_ipv6_map"`
 	UsedProxy      int64  `json:"used_proxy"`
 }
 
 func GetUserContainerStats(username string) (count int64, usedCPU, usedMemory, usedDisk int) {
-	var containers []models.Container
-	db.DB.Where("user_id = ?", username).Find(&containers)
-	count = int64(len(containers))
-	for _, c := range containers {
-		usedCPU += c.CPU
-		usedMemory += c.Memory
-		usedDisk += c.Disk
+	type statsRow struct {
+		Count   int64
+		UsedCPU int
+		UsedMem int
+		UsedDisk int
 	}
-	return
+	var row statsRow
+	db.DB.Model(&models.Container{}).
+		Select("COUNT(*) as count, COALESCE(SUM(cpu),0) as used_cpu, COALESCE(SUM(memory),0) as used_mem, COALESCE(SUM(disk),0) as used_disk").
+		Where("user_id = ?", username).
+		Scan(&row)
+	return row.Count, row.UsedCPU, row.UsedMem, row.UsedDisk
+}
+
+type userContainerStat struct {
+	UserID   string
+	Count    int64
+	UsedCPU  int
+	UsedMem  int
+	UsedDisk int
+}
+
+func GetAllUsersContainerStats() map[string]userContainerStat {
+	var results []userContainerStat
+	db.DB.Model(&models.Container{}).
+		Select("user_id, count(*) as count, coalesce(sum(cpu),0) as used_cpu, coalesce(sum(memory),0) as used_mem, coalesce(sum(disk),0) as used_disk").
+		Group("user_id").
+		Scan(&results)
+
+	stats := make(map[string]userContainerStat)
+	for _, r := range results {
+		stats[r.UserID] = r
+	}
+	return stats
+}
+
+func GetAllUsersContainerCount() map[string]int64 {
+	type row struct {
+		UserID string
+		Count  int64
+	}
+	var results []row
+	db.DB.Model(&models.Container{}).
+		Select("user_id, count(*) as count").
+		Group("user_id").
+		Scan(&results)
+
+	counts := make(map[string]int64)
+	for _, r := range results {
+		counts[r.UserID] = r.Count
+	}
+	return counts
 }
 
 func GetUserFullStats(username string) UserResourceStats {
@@ -167,9 +208,8 @@ func GetUserFullStats(username string) UserResourceStats {
 			stats.UsedTraffic += uint64(t.TotalGB * 1024 * 1024 * 1024)
 		}
 		
-		var ipv4Count, ipv6Count, proxyCount int64
+		var ipv4Count, proxyCount int64
 		db.DB.Model(&models.IPv4Binding{}).Where("container_name IN ?", containerNames).Count(&ipv4Count)
-		db.DB.Model(&models.IPv6Binding{}).Where("container_name IN ?", containerNames).Count(&ipv6Count)
 		db.DB.Model(&models.ReverseProxy{}).Where("container_name IN ?", containerNames).Count(&proxyCount)
 		
 		var ipv4Mappings []models.PortMappingV4
@@ -209,7 +249,6 @@ func GetUserFullStats(username string) UserResourceStats {
 		}
 		
 		stats.UsedIPv4Pool = ipv4Count
-		stats.UsedIPv6Pool = ipv6Count
 		stats.UsedProxy = proxyCount
 		stats.UsedIPv4Map = int64(ipv4MapCount)
 		stats.UsedIPv6Map = int64(ipv6MapCount)

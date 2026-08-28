@@ -97,7 +97,6 @@
             <a id="infoTabBtn" class="custom-tab-active px-2 py-1 lg:py-1.5 text-xs font-medium rounded cursor-pointer transition whitespace-nowrap" onclick="switchTab('info')">资源监控</a>
             <a id="ipv4PoolTabBtn" class="custom-tab-inactive px-2 py-1 lg:py-1.5 text-xs font-medium rounded cursor-pointer transition whitespace-nowrap" onclick="switchTab('ipv4Pool')" style="display:none;">IPv4 地址池</a>
             <a id="ipv4MappingTabBtn" class="custom-tab-inactive px-2 py-1 lg:py-1.5 text-xs font-medium rounded cursor-pointer transition whitespace-nowrap" onclick="switchTab('ipv4Mapping')" style="display:none;">IPv4 端口映射</a>
-            <a id="ipv6PoolTabBtn" class="custom-tab-inactive px-2 py-1 lg:py-1.5 text-xs font-medium rounded cursor-pointer transition whitespace-nowrap" onclick="switchTab('ipv6Pool')" style="display:none;">IPv6 地址池</a>
             <a id="ipv6MappingTabBtn" class="custom-tab-inactive px-2 py-1 lg:py-1.5 text-xs font-medium rounded cursor-pointer transition whitespace-nowrap" onclick="switchTab('ipv6Mapping')" style="display:none;">IPv6 端口映射</a>
             <a id="reverseProxyTabBtn" class="custom-tab-inactive px-2 py-1 lg:py-1.5 text-xs font-medium rounded cursor-pointer transition whitespace-nowrap" onclick="switchTab('reverseProxy')" style="display:none;">反向代理</a>
         </div>
@@ -214,26 +213,6 @@
                         </button>
                     </div>
                     <div id="ipv4MappingList">
-                        <p class="text-center text-gray-500 py-4 text-xs">加载中...</p>
-                    </div>
-                </div>
-            </div>
-
-            <div id="ipv6PoolTab" class="tab-pane" style="display: none;">
-                <div class="content-box rounded-lg border border-gray-200 p-4 mb-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <div>
-                            <h2 class="text-base font-semibold text-gray-800">IPv6 地址管理</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">已用 <span id="ipv6PoolCount">0</span> / 限制 <span id="ipv6PoolLimit">0</span></p>
-                        </div>
-                        <button onclick="showAddIPv6PoolModal()" class="content-box hover:bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            申请 IPv6
-                        </button>
-                    </div>
-                    <div id="ipv6PoolList">
                         <p class="text-center text-gray-500 py-4 text-xs">加载中...</p>
                     </div>
                 </div>
@@ -476,18 +455,12 @@
             loadContainerHash();
             loadIPv4PoolBindings();
             loadIPv4MappingBindings();
-            loadIPv6PoolBindings();
             loadIPv6MappingBindings();
             loadReverseProxyRules();
             
             $('#addIPv4PoolForm').submit(function(e) {
                 e.preventDefault();
                 submitAddIPv4Pool();
-            });
-
-            $('#addIPv6PoolForm').submit(function(e) {
-                e.preventDefault();
-                submitAddIPv6Pool();
             });
 
             $('#addIPv4Form').submit(function(e) {
@@ -611,13 +584,11 @@
         function updateTabVisibility(data) {
             const ipv4PoolLimit = data.ipv4_pool_limit || data.IPv4PoolLimit || 0;
             const ipv4MappingLimit = data.ipv4_mapping_limit || data.IPv4MappingLimit || 0;
-            const ipv6PoolLimit = data.ipv6_pool_limit || data.IPv6PoolLimit || 0;
             const ipv6MappingLimit = data.ipv6_mapping_limit || data.IPv6MappingLimit || 0;
             const reverseProxyLimit = data.reverse_proxy_limit || data.ReverseProxyLimit || 0;
             
             $('#ipv4PoolLimit').text(ipv4PoolLimit);
             $('#ipv4MappingLimit').text(ipv4MappingLimit);
-            $('#ipv6PoolLimit').text(ipv6PoolLimit);
             $('#ipv6MappingLimit').text(ipv6MappingLimit);
             $('#reverseProxyLimit').text(reverseProxyLimit);
             
@@ -635,15 +606,6 @@
             } else {
                 $('#ipv4MappingTabBtn').hide();
                 if ($('#ipv4MappingTab').is(':visible')) {
-                    switchTab('info');
-                }
-            }
-            
-            if (ipv6PoolLimit > 0) {
-                $('#ipv6PoolTabBtn').show();
-            } else {
-                $('#ipv6PoolTabBtn').hide();
-                if ($('#ipv6PoolTab').is(':visible')) {
                     switchTab('info');
                 }
             }
@@ -1131,8 +1093,8 @@
         }
 
         function switchTab(tabName) {
-            $('#infoTab, #ipv4PoolTab, #ipv4MappingTab, #ipv6PoolTab, #ipv6MappingTab, #reverseProxyTab').hide();
-            $('#infoTabBtn, #ipv4PoolTabBtn, #ipv4MappingTabBtn, #ipv6PoolTabBtn, #ipv6MappingTabBtn, #reverseProxyTabBtn').removeClass('custom-tab-active').addClass('custom-tab-inactive');
+            $('#infoTab, #ipv4PoolTab, #ipv4MappingTab, #ipv6MappingTab, #reverseProxyTab').hide();
+            $('#infoTabBtn, #ipv4PoolTabBtn, #ipv4MappingTabBtn, #ipv6MappingTabBtn, #reverseProxyTabBtn').removeClass('custom-tab-active').addClass('custom-tab-inactive');
             
             if (tabName === 'info') {
                 $('#infoTab').show();
@@ -1143,9 +1105,6 @@
             } else if (tabName === 'ipv4Mapping') {
                 $('#ipv4MappingTab').show();
                 $('#ipv4MappingTabBtn').removeClass('custom-tab-inactive').addClass('custom-tab-active');
-            } else if (tabName === 'ipv6Pool') {
-                $('#ipv6PoolTab').show();
-                $('#ipv6PoolTabBtn').removeClass('custom-tab-inactive').addClass('custom-tab-active');
             } else if (tabName === 'ipv6Mapping') {
                 $('#ipv6MappingTab').show();
                 $('#ipv6MappingTabBtn').removeClass('custom-tab-inactive').addClass('custom-tab-active');
@@ -1395,52 +1354,6 @@
                     showToast('error', `${failCount}条规则删除失败`);
                 }
             });
-        }
-
-        function loadIPv6PoolBindings() {
-            $.ajax({
-                url: `/api/user/containers/${encodeURIComponent(containerName)}/ip?version=v6`,
-                type: 'GET',
-                success: function(result) {
-                    if (result.code === 200 && result.data) {
-                        renderIPv6PoolBindings(result.data.ipv6 || []);
-                    } else {
-                        $('#ipv6PoolList').html('<p class="text-center text-gray-500 py-4 text-xs">加载失败</p>');
-                    }
-                }
-            });
-        }
-
-        function renderIPv6PoolBindings(bindings) {
-            $('#ipv6PoolCount').text(bindings.length);
-            if (bindings.length === 0) {
-                $('#ipv6PoolList').html('<p class="text-center text-gray-500 py-4 text-xs">暂无IPv6地址绑定</p>');
-                return;
-            }
-
-            let html = '<div class="overflow-x-auto"><table class="table table-xs"><thead><tr class="bg-gray-50"><th class="text-xs text-gray-600">公网IPv6</th><th class="text-xs text-gray-600">状态</th><th class="text-xs text-gray-600">分配时间</th><th class="text-xs text-gray-600">操作</th></tr></thead><tbody>';
-            bindings.forEach(b => {
-                const ipAddress = b.IPAddress || b.ip_address;
-                const status = b.Status || b.status || 'allocated';
-                const createdAt = b.CreatedAt || b.created_at;
-                
-                const ipEncoded = encodeURIComponent(ipAddress);
-                const statusBadge = status === 'bound' ? 
-                    '<span class="px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full">已绑定</span>' : 
-                    '<span class="px-2 py-0.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">已分配</span>';
-                const createTime = createdAt ? new Date(createdAt).toLocaleString('zh-CN') : '-';
-                const releaseBtn = ipPoolSettings.allow_user_release_ipv6 ? 
-                    `<button onclick="deleteIPv6Pool('${ipEncoded}')" class="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition">释放</button>` :
-                    `<span class="px-2 py-1 text-xs text-gray-400">无权限</span>`;
-                html += `<tr class="bg-gray-50">
-                    <td><code class="text-xs font-mono text-gray-700">${ipAddress}</code></td>
-                    <td>${statusBadge}</td>
-                    <td><span class="text-xs text-gray-600">${createTime}</span></td>
-                    <td>${releaseBtn}</td>
-                </tr>`;
-            });
-            html += '</tbody></table></div>';
-            $('#ipv6PoolList').html(html);
         }
 
         function loadIPv6MappingBindings() {
@@ -1704,70 +1617,6 @@
             });
         }
 
-        function showAddIPv6PoolModal() {
-            document.getElementById('addIPv6PoolModal').showModal();
-        }
-
-        function closeAddIPv6PoolModal() {
-            document.getElementById('addIPv6PoolModal').close();
-            $('#addIPv6PoolForm')[0].reset();
-        }
-
-        function submitAddIPv6Pool() {
-            const data = {
-                count: 1
-            };
-
-            $.ajax({
-                url: `/api/user/containers/${encodeURIComponent(containerName)}/ip/allocate?version=v6`,
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(data),
-                success: function(result) {
-                    if (result.code === 200) {
-                        showToast('success', 'IPv6分配成功');
-                        closeAddIPv6PoolModal();
-                        loadIPv6PoolBindings();
-                    } else {
-                        showToast('error', result.msg || 'IPv6分配失败');
-                    }
-                },
-                error: function(xhr) {
-                    handleAuthError(xhr);
-                    const msg = xhr.responseJSON && xhr.responseJSON.msg ? xhr.responseJSON.msg : 'IPv6分配失败';
-                    showToast('error', msg);
-                }
-            });
-        }
-
-        function deleteIPv6Pool(ipv6Encoded) {
-            const ip = decodeURIComponent(ipv6Encoded);
-            if (!confirm(`确定要释放此IPv6地址吗？\n${ip}\n\n释放后将删除相关的NAT规则。`)) return;
-            
-            const data = {
-                ip: ip
-            };
-            
-            $.ajax({
-                url: `/api/user/containers/${encodeURIComponent(containerName)}/ip/release?version=v6`,
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(data),
-                success: function(result) {
-                    if (result.code === 200) {
-                        showToast('success', 'IPv6释放成功');
-                        loadIPv6PoolBindings();
-                    } else {
-                        showToast('error', result.msg || 'IPv6释放失败');
-                    }
-                },
-                error: function(xhr) {
-                    handleAuthError(xhr);
-                    showToast('error', 'IPv6释放失败');
-                }
-            });
-        }
-
         function loadReverseProxyRules() {
             $.ajax({
                 url: `/api/user/nginx/proxies`,
@@ -1916,23 +1765,6 @@
     {{template "user/user_footer.html" .}}
 </body>
 </html>
-
-    <dialog id="addIPv6PoolModal" class="modal">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4">申请公网 IPv6</h3>
-            <form id="addIPv6PoolForm" class="space-y-3">
-                <div class="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="text-sm text-blue-800">系统将自动分配一个 IPv6 地址。</span>
-                </div>
-                <div class="modal-action">
-                    <button type="button" onclick="closeAddIPv6PoolModal()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition">取消</button>
-                    <button type="submit" class="px-3 py-1.5 text-sm font-medium text-gray-700 content-box hover:bg-gray-50 border border-gray-200 rounded-lg transition">确认分配</button>
-                </div>
-            </form>
-        </div>
-        <form method="dialog" class="modal-backdrop"><button>关闭</button></form>
-    </dialog>
 
     <dialog id="addIPv6MappingModal" class="modal">
         <div class="modal-box">

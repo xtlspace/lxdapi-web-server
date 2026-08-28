@@ -56,7 +56,7 @@
                 <div><span class="text-gray-500">流量:</span> <span class="font-medium" id="trafficUsed">0</span> / <span class="font-medium" id="trafficLimit">0</span> GB</div>
                 <div><span class="text-gray-500">IPv4池:</span> <span class="font-medium" id="ipv4PoolUsed">0</span> / <span class="font-medium" id="ipv4PoolLimit">0</span></div>
                 <div><span class="text-gray-500">IPv4映射:</span> <span class="font-medium" id="ipv4MapUsed">0</span> / <span class="font-medium" id="ipv4MappingLimit">0</span></div>
-                <div><span class="text-gray-500">IPv6池:</span> <span class="font-medium" id="ipv6PoolUsed">0</span> / <span class="font-medium" id="ipv6PoolLimit">0</span></div>
+
                 <div><span class="text-gray-500">IPv6映射:</span> <span class="font-medium" id="ipv6MapUsed">0</span> / <span class="font-medium" id="ipv6MappingLimit">0</span></div>
                 <div><span class="text-gray-500">反代:</span> <span class="font-medium" id="proxyUsed">0</span> / <span class="font-medium" id="reverseProxyLimit">0</span></div>
             </div>
@@ -235,8 +235,6 @@
                         $('#ipv4PoolLimit').text(user.IPv4PoolLimit || 0);
                         $('#ipv4MapUsed').text(stats.used_ipv4_map || 0);
                         $('#ipv4MappingLimit').text(user.IPv4MappingLimit || 0);
-                        $('#ipv6PoolUsed').text(stats.used_ipv6_pool || 0);
-                        $('#ipv6PoolLimit').text(user.IPv6PoolLimit || 0);
                         $('#ipv6MapUsed').text(stats.used_ipv6_map || 0);
                         $('#ipv6MappingLimit').text(user.IPv6MappingLimit || 0);
                         $('#proxyUsed').text(stats.used_proxy || 0);

@@ -62,16 +62,14 @@ func Init() error {
 		&models.NATConfigV6{},
 		&models.IPv4Binding{},
 		&models.IPv4Pool{},
-		&models.IPv6Binding{},
-		&models.IPv6Pool{},
 		&models.Task{},
 		&models.ContainerCredential{},
 		&models.Template{},
 		&models.BrandSettings{},
 		&models.PortRangeConfig{},
 		&models.IPPoolSettings{},
-		&models.StoragePool{},
 		&models.AccessToken{},
+		&models.IPv6NeighborConfig{},
 	); err != nil {
 		return err
 	}

@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Template struct {
 	gorm.Model
@@ -13,7 +17,7 @@ type Template struct {
 	Size         int64
 	Public       bool
 	AutoUpdate   bool
-	UploadedAt   string `gorm:"size:100"`
+	UploadedAt   *time.Time
 	AllowedUsers string `gorm:"type:text"`
 }
 
@@ -28,7 +32,7 @@ type TemplateListResponse struct {
 	SizeHuman    string `json:"size_human"`
 	Public       bool   `json:"public"`
 	AutoUpdate   bool   `json:"auto_update"`
-	UploadedAt   string `json:"uploaded_at"`
+	UploadedAt   *time.Time `json:"uploaded_at"`
 	CreatedAt    string `json:"created_at"`
 }
 

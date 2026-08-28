@@ -46,9 +46,9 @@ type LoggerConfig struct {
 }
 
 type LXCConfig struct {
-	Socket         string `yaml:"socket"`
-	Timeout        int    `yaml:"timeout"`
-	DefaultStorage string `yaml:"default_storage"`
+	Socket  string `yaml:"socket"`
+	Timeout int    `yaml:"timeout"`
+	Storage string `yaml:"storage"`
 }
 
 type NetworkConfig struct {
@@ -56,8 +56,7 @@ type NetworkConfig struct {
 }
 
 type TrafficConfig struct {
-	Enabled  bool `yaml:"enabled"`
-	Interval int  `yaml:"interval"`
+	Interval int `yaml:"interval"`
 }
 
 type TaskConfig struct {

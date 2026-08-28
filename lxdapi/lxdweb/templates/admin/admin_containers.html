@@ -265,10 +265,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">IPv4地址池配额</label>
                                 <input type="number" name="ipv4_pool_limit" value="0" min="0" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0表示无配额">
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">IPv6地址池配额</label>
-                                <input type="number" name="ipv6_pool_limit" value="0" min="0" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0表示无配额">
-                            </div>
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">IPv4端口映射配额</label>
                                 <input type="number" name="ipv4_mapping_limit" value="0" min="0" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0表示无配额">
@@ -1041,7 +1038,7 @@
             
 
             formData.forEach(item => {
-                if (item.name === 'cpu' || item.name === 'memory' || item.name === 'disk' || item.name === 'ingress' || item.name === 'egress' || item.name === 'traffic_limit' || item.name === 'ipv4_pool_limit' || item.name === 'ipv4_mapping_limit' || item.name === 'ipv6_pool_limit' || item.name === 'ipv6_mapping_limit' || item.name === 'reverse_proxy_limit' || item.name === 'cpu_allowance' || item.name === 'io_read' || item.name === 'io_write' || item.name === 'processes_limit') {
+                if (item.name === 'cpu' || item.name === 'memory' || item.name === 'disk' || item.name === 'ingress' || item.name === 'egress' || item.name === 'traffic_limit' || item.name === 'ipv4_pool_limit' || item.name === 'ipv4_mapping_limit' || item.name === 'ipv6_mapping_limit' || item.name === 'reverse_proxy_limit' || item.name === 'cpu_allowance' || item.name === 'io_read' || item.name === 'io_write' || item.name === 'processes_limit') {
                     data[item.name] = parseInt(item.value) || 0;
                 } else if (item.name === 'allow_nesting' || item.name === 'memory_swap' || item.name === 'privileged') {
                     data[item.name] = true; 
@@ -1207,7 +1204,6 @@
                         $('#configTrafficLimit').val(d.traffic_limit);
                         $('#configIpv4Pool').val(d.ipv4_pool_limit);
                         $('#configIpv4Mapping').val(d.ipv4_mapping_limit);
-                        $('#configIpv6Pool').val(d.ipv6_pool_limit);
                         $('#configIpv6Mapping').val(d.ipv6_mapping_limit);
                         $('#configReverseProxy').val(d.reverse_proxy_limit);
                         $('#configCpuAllowance').val(d.cpu_allowance);
@@ -1245,7 +1241,7 @@
             }
             const data = {};
             const fields = ['cpu', 'memory', 'disk', 'ingress', 'egress', 'traffic_limit', 
-                'ipv4_pool_limit', 'ipv4_mapping_limit', 'ipv6_pool_limit', 'ipv6_mapping_limit', 
+                'ipv4_pool_limit', 'ipv4_mapping_limit', 'ipv6_mapping_limit', 
                 'reverse_proxy_limit', 'cpu_allowance', 'io_read', 'io_write', 'processes_limit'];
             fields.forEach(field => {
                 const val = $(`[name="${field}"]`, '#updateConfigForm').val();
@@ -1405,10 +1401,7 @@
                             <label class="label py-1"><span class="label-text text-xs">IPv4映射</span></label>
                             <input type="number" name="ipv4_mapping_limit" id="configIpv4Mapping" min="0" class="input input-bordered input-sm w-full">
                         </div>
-                        <div class="form-control">
-                            <label class="label py-1"><span class="label-text text-xs">IPv6地址池</span></label>
-                            <input type="number" name="ipv6_pool_limit" id="configIpv6Pool" min="0" class="input input-bordered input-sm w-full">
-                        </div>
+
                         <div class="form-control">
                             <label class="label py-1"><span class="label-text text-xs">IPv6映射</span></label>
                             <input type="number" name="ipv6_mapping_limit" id="configIpv6Mapping" min="0" class="input input-bordered input-sm w-full">

@@ -69,8 +69,7 @@
                 <div><span class="text-gray-500">流量:</span> <span class="font-medium" id="trafficUsed">0</span> / <span class="font-medium" id="trafficLimit">0</span> GB</div>
                 <div><span class="text-gray-500">IPv4池:</span> <span class="font-medium" id="ipv4PoolUsed">0</span> / <span class="font-medium" id="ipv4PoolLimit">0</span></div>
                 <div><span class="text-gray-500">IPv4映射:</span> <span class="font-medium" id="ipv4MapUsed">0</span> / <span class="font-medium" id="ipv4MappingLimit">0</span></div>
-                <div><span class="text-gray-500">IPv6池:</span> <span class="font-medium" id="ipv6PoolUsed">0</span> / <span class="font-medium" id="ipv6PoolLimit">0</span></div>
-                <div><span class="text-gray-500">IPv6映射:</span> <span class="font-medium" id="ipv6MapUsed">0</span> / <span class="font-medium" id="ipv6MappingLimit">0</span></div>
+<div><span class="text-gray-500">IPv6映射:</span> <span class="font-medium" id="ipv6MapUsed">0</span> / <span class="font-medium" id="ipv6MappingLimit">0</span></div>
                 <div><span class="text-gray-500">反代:</span> <span class="font-medium" id="proxyUsed">0</span> / <span class="font-medium" id="reverseProxyLimit">0</span></div>
             </div>
         </div>
@@ -241,10 +240,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">IPv4端口映射</label>
                                 <input type="number" name="ipv4_mapping_limit" value="0" min="0" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500">
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">IPv6地址池</label>
-                                <input type="number" name="ipv6_pool_limit" value="0" min="0" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">IPv6端口映射</label>
                                 <input type="number" name="ipv6_mapping_limit" value="0" min="0" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500">
@@ -304,10 +300,6 @@
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mb-1">IPv4端口映射</label>
                             <input type="number" id="configIPv4MappingLimit" name="ipv4_mapping_limit" min="0" class="input input-bordered input-sm w-full">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">IPv6地址池</label>
-                            <input type="number" id="configIPv6PoolLimit" name="ipv6_pool_limit" min="0" class="input input-bordered input-sm w-full">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mb-1">IPv6端口映射</label>
@@ -381,8 +373,6 @@
                         $('#ipv4PoolLimit').text(user.ipv4_pool_limit || 0);
                         $('#ipv4MapUsed').text(stats.used_ipv4_map || 0);
                         $('#ipv4MappingLimit').text(user.ipv4_mapping_limit || 0);
-                        $('#ipv6PoolUsed').text(stats.used_ipv6_pool || 0);
-                        $('#ipv6PoolLimit').text(user.ipv6_pool_limit || 0);
                         $('#ipv6MapUsed').text(stats.used_ipv6_map || 0);
                         $('#ipv6MappingLimit').text(user.ipv6_mapping_limit || 0);
                         $('#proxyUsed').text(stats.used_proxy || 0);
@@ -1059,7 +1049,7 @@
             formData.forEach(function(item) {
                 if (item.name === 'cpu' || item.name === 'memory' || item.name === 'disk' ||
                     item.name === 'traffic_limit' || item.name === 'ipv4_pool_limit' ||
-                    item.name === 'ipv4_mapping_limit' || item.name === 'ipv6_pool_limit' ||
+                    item.name === 'ipv4_mapping_limit' ||
                     item.name === 'ipv6_mapping_limit' || item.name === 'reverse_proxy_limit') {
                     data[item.name] = parseInt(item.value) || 0;
                 } else {
@@ -1235,7 +1225,6 @@
                         $('#configTrafficLimit').val(d.traffic_limit);
                         $('#configIPv4PoolLimit').val(d.ipv4_pool_limit || 0);
                         $('#configIPv4MappingLimit').val(d.ipv4_mapping_limit || 0);
-                        $('#configIPv6PoolLimit').val(d.ipv6_pool_limit || 0);
                         $('#configIPv6MappingLimit').val(d.ipv6_mapping_limit || 0);
                         $('#configReverseProxyLimit').val(d.reverse_proxy_limit || 0);
                         $('#configRemark').val(d.remark || '').data('original', d.remark || '');
@@ -1272,7 +1261,6 @@
                 traffic_limit: parseInt($('#configTrafficLimit').val()) || 0,
                 ipv4_pool_limit: parseInt($('#configIPv4PoolLimit').val()) || 0,
                 ipv4_mapping_limit: parseInt($('#configIPv4MappingLimit').val()) || 0,
-                ipv6_pool_limit: parseInt($('#configIPv6PoolLimit').val()) || 0,
                 ipv6_mapping_limit: parseInt($('#configIPv6MappingLimit').val()) || 0,
                 reverse_proxy_limit: parseInt($('#configReverseProxyLimit').val()) || 0
             };

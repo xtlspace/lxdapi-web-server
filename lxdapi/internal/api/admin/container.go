@@ -485,13 +485,6 @@ func GetContainerIP(c *gin.Context) {
 		result["ipv4_count"] = len(bindings)
 	}
 
-	if version == "v6" || version == "all" {
-		var bindings []models.IPv6Binding
-		db.DB.Where("container_name = ?", name).Find(&bindings)
-		result["ipv6"] = bindings
-		result["ipv6_count"] = len(bindings)
-	}
-
 	response.Success(c, result)
 }
 
@@ -518,8 +511,8 @@ func AllocateContainerIP(c *gin.Context) {
 	}
 
 	version := c.Query("version")
-	if version != "v4" && version != "v6" {
-		response.Error(c, 400, "version参数必须是v4或v6")
+	if version != "v4" {
+		response.Error(c, 400, "version参数必须是v4")
 		return
 	}
 
@@ -539,35 +532,19 @@ func AllocateContainerIP(c *gin.Context) {
 
 	ctx := context.Background()
 
-	if version == "v4" {
-		ipv4Svc := service.NewIPv4Service()
-		ips, err := ipv4Svc.AllocateIPv4(ctx, name, container.UserID, req.Count)
-		if err != nil {
-			logger.Error("分配IPv4失败: %v", err)
-			response.Error(c, 500, err.Error())
-			return
-		}
-		logger.OK("容器 %s 分配IPv4成功: %v", name, ips)
-		response.Success(c, gin.H{
-			"container": name,
-			"ipv4":      ips,
-			"count":     len(ips),
-		})
-	} else {
-		ipv6Svc := service.NewIPv6Service()
-		ips, err := ipv6Svc.AllocateIPv6(ctx, name, container.UserID, req.Count)
-		if err != nil {
-			logger.Error("分配IPv6失败: %v", err)
-			response.Error(c, 500, err.Error())
-			return
-		}
-		logger.OK("容器 %s 分配IPv6成功: %v", name, ips)
-		response.Success(c, gin.H{
-			"container": name,
-			"ipv6":      ips,
-			"count":     len(ips),
-		})
+	ipv4Svc := service.NewIPv4Service()
+	ips, err := ipv4Svc.AllocateIPv4(ctx, name, container.UserID, req.Count)
+	if err != nil {
+		logger.Error("分配IPv4失败: %v", err)
+		response.Error(c, 500, err.Error())
+		return
 	}
+	logger.OK("容器 %s 分配IPv4成功: %v", name, ips)
+	response.Success(c, gin.H{
+		"container": name,
+		"ipv4":      ips,
+		"count":     len(ips),
+	})
 }
 
 func UpdateContainerRemark(c *gin.Context) {

@@ -2,7 +2,6 @@ package lxc
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 )
 
@@ -31,45 +30,32 @@ type ContainerState struct {
 }
 
 func (c *Client) GetContainerInfo(ctx context.Context, name string) (*ContainerInfo, error) {
-	output, err := c.exec(ctx, "query", fmt.Sprintf("/1.0/instances/%s?recursion=2", name))
+	var info ContainerInfo
+	err := c.get(ctx, fmt.Sprintf("/1.0/instances/%s?recursion=2", name), &info)
 	if err != nil {
 		return nil, fmt.Errorf("获取容器信息失败: %v", err)
 	}
 
-	var info ContainerInfo
-	if err := json.Unmarshal([]byte(output), &info); err != nil {
-		return nil, fmt.Errorf("解析容器信息失败: %v", err)
-	}
-
-	stateOutput, err := c.exec(ctx, "query", fmt.Sprintf("/1.0/instances/%s/state", name))
-	if err == nil {
-		var state ContainerState
-		if err := json.Unmarshal([]byte(stateOutput), &state); err == nil {
-			info.State = &state
-		}
+	var state ContainerState
+	if err := c.get(ctx, fmt.Sprintf("/1.0/instances/%s/state", name), &state); err == nil {
+		info.State = &state
 	}
 
 	return &info, nil
 }
 
 func (c *Client) ListAllContainers(ctx context.Context) ([]string, error) {
-	output, err := c.exec(ctx, "list", "--format=json")
-	if err != nil {
-		return nil, err
-	}
-
-	var containers []struct {
+	var instances []struct {
 		Name string `json:"name"`
 	}
-	
-	if err := json.Unmarshal([]byte(output), &containers); err != nil {
-		return nil, err
+	err := c.get(ctx, "/1.0/instances?recursion=1", &instances)
+	if err != nil {
+		return nil, fmt.Errorf("获取容器列表失败: %v", err)
 	}
 
-	names := make([]string, len(containers))
-	for i, c := range containers {
-		names[i] = c.Name
+	names := make([]string, len(instances))
+	for i, inst := range instances {
+		names[i] = inst.Name
 	}
-
 	return names, nil
 }

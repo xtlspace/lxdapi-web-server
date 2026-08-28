@@ -254,19 +254,6 @@ func GetIP(c *gin.Context) {
 		result["ipv4_count"] = len(bindings)
 	}
 
-	if version == "v6" || version == "all" {
-		var bindings []models.IPv6Binding
-		if err := db.DB.Where("container_name = ?", name).Find(&bindings).Error; err != nil {
-			if version == "v6" {
-				response.Error(c, 500, err.Error())
-				return
-			}
-			bindings = []models.IPv6Binding{}
-		}
-		result["ipv6"] = bindings
-		result["ipv6_count"] = len(bindings)
-	}
-
 	response.Success(c, result)
 }
 
@@ -324,19 +311,8 @@ func AllocateIP(c *gin.Context) {
 			"count":     len(ips),
 		})
 	} else {
-		ipv6Svc := service.NewIPv6Service()
-		ips, err := ipv6Svc.AllocateIPv6(ctx, name, container.UserID, req.Count)
-		if err != nil {
-			logger.Error("分配IPv6失败: %v", err)
-			response.Error(c, 500, err.Error())
-			return
-		}
-		logger.OK("容器 %s 分配IPv6成功: %v", name, ips)
-		response.Success(c, gin.H{
-			"container": name,
-			"ipv6":      ips,
-			"count":     len(ips),
-		})
+		response.Error(c, 400, "IPv6地址池分配已移除，仅支持IPv4")
+		return
 	}
 }
 
@@ -370,10 +346,6 @@ func ReleaseIP(c *gin.Context) {
 		response.Error(c, 403, "管理员未开放容器释放IPv4权限")
 		return
 	}
-	if version == "v6" && !settings.AllowContainerReleaseIPv6 {
-		response.Error(c, 403, "管理员未开放容器释放IPv6权限")
-		return
-	}
 
 	var req struct {
 		IP string `json:"ip" binding:"required"`
@@ -397,18 +369,8 @@ func ReleaseIP(c *gin.Context) {
 			"message":   "IPv4释放成功",
 		})
 	} else {
-		ipv6Svc := service.NewIPv6Service()
-		if err := ipv6Svc.ReleaseIPv6(name, req.IP); err != nil {
-			logger.Error("释放IPv6失败: %v", err)
-			response.Error(c, 500, err.Error())
-			return
-		}
-		logger.OK("容器 %s 释放IPv6成功: %s", name, req.IP)
-		response.Success(c, gin.H{
-			"container": name,
-			"ip":        req.IP,
-			"message":   "IPv6释放成功",
-		})
+		response.Error(c, 400, "IPv6地址池释放已移除，仅支持IPv4")
+		return
 	}
 }
 

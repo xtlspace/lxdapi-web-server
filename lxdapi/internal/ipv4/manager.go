@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"lxdapi/internal/db"
 	"lxdapi/internal/network"
+	"lxdapi/internal/nftutil"
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
 	"os/exec"
@@ -31,7 +32,7 @@ func FlushNftTables() error {
 func InitManager() error {
 	GlobalManager = &Manager{}
 	
-	if err := GlobalManager.initNftTable(); err != nil {
+	if err := nftutil.InitNftTable(); err != nil {
 		logger.Warn("初始化nftables表失败: %v", err)
 	}
 	
@@ -43,19 +44,6 @@ func InitManager() error {
 		logger.Warn("恢复IPv4绑定失败: %v", err)
 	}
 	
-	return nil
-}
-
-func (m *Manager) initNftTable() error {
-	exec.Command("nft", "add", "table", "inet", "lxdnat").Run()
-	exec.Command("nft", "add", "chain", "inet", "lxdnat", "prerouting", "{", "type", "nat", "hook", "prerouting", "priority", "-100", ";", "}").Run()
-	exec.Command("nft", "add", "chain", "inet", "lxdnat", "postrouting", "{", "type", "nat", "hook", "postrouting", "priority", "100", ";", "}").Run()
-
-	exec.Command("nft", "add", "table", "inet", "lxdip").Run()
-	exec.Command("nft", "add", "chain", "inet", "lxdip", "prerouting", "{", "type", "nat", "hook", "prerouting", "priority", "-100", ";", "}").Run()
-	exec.Command("nft", "add", "chain", "inet", "lxdip", "postrouting", "{", "type", "nat", "hook", "postrouting", "priority", "100", ";", "}").Run()
-	
-	logger.OK("nftables表初始化完成: lxdnat, lxdip")
 	return nil
 }
 

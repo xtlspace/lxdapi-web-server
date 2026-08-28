@@ -78,25 +78,12 @@
                         容器管理
                     </div>
                 </a>
-                <div class="dropdown">
-                    <div tabindex="0" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition cursor-pointer">
-                        <div class="flex items-center gap-2">
-                            <span class="iconify" data-icon="mdi:package-variant" data-width="18"></span>
-                            资源管理
-                            <span class="iconify" data-icon="mdi:chevron-down" data-width="12"></span>
-                        </div>
+                <a href="/admin/templates" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
+                    <div class="flex items-center gap-2">
+                        <span class="iconify" data-icon="mdi:image-multiple" data-width="18"></span>
+                        镜像模板
                     </div>
-                    <ul tabindex="0" class="dropdown-content menu bg-white rounded-lg shadow-lg border border-gray-200 w-48 mt-2 p-1 z-50">
-                        <li><a href="/admin/templates" class="text-sm flex items-center gap-2">
-                            <span class="iconify" data-icon="mdi:image-multiple" data-width="18"></span>
-                            镜像模板
-                        </a></li>
-                        <li><a href="/admin/storage-pools" class="text-sm flex items-center gap-2">
-                            <span class="iconify" data-icon="mdi:database" data-width="18"></span>
-                            存储池
-                        </a></li>
-                    </ul>
-                </div>
+                </a>
                 <a href="/admin/users" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
                     <div class="flex items-center gap-2">
                         <span class="iconify" data-icon="mdi:account-group" data-width="18"></span>
@@ -147,10 +134,11 @@
                             <span class="iconify" data-icon="mdi:ip-network" data-width="18"></span>
                             独立IPv4管理
                         </a></li>
-                        <li><a href="/admin/ip-pool/v6" class="text-sm flex items-center gap-2">
-                            <span class="iconify" data-icon="mdi:ip-network" data-width="18"></span>
-                            独立IPv6管理
+                        <li><a href="/admin/nserIPv6" class="text-sm flex items-center gap-2">
+                            <span class="iconify" data-icon="mdi:access-point-network" data-width="18"></span>
+                            IPv6邻居请求
                         </a></li>
+
                         <li><a href="/admin/port-mapping/v4" class="text-sm flex items-center gap-2">
                             <span class="iconify" data-icon="mdi:ethernet" data-width="18"></span>
                             IPv4NAT管理
@@ -188,27 +176,10 @@
                     <span class="iconify" data-icon="mdi:cube-outline" data-width="20"></span>
                     容器管理
                 </a>
-                <div class="mobile-dropdown">
-                    <button onclick="toggleMobileDropdown(this)" class="flex items-center justify-between w-full gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
-                        <div class="flex items-center gap-3">
-                            <span class="iconify" data-icon="mdi:package-variant" data-width="20"></span>
-                            资源管理
-                        </div>
-                        <span class="iconify chevron-icon smooth-transition" data-icon="mdi:chevron-down" data-width="18"></span>
-                    </button>
-                    <div class="mobile-dropdown-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
-                        <div class="pl-4 space-y-1 py-2">
-                            <a href="/admin/templates" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
-                                <span class="iconify" data-icon="mdi:image-multiple" data-width="20"></span>
-                                镜像模板
-                            </a>
-                            <a href="/admin/storage-pools" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
-                                <span class="iconify" data-icon="mdi:database" data-width="20"></span>
-                                存储池
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <a href="/admin/templates" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
+                    <span class="iconify" data-icon="mdi:image-multiple" data-width="20"></span>
+                    镜像模板
+                </a>
                 <a href="/admin/users" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
                     <span class="iconify" data-icon="mdi:account-group" data-width="20"></span>
                     用户管理
@@ -256,10 +227,11 @@
                                 <span class="iconify" data-icon="mdi:ip-network" data-width="20"></span>
                                 独立IPv4管理
                             </a>
-                            <a href="/admin/ip-pool/v6" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
-                                <span class="iconify" data-icon="mdi:ip-network" data-width="20"></span>
-                                独立IPv6管理
+                            <a href="/admin/nserIPv6" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
+                                <span class="iconify" data-icon="mdi:access-point-network" data-width="20"></span>
+                                IPv6邻居请求
                             </a>
+
                             <a href="/admin/port-mapping/v4" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
                                 <span class="iconify" data-icon="mdi:ethernet" data-width="20"></span>
                                 IPv4NAT管理
