@@ -21,7 +21,6 @@ type Task struct {
 	ID            uint
 	ContainerName string
 	Action        string
-	UserID        string
 	Params        map[string]interface{}
 	Func          TaskFunc
 }
@@ -163,7 +162,7 @@ func (q *Queue) executeTask(task *Task) {
 	}
 }
 
-func CreateTask(containerName, action, userID string, params map[string]interface{}, fn TaskFunc) (*models.Task, error) {
+func CreateTask(containerName, action string, params map[string]interface{}, fn TaskFunc) (*models.Task, error) {
 	if action != "delete" {
 		var count int64
 		db.DB.Model(&models.Task{}).
@@ -184,7 +183,6 @@ func CreateTask(containerName, action, userID string, params map[string]interfac
 	task := &models.Task{
 		ContainerName: containerName,
 		Action:        action,
-		UserID:        userID,
 		Type:          "async",
 		Status:        models.TaskQueued,
 		Params:        paramsJSON,
@@ -198,7 +196,6 @@ func CreateTask(containerName, action, userID string, params map[string]interfac
 		ID:            task.ID,
 		ContainerName: containerName,
 		Action:        action,
-		UserID:        userID,
 		Params:        params,
 		Func:          fn,
 	}
@@ -210,7 +207,7 @@ func CreateTask(containerName, action, userID string, params map[string]interfac
 	return task, nil
 }
 
-func CreateSyncTask(containerName, action, userID string, fn TaskFunc) error {
+func CreateSyncTask(containerName, action string, fn TaskFunc) error {
 	var count int64
 	db.DB.Model(&models.Task{}).
 		Where("container_name = ? AND status IN ?", containerName, []string{models.TaskQueued, models.TaskRunning}).
@@ -225,7 +222,6 @@ func CreateSyncTask(containerName, action, userID string, fn TaskFunc) error {
 	task := &models.Task{
 		ContainerName: containerName,
 		Action:        action,
-		UserID:        userID,
 		Type:          "sync",
 		Status:        models.TaskRunning,
 		StartedAt:     &now,

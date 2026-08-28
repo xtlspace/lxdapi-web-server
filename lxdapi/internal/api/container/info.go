@@ -130,11 +130,9 @@ func Action(c *gin.Context) {
 		return
 	}
 
-	userID := dbContainer.UserID
-
 	switch action {
 	case "start":
-		err := executor.CreateSyncTask(name, "start", userID, func(ctx context.Context) error {
+		err := executor.CreateSyncTask(name, "start", func(ctx context.Context) error {
 			return containerService.Start(ctx, name)
 		})
 		if err != nil {
@@ -145,7 +143,7 @@ func Action(c *gin.Context) {
 		response.Success(c, "容器启动成功")
 
 	case "stop":
-		err := executor.CreateSyncTask(name, "stop", userID, func(ctx context.Context) error {
+		err := executor.CreateSyncTask(name, "stop", func(ctx context.Context) error {
 			return containerService.Stop(ctx, name)
 		})
 		if err != nil {
@@ -156,7 +154,7 @@ func Action(c *gin.Context) {
 		response.Success(c, "容器停止成功")
 
 	case "restart":
-		err := executor.CreateSyncTask(name, "restart", userID, func(ctx context.Context) error {
+		err := executor.CreateSyncTask(name, "restart", func(ctx context.Context) error {
 			return containerService.Restart(ctx, name)
 		})
 		if err != nil {
@@ -183,12 +181,11 @@ func Action(c *gin.Context) {
 			"original_image": dbContainer.Image,
 			"new_image":      finalImage,
 			"password_set":   req.Password != "",
-			"user_id":        userID,
 			"image":          finalImage,
 			"password":       req.Password,
 		}
 
-		task, err := executor.CreateTask(name, "reinstall", userID, params, func(ctx context.Context) error {
+		task, err := executor.CreateTask(name, "reinstall", params, func(ctx context.Context) error {
 			return containerService.Reinstall(ctx, name, req.Image, req.Password)
 		})
 		if err != nil {
@@ -288,8 +285,7 @@ func AllocateIP(c *gin.Context) {
 		req.Count = 1
 	}
 
-	var container models.Container
-	if err := db.DB.Where("name = ?", name).First(&container).Error; err != nil {
+	if err := db.DB.Where("name = ?", name).First(&models.Container{}).Error; err != nil {
 		response.Error(c, 404, "容器不存在")
 		return
 	}
@@ -298,7 +294,7 @@ func AllocateIP(c *gin.Context) {
 
 	if version == "v4" {
 		ipv4Svc := service.NewIPv4Service()
-		ips, err := ipv4Svc.AllocateIPv4(ctx, name, container.UserID, req.Count)
+		ips, err := ipv4Svc.AllocateIPv4(ctx, name, req.Count)
 		if err != nil {
 			logger.Error("分配IPv4失败: %v", err)
 			response.Error(c, 500, err.Error())

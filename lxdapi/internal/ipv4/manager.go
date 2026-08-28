@@ -55,7 +55,7 @@ func (m *Manager) RemovePortMapping(publicIP string, publicPort, publicPortEnd i
 	return m.removePortDNAT(publicIP, publicPort, publicPortEnd, containerIP, containerPort, containerPortEnd, protocol, iface)
 }
 
-func (m *Manager) AllocateIPs(containerName, userID string, count int) ([]string, error) {
+func (m *Manager) AllocateIPs(containerName string, count int) ([]string, error) {
 	if count == 0 {
 		logger.Info("容器 %s 不需要分配IPv4", containerName)
 		return nil, nil
@@ -85,7 +85,6 @@ func (m *Manager) AllocateIPs(containerName, userID string, count int) ([]string
 		binding := &models.IPv4Binding{
 			IPAddress:     pool.IPAddress,
 			ContainerName: containerName,
-			UserID:        userID,
 			Status:        "allocated",
 		}
 		if err := db.DB.Create(binding).Error; err != nil {

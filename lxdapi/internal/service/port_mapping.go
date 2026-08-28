@@ -147,7 +147,7 @@ func (s *PortMappingService) FindAvailableV6Port(portStart, portEnd, portCount i
 	return findAvailablePortFromUsed(portStart, portEnd, portCount, usedPorts)
 }
 
-func (s *PortMappingService) AllocateV4Mapping(ctx context.Context, containerName, userID string, forwardIP string, displayIP string, publicPort, publicPortEnd, containerPort, containerPortEnd int, protocol, iface, description string) (*models.PortMappingV4, error) {
+func (s *PortMappingService) AllocateV4Mapping(ctx context.Context, containerName string, forwardIP string, displayIP string, publicPort, publicPortEnd, containerPort, containerPortEnd int, protocol, iface, description string) (*models.PortMappingV4, error) {
 	if iface == "" {
 		return nil, fmt.Errorf("必须指定网卡")
 	}
@@ -171,7 +171,7 @@ func (s *PortMappingService) AllocateV4Mapping(ctx context.Context, containerNam
 		ForwardIP: forwardIP, PublicIP: displayIP, PublicPort: publicPort,
 		PublicPortEnd: publicPortEnd, ContainerName: containerName, ContainerIP: containerIP,
 		ContainerPort: containerPort, ContainerPortEnd: containerPortEnd, Protocol: protocol,
-		Status: "active", UserID: userID, Interface: iface, Description: description,
+		Status: "active", Interface: iface, Description: description,
 	}
 	if err := db.DB.Create(mapping).Error; err != nil {
 		return nil, fmt.Errorf("保存端口映射失败: %v", err)
@@ -186,7 +186,7 @@ func (s *PortMappingService) AllocateV4Mapping(ctx context.Context, containerNam
 	return mapping, nil
 }
 
-func (s *PortMappingService) AllocateV6Mapping(ctx context.Context, containerName, userID string, forwardIP string, displayIP string, publicPort, publicPortEnd, containerPort, containerPortEnd int, protocol, iface, description string) (*models.PortMappingV6, error) {
+func (s *PortMappingService) AllocateV6Mapping(ctx context.Context, containerName string, forwardIP string, displayIP string, publicPort, publicPortEnd, containerPort, containerPortEnd int, protocol, iface, description string) (*models.PortMappingV6, error) {
 	if iface == "" {
 		return nil, fmt.Errorf("必须指定网卡")
 	}
@@ -210,7 +210,7 @@ func (s *PortMappingService) AllocateV6Mapping(ctx context.Context, containerNam
 		ForwardIP: forwardIP, PublicIP: displayIP, PublicPort: publicPort,
 		PublicPortEnd: publicPortEnd, ContainerName: containerName, ContainerIP: containerIP,
 		ContainerPort: containerPort, ContainerPortEnd: containerPortEnd, Protocol: protocol,
-		Status: "active", UserID: userID, Interface: iface, Description: description,
+		Status: "active", Interface: iface, Description: description,
 	}
 	if err := db.DB.Create(mapping).Error; err != nil {
 		return nil, fmt.Errorf("保存IPv6端口映射失败: %v", err)

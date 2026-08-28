@@ -51,8 +51,7 @@ func AllocatePortMapping(c *gin.Context) {
 		return
 	}
 
-	var container models.Container
-	if err := db.DB.Where("name = ?", req.ContainerName).First(&container).Error; err != nil {
+	if err := db.DB.Where("name = ?", req.ContainerName).First(&models.Container{}).Error; err != nil {
 		response.Error(c, 404, "容器不存在")
 		return
 	}
@@ -61,7 +60,7 @@ func AllocatePortMapping(c *gin.Context) {
 	pmService := service.NewPortMappingService()
 
 	if version == "v4" {
-		mapping, err := pmService.AllocateV4Mapping(ctx, req.ContainerName, container.UserID, req.PublicIP, req.PublicIP, req.PublicPort, req.PublicPort, req.ContainerPort, req.ContainerPort, req.Protocol, req.Interface, req.Description)
+		mapping, err := pmService.AllocateV4Mapping(ctx, req.ContainerName, req.PublicIP, req.PublicIP, req.PublicPort, req.PublicPort, req.ContainerPort, req.ContainerPort, req.Protocol, req.Interface, req.Description)
 		if err != nil {
 			logger.Error("分配IPv4端口映射失败: %v", err)
 			response.Error(c, 500, err.Error())
@@ -70,7 +69,7 @@ func AllocatePortMapping(c *gin.Context) {
 		logger.OK("系统API为容器 %s 分配IPv4端口映射: %s:%d -> %d", req.ContainerName, req.PublicIP, req.PublicPort, req.ContainerPort)
 		response.Success(c, gin.H{"mapping": mapping})
 	} else {
-		mapping, err := pmService.AllocateV6Mapping(ctx, req.ContainerName, container.UserID, req.PublicIP, req.PublicIP, req.PublicPort, req.PublicPort, req.ContainerPort, req.ContainerPort, req.Protocol, req.Interface, req.Description)
+		mapping, err := pmService.AllocateV6Mapping(ctx, req.ContainerName, req.PublicIP, req.PublicIP, req.PublicPort, req.PublicPort, req.ContainerPort, req.ContainerPort, req.Protocol, req.Interface, req.Description)
 		if err != nil {
 			logger.Error("分配IPv6端口映射失败: %v", err)
 			response.Error(c, 500, err.Error())

@@ -18,7 +18,6 @@ type Template struct {
 	Public       bool
 	AutoUpdate   bool
 	UploadedAt   *time.Time
-	AllowedUsers string `gorm:"type:text"`
 }
 
 type TemplateListResponse struct {

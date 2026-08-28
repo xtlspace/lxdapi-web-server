@@ -156,10 +156,6 @@
                             <label class="text-sm font-medium text-gray-600">执行时长</label>
                             <p id="detailDuration" class="text-sm text-gray-900"></p>
                         </div>
-                        <div>
-                            <label class="text-sm font-medium text-gray-600">用户ID</label>
-                            <p id="detailUserId" class="text-sm text-gray-900"></p>
-                        </div>
                     </div>
                     
                     <div id="detailParamsSection" style="display: none;">
@@ -480,7 +476,6 @@
                 $('#detailStartedAt').text(task.started_at ? new Date(task.started_at).toLocaleString('zh-CN') : '-');
                 $('#detailCompletedAt').text(task.completed_at ? new Date(task.completed_at).toLocaleString('zh-CN') : '-');
                 $('#detailDuration').text(task.duration ? (task.duration + 'ms') : '-');
-                $('#detailUserId').text(task.user_id || '-');
                 
                 if (task.params && task.params.trim()) {
                     try {

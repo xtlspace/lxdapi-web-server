@@ -86,9 +86,8 @@ func AllocateIP(c *gin.Context) {
 	}
 
 	var req struct {
-		Name   string `json:"name" binding:"required"`
-		UserID string `json:"user_id"`
-		Count  int    `json:"count"`
+		Name  string `json:"name" binding:"required"`
+		Count int    `json:"count"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -102,7 +101,7 @@ func AllocateIP(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	ips, err := ipv4Service.AllocateIPv4(ctx, req.Name, req.UserID, req.Count)
+	ips, err := ipv4Service.AllocateIPv4(ctx, req.Name, req.Count)
 	if err != nil {
 		response.Error(c, 500, err.Error())
 		return

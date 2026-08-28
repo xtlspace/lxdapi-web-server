@@ -107,14 +107,6 @@ func AdminTemplates(c *gin.Context) {
 	}))
 }
 
-
-func AdminUsers(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/admin_users.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "用户管理 - LXD API 管理",
-		"username": "admin",
-	}))
-}
-
 func AdminBrandSettings(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_brand_settings.html", utils.MergeTemplateData(c, gin.H{
 		"title":    "主题设置 - LXD API 管理",
@@ -133,15 +125,6 @@ func AdminNginx(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_nginx.html", utils.MergeTemplateData(c, gin.H{
 		"title":    "Nginx反向代理 - LXD API 管理",
 		"username": "admin",
-	}))
-}
-
-func AdminUserDetail(c *gin.Context) {
-	userID := c.Param("id")
-	c.HTML(http.StatusOK, "admin/admin_user_detail.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "用户详情 - LXD API 管理",
-		"username": "admin",
-		"user_id":  userID,
 	}))
 }
 

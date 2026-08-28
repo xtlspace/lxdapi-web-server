@@ -74,8 +74,7 @@ func AllocateIP(c *gin.Context) {
 		req.Count = 1
 	}
 
-	var container models.Container
-	if err := db.DB.Where("name = ?", req.Name).First(&container).Error; err != nil {
+	if err := db.DB.Where("name = ?", req.Name).First(&models.Container{}).Error; err != nil {
 		response.Error(c, 404, "容器不存在")
 		return
 	}
@@ -87,7 +86,7 @@ func AllocateIP(c *gin.Context) {
 		return
 	}
 	ipv4Svc := service.NewIPv4Service()
-	ips, err := ipv4Svc.AllocateIPv4(ctx, req.Name, container.UserID, req.Count)
+	ips, err := ipv4Svc.AllocateIPv4(ctx, req.Name, req.Count)
 	if err != nil {
 		logger.Error("分配IPv4失败: %v", err)
 		response.Error(c, 500, err.Error())
@@ -505,7 +504,6 @@ func GetIPPoolSettingsPublic(c *gin.Context) {
 		settings = models.IPPoolSettings{}
 	}
 	response.Success(c, gin.H{
-		"allow_user_release_ipv4":      settings.AllowUserReleaseIPv4,
 		"allow_container_release_ipv4": settings.AllowContainerReleaseIPv4,
 	})
 }
@@ -514,7 +512,6 @@ func UpdateIPPoolSettings(c *gin.Context) {
 	var req struct {
 		RandomAssign              bool `json:"random_assign"`
 		AutoAssign                bool `json:"auto_assign"`
-		AllowUserReleaseIPv4      bool `json:"allow_user_release_ipv4"`
 		AllowContainerReleaseIPv4 bool `json:"allow_container_release_ipv4"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -528,14 +525,12 @@ func UpdateIPPoolSettings(c *gin.Context) {
 		settings = models.IPPoolSettings{
 			RandomAssign:              req.RandomAssign,
 			AutoAssign:                req.AutoAssign,
-			AllowUserReleaseIPv4:      req.AllowUserReleaseIPv4,
 			AllowContainerReleaseIPv4: req.AllowContainerReleaseIPv4,
 		}
 		db.DB.Create(&settings)
 	} else {
 		settings.RandomAssign = req.RandomAssign
 		settings.AutoAssign = req.AutoAssign
-		settings.AllowUserReleaseIPv4 = req.AllowUserReleaseIPv4
 		settings.AllowContainerReleaseIPv4 = req.AllowContainerReleaseIPv4
 		db.DB.Save(&settings)
 	}

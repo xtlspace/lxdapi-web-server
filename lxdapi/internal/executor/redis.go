@@ -25,7 +25,6 @@ type RedisTask struct {
 	ID            uint   `json:"id"`
 	ContainerName string `json:"container_name"`
 	Action        string `json:"action"`
-	UserID        string `json:"user_id"`
 }
 
 func InitRedisQueue() error {
@@ -92,7 +91,6 @@ func (q *RedisQueue) Submit(task *Task) error {
 		ID:            task.ID,
 		ContainerName: task.ContainerName,
 		Action:        task.Action,
-		UserID:        task.UserID,
 	}
 
 	data, err := json.Marshal(redisTask)

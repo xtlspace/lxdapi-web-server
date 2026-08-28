@@ -1,9 +1,7 @@
 package admin
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"lxdapi/internal/db"
 	"lxdapi/internal/service"
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
@@ -159,94 +157,5 @@ func BatchDeleteTemplates(c *gin.Context) {
 		"deleted_count": success,
 		"failed":        failed,
 		"message":       "批量删除完成",
-	})
-}
-
-// SetTemplatePermission 设置模板用户权限
-// @Summary 设置模板用户权限
-// @Description 设置哪些用户可以使用该模板
-// @Tags Admin API - 模板管理
-// @Accept json
-// @Produce json
-// @Param fingerprint path string true "模板指纹"
-// @Param request body object{allowed_users=[]string} true "允许使用的用户名列表"
-// @Success 200 {object} response.Response "设置成功"
-// @Failure 400 {object} response.Response "参数错误"
-// @Failure 404 {object} response.Response "模板不存在"
-// @Failure 500 {object} response.Response "设置失败"
-// @Security SessionAuth
-// @Router /api/admin/templates/:fingerprint/permission [put]
-func SetTemplatePermission(c *gin.Context) {
-	fingerprint := c.Param("fingerprint")
-	if fingerprint == "" {
-		response.Error(c, 400, "缺少模板指纹")
-		return
-	}
-
-	var req struct {
-		AllowedUsers []string `json:"allowed_users"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, 400, "参数错误: "+err.Error())
-		return
-	}
-
-	var template models.Template
-	if err := db.DB.Where("fingerprint = ?", fingerprint).First(&template).Error; err != nil {
-		response.Error(c, 404, "模板不存在")
-		return
-	}
-
-	allowedUsersJSON := ""
-	if len(req.AllowedUsers) > 0 {
-		jsonBytes, _ := json.Marshal(req.AllowedUsers)
-		allowedUsersJSON = string(jsonBytes)
-	}
-
-	if err := db.DB.Model(&template).Update("allowed_users", allowedUsersJSON).Error; err != nil {
-		logger.Error("设置模板权限失败: %v", err)
-		response.Error(c, 500, "设置失败")
-		return
-	}
-
-	logger.OK("模板权限设置成功: %s, 用户: %v", fingerprint, req.AllowedUsers)
-	response.Success(c, gin.H{
-		"fingerprint":   fingerprint,
-		"allowed_users": req.AllowedUsers,
-	})
-}
-
-// GetTemplatePermission 获取模板用户权限
-// @Summary 获取模板用户权限
-// @Description 获取模板的用户权限设置
-// @Tags Admin API - 模板管理
-// @Accept json
-// @Produce json
-// @Param fingerprint path string true "模板指纹"
-// @Success 200 {object} response.Response "获取成功"
-// @Failure 404 {object} response.Response "模板不存在"
-// @Security SessionAuth
-// @Router /api/admin/templates/:fingerprint/permission [get]
-func GetTemplatePermission(c *gin.Context) {
-	fingerprint := c.Param("fingerprint")
-	if fingerprint == "" {
-		response.Error(c, 400, "缺少模板指纹")
-		return
-	}
-
-	var template models.Template
-	if err := db.DB.Where("fingerprint = ?", fingerprint).First(&template).Error; err != nil {
-		response.Error(c, 404, "模板不存在")
-		return
-	}
-
-	var allowedUsers []string
-	if template.AllowedUsers != "" {
-		json.Unmarshal([]byte(template.AllowedUsers), &allowedUsers)
-	}
-
-	response.Success(c, gin.H{
-		"fingerprint":   fingerprint,
-		"allowed_users": allowedUsers,
 	})
 }

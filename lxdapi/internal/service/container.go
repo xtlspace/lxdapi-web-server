@@ -17,8 +17,6 @@ import (
 	"math/big"
 	"strconv"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type ContainerService struct {
@@ -79,17 +77,6 @@ func (s *ContainerService) Create(ctx context.Context, req *models.CreateContain
 	if s.lxcClient.ContainerExists(ctx, req.Name) {
 		return fmt.Errorf("容器已存在: %s", req.Name)
 	}
-	
-	user, err := GetOrCreateUser(req.Username)
-	if err != nil {
-		return fmt.Errorf("处理用户失败: %v", err)
-	}
-	
-	if user.TrafficLocked {
-		return fmt.Errorf("用户流量已超限，无法创建容器")
-	}
-	
-	logger.Info("用户确认: %s (ID: %d)", user.Username, user.ID)
 	
 	logger.Info("开始创建容器: %s, 镜像: %s", req.Name, req.Image)
 	
@@ -193,7 +180,6 @@ func (s *ContainerService) Create(ctx context.Context, req *models.CreateContain
 	
 	container := &models.Container{
 		Name:         req.Name,
-		UserID:       req.Username,
 		Image:        imageAlias,
 		Password:     actualPassword,
 		Status:       "stopped",
@@ -258,7 +244,7 @@ func (s *ContainerService) Create(ctx context.Context, req *models.CreateContain
 	if ipSettings.AutoAssign {
 		if container.IPv4PoolLimit > 0 && ipv4.GlobalManager != nil && privateIP != "" {
 			ipv4Svc := NewIPv4Service()
-			if ips, err := ipv4Svc.AllocateIPv4(ctx, req.Name, req.Username, container.IPv4PoolLimit); err != nil {
+			if ips, err := ipv4Svc.AllocateIPv4(ctx, req.Name, container.IPv4PoolLimit); err != nil {
 				logger.Warn("自动分配IPv4失败: %v", err)
 			} else if len(ips) > 0 {
 				logger.OK("自动分配IPv4成功: %s -> %v", req.Name, ips)
@@ -270,22 +256,21 @@ func (s *ContainerService) Create(ctx context.Context, req *models.CreateContain
 	db.DB.First(&portRangeConfig)
 	
 	if portRangeConfig.V4AutoAllocate22 && container.IPv4MappingLimit >= 1 && privateIP != "" {
-		if err := s.autoAllocateSSHPortV4(ctx, req.Name, req.Username, privateIP, portRangeConfig); err != nil {
+		if err := s.autoAllocateSSHPortV4(ctx, req.Name, privateIP, portRangeConfig); err != nil {
 			logger.Warn("自动分配IPv4 SSH端口失败: %v", err)
 		}
 	}
 	
 	if portRangeConfig.V6AutoAllocate22 && container.IPv6MappingLimit >= 1 && privateIPv6 != "" {
-		if err := s.autoAllocateSSHPortV6(ctx, req.Name, req.Username, privateIPv6, portRangeConfig); err != nil {
+		if err := s.autoAllocateSSHPortV6(ctx, req.Name, privateIPv6, portRangeConfig); err != nil {
 			logger.Warn("自动分配IPv6 SSH端口失败: %v", err)
 		}
 	}
 	
 	if mgr := plugin.GetManager(); mgr != nil {
 		mgr.GetHookManager().TriggerAsync(plugin.HookAfterContainerCreate, ctx, map[string]interface{}{
-			"name":     req.Name,
-			"username": req.Username,
-			"image":    req.Image,
+			"name":  req.Name,
+			"image": req.Image,
 		})
 	}
 	
@@ -451,15 +436,6 @@ func (s *ContainerService) Reinstall(ctx context.Context, name, image, password 
 }
 
 func (s *ContainerService) Delete(ctx context.Context, name string) error {
-	var container models.Container
-	if err := db.DB.Where("name = ?", name).First(&container).Error; err == nil {
-		var traffic models.Traffic
-		if err := db.DB.Where("container_name = ?", name).First(&traffic).Error; err == nil && traffic.TotalGB > 0 {
-			db.DB.Model(&models.User{}).Where("username = ?", container.UserID).
-				Update("traffic_used", gorm.Expr("traffic_used + ?", traffic.TotalGB))
-		}
-	}
-
 	var mappingsV4 []models.PortMappingV4
 	if err := db.DB.Where("container_name = ?", name).Find(&mappingsV4).Error; err == nil {
 		pmService := NewPortMappingService()
@@ -524,25 +500,9 @@ func (s *ContainerService) Get(name string) (*models.Container, error) {
 	return &container, nil
 }
 
-func (s *ContainerService) List(userID string) ([]models.Container, error) {
+func (s *ContainerService) List() ([]models.Container, error) {
 	var containers []models.Container
-	query := db.DB
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
-	if err := query.Find(&containers).Error; err != nil {
-		return nil, err
-	}
-	return containers, nil
-}
-
-func ListContainersByUser(userID string) ([]models.Container, error) {
-	var containers []models.Container
-	query := db.DB
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
-	if err := query.Find(&containers).Error; err != nil {
+	if err := db.DB.Find(&containers).Error; err != nil {
 		return nil, err
 	}
 	return containers, nil
@@ -1072,7 +1032,7 @@ func (s *ContainerService) GetConfig(name string) (map[string]interface{}, error
 	}, nil
 }
 
-func (s *ContainerService) autoAllocateSSHPortV4(ctx context.Context, containerName, userID, containerIP string, config models.PortRangeConfig) error {
+func (s *ContainerService) autoAllocateSSHPortV4(ctx context.Context, containerName, containerIP string, config models.PortRangeConfig) error {
 	var container models.Container
 	if err := db.DB.Where("name = ?", containerName).First(&container).Error; err == nil {
 		if container.PrivateIP != containerIP {
@@ -1098,7 +1058,7 @@ func (s *ContainerService) autoAllocateSSHPortV4(ctx context.Context, containerN
 		return err
 	}
 	
-	_, err = portMappingSvc.AllocateV4Mapping(ctx, containerName, userID, natConfig.IP, displayIP, publicPort, publicPort, 22, 22, "tcp", natConfig.Interface, "Auto-allocated SSH port")
+	_, err = portMappingSvc.AllocateV4Mapping(ctx, containerName, natConfig.IP, displayIP, publicPort, publicPort, 22, 22, "tcp", natConfig.Interface, "Auto-allocated SSH port")
 	if err != nil {
 		return err
 	}
@@ -1107,7 +1067,7 @@ func (s *ContainerService) autoAllocateSSHPortV4(ctx context.Context, containerN
 	return nil
 }
 
-func (s *ContainerService) autoAllocateSSHPortV6(ctx context.Context, containerName, userID, containerIP string, config models.PortRangeConfig) error {
+func (s *ContainerService) autoAllocateSSHPortV6(ctx context.Context, containerName, containerIP string, config models.PortRangeConfig) error {
 	var container models.Container
 	if err := db.DB.Where("name = ?", containerName).First(&container).Error; err == nil {
 		if container.PrivateIPv6 != containerIP {
@@ -1133,7 +1093,7 @@ func (s *ContainerService) autoAllocateSSHPortV6(ctx context.Context, containerN
 		return err
 	}
 	
-	_, err = portMappingSvc.AllocateV6Mapping(ctx, containerName, userID, natConfig.IP, displayIP, publicPort, publicPort, 22, 22, "tcp", natConfig.Interface, "Auto-allocated SSH port")
+	_, err = portMappingSvc.AllocateV6Mapping(ctx, containerName, natConfig.IP, displayIP, publicPort, publicPort, 22, 22, "tcp", natConfig.Interface, "Auto-allocated SSH port")
 	if err != nil {
 		return err
 	}

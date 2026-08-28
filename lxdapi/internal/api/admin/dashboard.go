@@ -36,9 +36,6 @@ func GetDashboard(c *gin.Context) {
 	var portMappingV6Count int64
 	db.DB.Model(&models.PortMappingV6{}).Count(&portMappingV6Count)
 
-	var userCount int64
-	db.DB.Model(&models.User{}).Count(&userCount)
-
 	sysInfo := system.GetSystemInfo()
 	
 	response.Success(c, gin.H{
@@ -52,7 +49,6 @@ func GetDashboard(c *gin.Context) {
 			"ipv4": portMappingV4Count,
 			"ipv6": portMappingV6Count,
 		},
-		"users": userCount,
 		"system": gin.H{
 			"os":           sysInfo.OS,
 			"arch":         sysInfo.Arch,

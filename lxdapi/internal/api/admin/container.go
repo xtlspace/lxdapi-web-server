@@ -26,9 +26,7 @@ import (
 // @Security SessionAuth
 // @Router /api/admin/containers [get]
 func ListContainers(c *gin.Context) {
-	userID := c.Query("user_id")
-	
-	containers, err := service.ListContainersByUser(userID)
+	containers, err := service.NewContainerService().List()
 	if err != nil {
 		logger.Error("获取容器列表失败: %v", err)
 		response.Error(c, 500, err.Error())
@@ -117,18 +115,16 @@ func DeleteContainer(c *gin.Context) {
 	}
 
 	svc := service.NewContainerService()
-	container, err := svc.Get(name)
-	if err != nil {
+	if _, err := svc.Get(name); err != nil {
 		response.Error(c, 404, "容器不存在")
 		return
 	}
 
 	params := map[string]interface{}{
 		"container_name": name,
-		"user_id":        container.UserID,
 	}
 
-	task, err := executor.CreateTask(name, "delete", container.UserID, params, func(ctx context.Context) error {
+	task, err := executor.CreateTask(name, "delete", params, func(ctx context.Context) error {
 		return svc.Delete(ctx, name)
 	})
 	if err != nil {
@@ -178,11 +174,9 @@ func ContainerAction(c *gin.Context) {
 		return
 	}
 
-	userID := container.UserID
-
 	switch action {
 	case "start":
-		if err := executor.CreateSyncTask(name, "start", userID, func(ctx context.Context) error {
+		if err := executor.CreateSyncTask(name, "start", func(ctx context.Context) error {
 			return svc.Start(ctx, name)
 		}); err != nil {
 			response.Error(c, 500, err.Error())
@@ -192,7 +186,7 @@ func ContainerAction(c *gin.Context) {
 		response.Success(c, "容器启动成功")
 
 	case "stop":
-		if err := executor.CreateSyncTask(name, "stop", userID, func(ctx context.Context) error {
+		if err := executor.CreateSyncTask(name, "stop", func(ctx context.Context) error {
 			return svc.Stop(ctx, name)
 		}); err != nil {
 			response.Error(c, 500, err.Error())
@@ -202,7 +196,7 @@ func ContainerAction(c *gin.Context) {
 		response.Success(c, "容器停止成功")
 
 	case "restart":
-		if err := executor.CreateSyncTask(name, "restart", userID, func(ctx context.Context) error {
+		if err := executor.CreateSyncTask(name, "restart", func(ctx context.Context) error {
 			return svc.Restart(ctx, name)
 		}); err != nil {
 			response.Error(c, 500, err.Error())
@@ -212,7 +206,7 @@ func ContainerAction(c *gin.Context) {
 		response.Success(c, "容器重启成功")
 
 	case "pause":
-		if err := executor.CreateSyncTask(name, "pause", userID, func(ctx context.Context) error {
+		if err := executor.CreateSyncTask(name, "pause", func(ctx context.Context) error {
 			return svc.Pause(ctx, name)
 		}); err != nil {
 			response.Error(c, 500, err.Error())
@@ -222,7 +216,7 @@ func ContainerAction(c *gin.Context) {
 		response.Success(c, "容器暂停成功")
 
 	case "resume":
-		if err := executor.CreateSyncTask(name, "resume", userID, func(ctx context.Context) error {
+		if err := executor.CreateSyncTask(name, "resume", func(ctx context.Context) error {
 			return svc.Resume(ctx, name)
 		}); err != nil {
 			response.Error(c, 500, err.Error())
@@ -248,12 +242,11 @@ func ContainerAction(c *gin.Context) {
 			"original_image": container.Image,
 			"new_image":      finalImage,
 			"password_set":   req.Password != "",
-			"user_id":        userID,
 			"image":          finalImage,
 			"password":       req.Password,
 		}
 
-		task, err := executor.CreateTask(name, "reinstall", userID, params, func(ctx context.Context) error {
+		task, err := executor.CreateTask(name, "reinstall", params, func(ctx context.Context) error {
 			return svc.Reinstall(ctx, name, req.Image, req.Password)
 		})
 		if err != nil {
@@ -275,7 +268,7 @@ func ContainerAction(c *gin.Context) {
 			return
 		}
 
-		if err := executor.CreateSyncTask(name, "reset_password", userID, func(ctx context.Context) error {
+		if err := executor.CreateSyncTask(name, "reset_password", func(ctx context.Context) error {
 			return svc.ResetPassword(ctx, name, req.Password)
 		}); err != nil {
 			response.Error(c, 500, err.Error())
@@ -420,8 +413,7 @@ func UpdateContainerConfig(c *gin.Context) {
 	}
 
 	svc := service.NewContainerService()
-	container, err := svc.Get(name)
-	if err != nil {
+	if _, err := svc.Get(name); err != nil {
 		response.Error(c, 404, "容器不存在")
 		return
 	}
@@ -434,11 +426,10 @@ func UpdateContainerConfig(c *gin.Context) {
 
 	params := map[string]interface{}{
 		"container_name": name,
-		"user_id":        container.UserID,
 		"config":         req,
 	}
 
-	task, err := executor.CreateTask(name, "update_config", container.UserID, params, func(ctx context.Context) error {
+	task, err := executor.CreateTask(name, "update_config", params, func(ctx context.Context) error {
 		_, err := svc.UpdateConfig(ctx, name, &req)
 		return err
 	})
@@ -533,7 +524,7 @@ func AllocateContainerIP(c *gin.Context) {
 	ctx := context.Background()
 
 	ipv4Svc := service.NewIPv4Service()
-	ips, err := ipv4Svc.AllocateIPv4(ctx, name, container.UserID, req.Count)
+	ips, err := ipv4Svc.AllocateIPv4(ctx, name, req.Count)
 	if err != nil {
 		logger.Error("分配IPv4失败: %v", err)
 		response.Error(c, 500, err.Error())

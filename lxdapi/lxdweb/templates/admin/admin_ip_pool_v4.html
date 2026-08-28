@@ -257,13 +257,6 @@
                 </div>
                 <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                     <div>
-                        <div class="font-medium text-sm">允许用户层级释放IPv4</div>
-                        <div class="text-xs text-gray-500">用户可在用户中心释放容器的IPv4地址</div>
-                    </div>
-                    <input type="checkbox" id="settingAllowUserReleaseIPv4" class="toggle toggle-primary">
-                </div>
-                <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <div>
                         <div class="font-medium text-sm">允许容器层级释放IPv4</div>
                         <div class="text-xs text-gray-500">容器独立面板可释放IPv4地址</div>
                     </div>
@@ -567,7 +560,6 @@
                                 <th width="40"><input type="checkbox" class="checkbox checkbox-xs" ${selectedBindings.size === allBindings.length && selectedBindings.size > 0 ? 'checked' : ''} onclick="toggleSelectAllBindings()"></th>
                                 <th>容器名称</th>
                                 <th>公网IPv4</th>
-                                <th>用户ID</th>
                                 <th>状态</th>
                                 <th>分配时间</th>
                                 <th>操作</th>
@@ -579,7 +571,6 @@
             pageData.forEach(b => {
                 const containerName = b.ContainerName || b.container_name || '-';
                 const ipAddress = b.IPAddress || b.ip_address || '-';
-                const userID = b.UserID || b.user_id || '-';
                 const status = b.Status || b.status || 'unknown';
                 const createdAt = b.CreatedAt || b.created_at;
                 const bindingKey = `${containerName}:${ipAddress}`;
@@ -595,7 +586,6 @@
                         <td><input type="checkbox" class="checkbox checkbox-xs binding-checkbox" value="${bindingKey}" ${checked} onchange="toggleBindingSelect('${containerName}', '${ipAddress}')"></td>
                         <td><a href="/admin/containers/${containerName}" class="link link-primary text-xs">${containerName}</a></td>
                         <td><code class="text-xs font-mono text-blue-600">${ipAddress}</code></td>
-                        <td class="text-xs text-gray-600">${userID}</td>
                         <td>${statusBadge}</td>
                         <td class="text-xs text-gray-500">${createTime}</td>
                         <td>
@@ -859,7 +849,6 @@
                 if (result.code === 200) {
                     $('#settingRandomAssign').prop('checked', result.data.random_assign);
                     $('#settingAutoAssign').prop('checked', result.data.auto_assign);
-                    $('#settingAllowUserReleaseIPv4').prop('checked', result.data.allow_user_release_ipv4);
                     $('#settingAllowContainerReleaseIPv4').prop('checked', result.data.allow_container_release_ipv4);
                 }
                 document.getElementById('settingsModal').showModal();
@@ -874,7 +863,6 @@
             const data = {
                 random_assign: $('#settingRandomAssign').is(':checked'),
                 auto_assign: $('#settingAutoAssign').is(':checked'),
-                allow_user_release_ipv4: $('#settingAllowUserReleaseIPv4').is(':checked'),
                 allow_container_release_ipv4: $('#settingAllowContainerReleaseIPv4').is(':checked')
             };
             $.ajax({

@@ -235,7 +235,6 @@
                         <td class="text-xs text-gray-500">${uploadTime}</td>
                         <td>
                             <div class="flex gap-1">
-                                <button onclick="showPermissionModal('${t.fingerprint}', '${alias}')" class="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded transition">权限</button>
                                 <button onclick="deleteTemplate('${t.fingerprint}', '${alias}')" class="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition">删除</button>
                             </div>
                         </td>
@@ -439,118 +438,7 @@
             });
         }
 
-        let currentPermissionFingerprint = '';
-
-        function showPermissionModal(fingerprint, alias) {
-            currentPermissionFingerprint = fingerprint;
-            $('#permissionTemplateAlias').text(alias);
-            $('input[name="permissionMode"][value="all"]').prop('checked', true);
-            $('#permissionUsers').val('');
-            $('#permissionInputArea').addClass('hidden');
-            $('#permissionModal').removeClass('hidden');
-            $('body').addClass('overflow-hidden');
-            
-            $.ajax({
-                url: `/api/admin/templates/${fingerprint}/permission`,
-                type: 'GET',
-                success: function(result) {
-                    if (result.code === 200) {
-                        const allowedUsers = result.data.allowed_users || [];
-                        if (allowedUsers.length > 0) {
-                            $('input[name="permissionMode"][value="specific"]').prop('checked', true);
-                            $('#permissionUsers').val(allowedUsers.join(','));
-                            $('#permissionInputArea').removeClass('hidden');
-                        }
-                    }
-                }
-            });
-        }
-
-        function setPermissionMode(mode) {
-            if (mode === 'specific') {
-                $('#permissionInputArea').removeClass('hidden');
-            } else {
-                $('#permissionInputArea').addClass('hidden');
-                $('#permissionUsers').val('');
-            }
-        }
-
-        function closePermissionModal() {
-            $('#permissionModal').addClass('hidden');
-            $('body').removeClass('overflow-hidden');
-            currentPermissionFingerprint = '';
-        }
-
-        function saveTemplatePermission() {
-            let allowedUsers = [];
-            const mode = $('input[name="permissionMode"]:checked').val();
-            if (mode === 'specific') {
-                const input = $('#permissionUsers').val().trim();
-                if (input) {
-                    allowedUsers = input.split(',').map(u => u.trim()).filter(u => u);
-                }
-            }
-
-            $.ajax({
-                url: `/api/admin/templates/${currentPermissionFingerprint}/permission`,
-                type: 'PUT',
-                contentType: 'application/json',
-                data: JSON.stringify({ allowed_users: allowedUsers }),
-                success: function(result) {
-                    if (result.code === 200) {
-                        showToast('success', '权限设置成功');
-                        closePermissionModal();
-                    } else {
-                        showToast('error', result.msg || '设置失败');
-                    }
-                },
-                error: function() {
-                    showToast('error', '设置失败');
-                }
-            });
-        }
-
     </script>
-
-    <div id="permissionModal" class="fixed inset-0 z-50 flex items-center justify-center hidden" style="background-color: rgba(0,0,0,0.5);">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div class="flex items-center justify-between p-4 border-b">
-                <h3 class="text-lg font-semibold text-gray-800">设置镜像权限</h3>
-                <button onclick="closePermissionModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <div class="p-4">
-                <p class="text-sm text-gray-600 mb-4">镜像：<span id="permissionTemplateAlias" class="font-medium text-gray-800"></span></p>
-                <div class="space-y-3">
-                    <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50" onclick="setPermissionMode('all')">
-                        <input type="radio" name="permissionMode" value="all" class="radio radio-sm radio-primary" checked>
-                        <div>
-                            <span class="text-sm font-medium text-gray-700">所有用户可用</span>
-                            <p class="text-xs text-gray-500">任何用户都可以使用此镜像</p>
-                        </div>
-                    </label>
-                    <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50" onclick="setPermissionMode('specific')">
-                        <input type="radio" name="permissionMode" value="specific" class="radio radio-sm radio-primary">
-                        <div>
-                            <span class="text-sm font-medium text-gray-700">指定用户可用</span>
-                            <p class="text-xs text-gray-500">只有指定的用户可以使用此镜像</p>
-                        </div>
-                    </label>
-                </div>
-                <div id="permissionInputArea" class="mt-4 hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">指定用户（多个用逗号分隔）</label>
-                    <input type="text" id="permissionUsers" placeholder="user1,user2,user3" class="input input-bordered input-sm w-full">
-                </div>
-            </div>
-            <div class="flex justify-end gap-2 p-4 border-t bg-gray-50 rounded-b-lg">
-                <button onclick="closePermissionModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg">取消</button>
-                <button onclick="saveTemplatePermission()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg">保存</button>
-            </div>
-        </div>
-    </div>
 
     </div>
 </div>

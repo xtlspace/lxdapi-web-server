@@ -26,7 +26,6 @@ func ValidateContainerName(name string) error {
 type Container struct {
 	gorm.Model
 	Name         string `gorm:"uniqueIndex;size:255"`
-	UserID       string `gorm:"index;size:255"`
 	Image        string `gorm:"size:255"`
 	Password     string `gorm:"size:255"`
 	Status       string `gorm:"size:50"`
@@ -79,7 +78,6 @@ type CreateContainerRequest struct {
 	AllowNesting    bool   `json:"allow_nesting"`
 	MemorySwap      bool   `json:"memory_swap"`
 	Privileged      bool   `json:"privileged"`
-	Username         string `json:"username"`
 	Remark          string `json:"remark"`
 	IPv4PoolLimit    int    `json:"ipv4_pool_limit"`
 	IPv4MappingLimit int    `json:"ipv4_mapping_limit"`

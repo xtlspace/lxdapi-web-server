@@ -16,7 +16,6 @@ type PortMappingV4 struct {
 	ContainerPortEnd int       `gorm:"not null;default:0" json:"container_port_end"`
 	Protocol         string    `gorm:"size:10;default:tcp;not null" json:"protocol"`
 	Status           string    `gorm:"size:20;default:active" json:"status"`
-	UserID           string    `gorm:"index;size:255" json:"user_id"`
 	Interface        string    `gorm:"size:50" json:"interface"`
 	Description      string    `gorm:"size:255" json:"description"`
 	CreatedAt        time.Time `json:"created_at"`
@@ -35,7 +34,6 @@ type PortMappingV6 struct {
 	ContainerPortEnd int       `gorm:"not null;default:0" json:"container_port_end"`
 	Protocol         string    `gorm:"size:10;default:tcp;not null" json:"protocol"`
 	Status           string    `gorm:"size:20;default:active" json:"status"`
-	UserID           string    `gorm:"index;size:255" json:"user_id"`
 	Interface        string    `gorm:"size:50" json:"interface"`
 	Description      string    `gorm:"size:255" json:"description"`
 	CreatedAt        time.Time `json:"created_at"`

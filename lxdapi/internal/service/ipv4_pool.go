@@ -16,7 +16,7 @@ func NewIPv4Service() *IPv4Service {
 	return &IPv4Service{}
 }
 
-func (s *IPv4Service) AllocateIPv4(ctx context.Context, containerName, userID string, count int) ([]string, error) {
+func (s *IPv4Service) AllocateIPv4(ctx context.Context, containerName string, count int) ([]string, error) {
 	if ipv4.GlobalManager == nil {
 		return nil, fmt.Errorf("IPv4功能未启用")
 	}
@@ -35,7 +35,7 @@ func (s *IPv4Service) AllocateIPv4(ctx context.Context, containerName, userID st
 		return nil, fmt.Errorf("超过IPv4地址池限制，最多%d个，已有%d个", container.IPv4PoolLimit, len(currentIPs))
 	}
 	
-	ips, err := ipv4.GlobalManager.AllocateIPs(containerName, userID, count)
+	ips, err := ipv4.GlobalManager.AllocateIPs(containerName, count)
 	if err != nil {
 		return nil, err
 	}

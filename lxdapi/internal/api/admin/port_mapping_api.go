@@ -186,7 +186,7 @@ func AllocatePortMapping(c *gin.Context) {
 
 		createdMappings := make([]models.PortMappingV4, 0, len(natConfigs))
 		for _, natConfig := range natConfigs {
-			mapping, err := pmService.AllocateV4Mapping(ctx, req.ContainerName, container.UserID, natConfig.IP, natConfig.DisplayIP, req.PublicPort, publicPortEnd, req.ContainerPort, containerPortEnd, natConfig.Protocol, natConfig.Interface, req.Description)
+			mapping, err := pmService.AllocateV4Mapping(ctx, req.ContainerName, natConfig.IP, natConfig.DisplayIP, req.PublicPort, publicPortEnd, req.ContainerPort, containerPortEnd, natConfig.Protocol, natConfig.Interface, req.Description)
 			if err != nil {
 				logger.Error("为 %s:%s 创建端口映射失败: %v", natConfig.Interface, natConfig.IP, err)
 				continue
@@ -254,7 +254,7 @@ func AllocatePortMapping(c *gin.Context) {
 
 		createdMappings := make([]models.PortMappingV6, 0, len(natConfigs))
 		for _, natConfig := range natConfigs {
-			mapping, err := pmService.AllocateV6Mapping(ctx, req.ContainerName, container.UserID, natConfig.IP, natConfig.DisplayIP, req.PublicPort, publicPortEnd, req.ContainerPort, containerPortEnd, natConfig.Protocol, natConfig.Interface, req.Description)
+			mapping, err := pmService.AllocateV6Mapping(ctx, req.ContainerName, natConfig.IP, natConfig.DisplayIP, req.PublicPort, publicPortEnd, req.ContainerPort, containerPortEnd, natConfig.Protocol, natConfig.Interface, req.Description)
 			if err != nil {
 				logger.Error("为 %s:%s 创建端口映射失败: %v", natConfig.Interface, natConfig.IP, err)
 				continue

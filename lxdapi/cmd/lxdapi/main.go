@@ -174,7 +174,6 @@ func main() {
 			AllowNesting:      getBool("allow_nesting"),
 			MemorySwap:        getBool("memory_swap"),
 			Privileged:        getBool("privileged"),
-			Username:          getString("username"),
 			IPv4PoolLimit:     getInt("ipv4_pool_limit"),
 			IPv4MappingLimit:  getInt("ipv4_mapping_limit"),
 			IPv6MappingLimit:  getInt("ipv6_mapping_limit"),
@@ -353,8 +352,6 @@ func main() {
 		adminPages.GET("/dashboard", handlers.AdminDashboard)
 		adminPages.GET("/containers", handlers.AdminContainers)
 		adminPages.GET("/containers/:name", handlers.AdminContainerDetail)
-		adminPages.GET("/users", handlers.AdminUsers)
-		adminPages.GET("/users/:id", handlers.AdminUserDetail)
 		adminPages.GET("/tasks", handlers.AdminTasks)
 		adminPages.GET("/ip-pool/v4", handlers.AdminIPPoolV4)
 		adminPages.GET("/port-mapping/v4", handlers.AdminPortMappingV4)
@@ -391,11 +388,6 @@ func main() {
 		systemAPI.POST("/traffic/reset", system.ResetTraffic)
 		systemAPI.GET("/tasks", system.ListTasks)
 		systemAPI.GET("/tasks/detail", system.GetTask)
-		systemAPI.POST("/users", system.CreateUser)
-		systemAPI.GET("/users", system.GetUsers)
-		systemAPI.PUT("/users/:id", system.UpdateUser)
-		systemAPI.DELETE("/users/:id", system.DeleteUser)
-		systemAPI.POST("/users/:id/regenerate-key", system.RegenerateUserAPIKey)
 		systemAPI.GET("/containers/:name/credential", system.GetContainerCredential)
 		systemAPI.POST("/containers/:name/credential/regenerate", system.RegenerateContainerCredential)
 		systemAPI.POST("/console/create-token", console.CreateToken)
@@ -441,18 +433,10 @@ func main() {
 		adminAPI.DELETE("/ip/pool", admin.DeleteIPFromPool)
 		adminAPI.POST("/ip/pool/batch", admin.BatchAddIPToPool)
 		adminAPI.POST("/ip/pool/batch-delete", admin.BatchDeleteIPFromPool)
-		adminAPI.GET("/users", admin.GetUsers)
-		adminAPI.POST("/users", admin.CreateUser)
-		adminAPI.PUT("/users/:id", admin.UpdateUser)
-		adminAPI.DELETE("/users/:id", admin.DeleteUser)
-		adminAPI.POST("/users/batch-delete", admin.BatchDeleteUsers)
-		adminAPI.POST("/users/:id/regenerate-key", admin.RegenerateAPIKey)
 		adminAPI.GET("/templates", admin.GetTemplateList)
 		adminAPI.POST("/templates/sync", admin.SyncTemplates)
 		adminAPI.DELETE("/templates/:fingerprint", admin.DeleteTemplate)
 		adminAPI.POST("/templates/batch-delete", admin.BatchDeleteTemplates)
-		adminAPI.GET("/templates/:fingerprint/permission", admin.GetTemplatePermission)
-		adminAPI.PUT("/templates/:fingerprint/permission", admin.SetTemplatePermission)
 		adminAPI.GET("/brand-settings", admin.GetBrandSettings)
 		adminAPI.POST("/brand-settings", admin.UpdateBrandSettings)
 		adminAPI.GET("/container-templates", admin.GetContainerTemplates)

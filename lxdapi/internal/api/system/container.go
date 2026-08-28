@@ -46,7 +46,6 @@ func CreateContainer(c *gin.Context) {
 		"allow_nesting":      req.AllowNesting,
 		"memory_swap":        req.MemorySwap,
 		"privileged":         req.Privileged,
-		"username":           req.Username,
 		"ipv4_pool_limit":    req.IPv4PoolLimit,
 		"ipv4_mapping_limit": req.IPv4MappingLimit,
 		"ipv6_mapping_limit": req.IPv6MappingLimit,
@@ -57,7 +56,7 @@ func CreateContainer(c *gin.Context) {
 		"processes_limit":    req.ProcessesLimit,
 	}
 
-	task, err := executor.CreateTask(req.Name, "create", req.Username, params, func(ctx context.Context) error {
+	task, err := executor.CreateTask(req.Name, "create", params, func(ctx context.Context) error {
 		return containerService.Create(ctx, &req)
 	})
 
@@ -84,7 +83,7 @@ func CreateContainer(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Router /api/system/containers [get]
 func ListContainers(c *gin.Context) {
-	containers, err := containerService.List("")
+	containers, err := containerService.List()
 	if err != nil {
 		response.Error(c, 500, err.Error())
 		return
@@ -156,13 +155,12 @@ func DeleteContainer(c *gin.Context) {
 
 	params := map[string]interface{}{
 		"container_name": name,
-		"user_id":        container.UserID,
 		"image":          container.Image,
 		"status":         container.Status,
 		"created_at":     container.CreatedAt,
 	}
 
-	task, err := executor.CreateTask(name, "delete", container.UserID, params, func(ctx context.Context) error {
+	task, err := executor.CreateTask(name, "delete", params, func(ctx context.Context) error {
 		return containerService.Delete(ctx, name)
 	})
 
@@ -211,11 +209,9 @@ func ContainerAction(c *gin.Context) {
 		return
 	}
 
-	userID := container.UserID
-
 	switch action {
 	case "start":
-		err := executor.CreateSyncTask(name, "start", userID, func(ctx context.Context) error {
+		err := executor.CreateSyncTask(name, "start", func(ctx context.Context) error {
 			return containerService.Start(ctx, name)
 		})
 		if err != nil {
@@ -225,7 +221,7 @@ func ContainerAction(c *gin.Context) {
 		response.Success(c, "容器启动成功")
 
 	case "stop":
-		err := executor.CreateSyncTask(name, "stop", userID, func(ctx context.Context) error {
+		err := executor.CreateSyncTask(name, "stop", func(ctx context.Context) error {
 			return containerService.Stop(ctx, name)
 		})
 		if err != nil {
@@ -235,7 +231,7 @@ func ContainerAction(c *gin.Context) {
 		response.Success(c, "容器停止成功")
 
 	case "restart":
-		err := executor.CreateSyncTask(name, "restart", userID, func(ctx context.Context) error {
+		err := executor.CreateSyncTask(name, "restart", func(ctx context.Context) error {
 			return containerService.Restart(ctx, name)
 		})
 		if err != nil {
@@ -245,7 +241,7 @@ func ContainerAction(c *gin.Context) {
 		response.Success(c, "容器重启成功")
 
 	case "pause":
-		err := executor.CreateSyncTask(name, "pause", userID, func(ctx context.Context) error {
+		err := executor.CreateSyncTask(name, "pause", func(ctx context.Context) error {
 			return containerService.Pause(ctx, name)
 		})
 		if err != nil {
@@ -255,7 +251,7 @@ func ContainerAction(c *gin.Context) {
 		response.Success(c, "容器暂停成功")
 
 	case "resume":
-		err := executor.CreateSyncTask(name, "resume", userID, func(ctx context.Context) error {
+		err := executor.CreateSyncTask(name, "resume", func(ctx context.Context) error {
 			return containerService.Resume(ctx, name)
 		})
 		if err != nil {
@@ -281,12 +277,11 @@ func ContainerAction(c *gin.Context) {
 			"original_image": container.Image,
 			"new_image":      finalImage,
 			"password_set":   req.Password != "",
-			"user_id":        userID,
 			"image":          finalImage,
 			"password":       req.Password,
 		}
 
-		task, err := executor.CreateTask(name, "reinstall", userID, params, func(ctx context.Context) error {
+		task, err := executor.CreateTask(name, "reinstall", params, func(ctx context.Context) error {
 			return containerService.Reinstall(ctx, name, req.Image, req.Password)
 		})
 		if err != nil {
@@ -307,7 +302,7 @@ func ContainerAction(c *gin.Context) {
 			return
 		}
 
-		err := executor.CreateSyncTask(name, "reset_password", userID, func(ctx context.Context) error {
+		err := executor.CreateSyncTask(name, "reset_password", func(ctx context.Context) error {
 			return containerService.ResetPassword(ctx, name, req.Password)
 		})
 		if err != nil {
@@ -342,8 +337,7 @@ func UpdateContainerConfig(c *gin.Context) {
 		return
 	}
 
-	container, err := containerService.Get(name)
-	if err != nil {
+	if _, err := containerService.Get(name); err != nil {
 		response.Error(c, 404, "容器不存在")
 		return
 	}
@@ -356,11 +350,10 @@ func UpdateContainerConfig(c *gin.Context) {
 
 	params := map[string]interface{}{
 		"container_name": name,
-		"user_id":        container.UserID,
 		"config":         req,
 	}
 
-	task, err := executor.CreateTask(name, "update_config", container.UserID, params, func(ctx context.Context) error {
+	task, err := executor.CreateTask(name, "update_config", params, func(ctx context.Context) error {
 		_, err := containerService.UpdateConfig(ctx, name, &req)
 		return err
 	})

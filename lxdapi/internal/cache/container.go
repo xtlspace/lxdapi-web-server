@@ -17,7 +17,6 @@ import (
 
 type ContainerCacheJSON struct {
 	Name            string                 `json:"name"`
-	UserID          string                 `json:"user_id"`
 	Status          string                 `json:"status"`
 	Image           string                 `json:"image"`
 	CPU             int                    `json:"cpu"`
@@ -198,7 +197,6 @@ func RefreshContainerCache(ctx context.Context, name string) error {
 func buildCacheEntry(c models.Container, cpuUsage float64) *ContainerCacheJSON {
 	cacheData := &ContainerCacheJSON{
 		Name:            c.Name,
-		UserID:          c.UserID,
 		Status:          c.Status,
 		Image:           c.Image,
 		CPU:             c.CPU,

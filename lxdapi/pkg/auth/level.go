@@ -5,7 +5,6 @@ type APILevel int
 const (
 	LevelSystem    APILevel = iota
 	LevelAdmin
-	LevelUser
 	LevelContainer
 )
 
@@ -15,8 +14,6 @@ func (l APILevel) String() string {
 		return "system"
 	case LevelAdmin:
 		return "admin"
-	case LevelUser:
-		return "user"
 	case LevelContainer:
 		return "container"
 	default:
