@@ -190,6 +190,22 @@ func (m *Monitor) sampleContainer(s *sampleState) {
 		Where("name = ? AND status <> ? AND status <> ?", s.name, newStatus, "frozen").
 		Update("status", newStatus)
 
+	// 一致性检查：数据库中容器被标记为 frozen，但实际处于 running，强制停止
+	if state.Status == "Running" {
+		var cont models.Container
+		if err := db.DB.Where("name = ?", s.name).First(&cont).Error; err == nil && cont.Status == "frozen" {
+			logger.Warn("检测到数据库frozen但实际running，强制停止容器: %s", s.name)
+			stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			err := m.lxcClient.StopContainer(stopCtx, s.name)
+			cancel()
+			if err != nil {
+				logger.Warn("强制停止容器失败 %s: %v", s.name, err)
+			}
+			s.hasBase = false
+			return
+		}
+	}
+
 	if state.Status != "Running" {
 		s.hasBase = false
 		return
