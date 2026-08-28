@@ -54,7 +54,6 @@ func Init() error {
 	if err := DB.AutoMigrate(
 		&models.CPUMetric{},
 		&models.Container{},
-		&models.User{},
 		&models.Traffic{},
 		&models.PortMappingV4{},
 		&models.PortMappingV6{},
