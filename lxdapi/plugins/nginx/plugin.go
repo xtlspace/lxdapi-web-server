@@ -160,15 +160,6 @@ func (p *NginxPlugin) RegisterRoutes(r *gin.Engine) {
 		adminAPI.GET("/proxies/container/:name", api.GetContainerProxies)
 	}
 	
-	userAPI := r.Group("/api/user/nginx")
-	userAPI.Use(middleware.UserAuthOrBasic())
-	{
-		userAPI.GET("/proxies", api.GetUserProxies)
-		userAPI.POST("/proxies", api.CreateUserProxy)
-		userAPI.PUT("/proxies/:id", api.UpdateUserProxy)
-		userAPI.DELETE("/proxies/:id", api.DeleteUserProxy)
-	}
-	
 	containerAPI := r.Group("/api/container/nginx")
 	containerAPI.Use(middleware.ContainerAuth())
 	{

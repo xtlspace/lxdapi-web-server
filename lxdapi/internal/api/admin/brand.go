@@ -89,20 +89,7 @@ func UpdateBrandSettings(c *gin.Context) {
 		response.Error(c, 400, "管理后台登录标题长度必须在1-100字符之间")
 		return
 	}
-	
-	if len(req.UserSystemName) == 0 || len(req.UserSystemName) > 100 {
-		response.Error(c, 400, "用户中心系统名称长度必须在1-100字符之间")
-		return
-	}
-	if len(req.UserSystemTitle) == 0 || len(req.UserSystemTitle) > 100 {
-		response.Error(c, 400, "用户中心浏览器标题长度必须在1-100字符之间")
-		return
-	}
-	if len(req.UserLoginTitle) == 0 || len(req.UserLoginTitle) > 100 {
-		response.Error(c, 400, "用户中心登录标题长度必须在1-100字符之间")
-		return
-	}
-	
+
 	if len(req.ContainerSystemName) == 0 || len(req.ContainerSystemName) > 100 {
 		response.Error(c, 400, "容器面板系统名称长度必须在1-100字符之间")
 		return

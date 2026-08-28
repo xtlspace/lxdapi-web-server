@@ -81,25 +81,6 @@ func GetUserByUsername(username string) (*models.User, error) {
 	return &user, nil
 }
 
-func GetUserByAPIKey(apiKey string) (*models.User, error) {
-	var user models.User
-	if err := db.DB.Where("api_key = ? AND status = ?", apiKey, "active").First(&user).Error; err != nil {
-		return nil, fmt.Errorf("无效的密码")
-	}
-	return &user, nil
-}
-
-func GetUserByUsernameAndAPIKey(username, apiKey string) (*models.User, error) {
-	var user models.User
-	if err := db.DB.Where("username = ? AND api_key = ?", username, apiKey).First(&user).Error; err != nil {
-		return nil, fmt.Errorf("用户名或密码无效")
-	}
-	if user.Status != "active" {
-		return nil, fmt.Errorf("账户已被禁用，请联系管理员")
-	}
-	return &user, nil
-}
-
 func ListUsers() ([]models.User, error) {
 	var users []models.User
 	if err := db.DB.Find(&users).Error; err != nil {
