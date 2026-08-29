@@ -3,15 +3,13 @@ package admin
 import (
 	"context"
 	"github.com/gin-gonic/gin"
-	"lxdapi/internal/cache"
 	"lxdapi/internal/db"
 	"lxdapi/internal/executor"
 	"lxdapi/internal/service"
-	"lxdapi/internal/traffic"
+	"lxdapi/internal/monitor"
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/response"
-	"time"
 )
 
 // ListContainers 获取容器列表
@@ -73,25 +71,6 @@ func GetContainer(c *gin.Context) {
 	}
 
 	response.Success(c, info)
-}
-
-func GetContainerCPUUsage(c *gin.Context) {
-	name := c.Param("name")
-	if name == "" {
-		response.Error(c, 400, "缺少容器名称")
-		return
-	}
-
-	metrics := cache.GetRecentCPUMetrics(name, time.Now().Add(-time.Hour))
-	list := make([]gin.H, 0, len(metrics))
-	for _, m := range metrics {
-		list = append(list, gin.H{
-			"time":      m.CreatedAt.Format("15:04:05"),
-			"cpu_usage": m.CPUUsage,
-		})
-	}
-
-	response.Success(c, list)
 }
 
 // DeleteContainer 删除容器
@@ -278,11 +257,11 @@ func ContainerAction(c *gin.Context) {
 		response.Success(c, "密码重置成功")
 
 	case "reset-traffic":
-		if traffic.GlobalMonitor == nil {
+		if monitor.GlobalMonitor == nil {
 			response.Error(c, 500, "流量监控未启用")
 			return
 		}
-		if err := traffic.GlobalMonitor.ResetTraffic(name); err != nil {
+		if err := monitor.GlobalMonitor.ResetTraffic(name); err != nil {
 			response.Error(c, 500, err.Error())
 			return
 		}

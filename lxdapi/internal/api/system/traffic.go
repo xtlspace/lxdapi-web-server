@@ -2,7 +2,7 @@ package system
 
 import (
 	"github.com/gin-gonic/gin"
-	"lxdapi/internal/traffic"
+	"lxdapi/internal/monitor"
 	"lxdapi/pkg/response"
 )
 
@@ -25,12 +25,12 @@ func GetTraffic(c *gin.Context) {
 		return
 	}
 	
-	if traffic.GlobalMonitor == nil {
+	if monitor.GlobalMonitor == nil {
 		response.Error(c, 500, "流量监控未启用")
 		return
 	}
 	
-	t, err := traffic.GlobalMonitor.GetTraffic(name)
+	t, err := monitor.GlobalMonitor.GetTraffic(name)
 	if err != nil {
 		response.Error(c, 500, err.Error())
 		return
@@ -59,12 +59,12 @@ func ResetTraffic(c *gin.Context) {
 		return
 	}
 
-	if traffic.GlobalMonitor == nil {
+	if monitor.GlobalMonitor == nil {
 		response.Error(c, 500, "流量监控未启用")
 		return
 	}
 
-	if err := traffic.GlobalMonitor.ResetTraffic(name); err != nil {
+	if err := monitor.GlobalMonitor.ResetTraffic(name); err != nil {
 		response.Error(c, 500, err.Error())
 		return
 	}

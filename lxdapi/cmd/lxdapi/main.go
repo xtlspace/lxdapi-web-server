@@ -25,7 +25,7 @@ import (
 	"lxdapi/internal/middleware"
 	"lxdapi/internal/service"
 	"lxdapi/internal/task"
-	"lxdapi/internal/traffic"
+	"lxdapi/internal/monitor"
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/plugin"
@@ -57,14 +57,14 @@ func main() {
 		logger.Error("数据库初始化失败: %v", err)
 		return
 	}
-	logger.OK("数据库连接成功")
+	logger.OK("数据库连接成�?)
 
-	logger.Info("正在初始化网络组件...")
+	logger.Info("正在初始化网络组�?..")
 	
 	if err := ipv4.FlushNftTables(); err != nil {
-		logger.Error("清空nftables表失败: %v", err)
+		logger.Error("清空nftables表失�? %v", err)
 	} else {
-		logger.OK("nftables 表已清空，等待按数据库重建")
+		logger.OK("nftables 表已清空，等待按数据库重�?)
 	}
 	
 	if err := ipv4.InitManager(); err != nil {
@@ -77,15 +77,15 @@ func main() {
 	
 	var portMappingV4Count int64
 	db.DB.Model(&models.PortMappingV4{}).Count(&portMappingV4Count)
-	logger.OK("IPv4端口映射: %d条规则", portMappingV4Count)
+	logger.OK("IPv4端口映射: %d条规�?, portMappingV4Count)
 	
 	var portMappingV6Count int64
 	db.DB.Model(&models.PortMappingV6{}).Count(&portMappingV6Count)
-	logger.OK("IPv6端口映射: %d条规则", portMappingV6Count)
+	logger.OK("IPv6端口映射: %d条规�?, portMappingV6Count)
 	
 
 
-	if err := traffic.InitMonitor(); err != nil {
+	if err := monitor.InitMonitor(); err != nil {
 		logger.Error("流量监控器初始化失败: %v", err)
 	} else {
 		logger.OK("流量监控器初始化成功")
@@ -116,7 +116,7 @@ func main() {
 	if err := pluginManager.StartAll(); err != nil {
 		logger.Error("插件启动失败: %v", err)
 	} else {
-		logger.OK("所有插件启动成功")
+		logger.OK("所有插件启动成�?)
 	}
 
 	containerService := service.NewContainerService()
@@ -218,26 +218,26 @@ func main() {
 	executor.ClearPendingTasks()
 
 	if err := executor.InitQueue(); err != nil {
-		logger.Error("任务队列初始化失败: %v", err)
+		logger.Error("任务队列初始化失�? %v", err)
 	} else {
-		logger.OK("任务队列初始化成功")
+		logger.OK("任务队列初始化成�?)
 	}
 
 	ctx := context.Background()
-	if traffic.GlobalMonitor != nil {
-		go traffic.GlobalMonitor.Start(ctx)
+	if monitor.GlobalMonitor != nil {
+		go monitor.GlobalMonitor.Start(ctx)
 		logger.OK("流量监控器已启动")
 	}
 
 	task.StartAutoCleanup()
-	logger.OK("自动清理任务已启动")
+	logger.OK("自动清理任务已启�?)
 
 	go func() {
-		logger.Info("启动时自动同步镜像模板...")
+		logger.Info("启动时自动同步镜像模�?..")
 		svc := service.NewTemplateService()
 		added, updated, deleted, err := svc.SyncFromLXD(context.Background())
 		if err != nil {
-			logger.Error("启动时同步模板失败: %v", err)
+			logger.Error("启动时同步模板失�? %v", err)
 			return
 		}
 		logger.OK("启动模板同步完成: 新增 %d, 更新 %d, 删除 %d", added, updated, deleted)
@@ -260,7 +260,7 @@ func main() {
 	
 	templatesFS, err := fs.Sub(embeddedFiles, "templates")
 	if err != nil {
-		logger.Error("加载嵌入式模板失败: %v", err)
+		logger.Error("加载嵌入式模板失�? %v", err)
 		patterns := []string{
 			"templates/*.html",
 			"templates/admin/*.html",
@@ -294,14 +294,14 @@ func main() {
 			
 			content, err := fs.ReadFile(templatesFS, path)
 			if err != nil {
-				logger.Error("读取嵌入式模板失败 %s: %v", path, err)
+				logger.Error("读取嵌入式模板失�?%s: %v", path, err)
 				return nil
 			}
 			
 			name := filepath.ToSlash(path)
 			_, err = tmpl.New(name).Parse(string(content))
 			if err != nil {
-				logger.Error("解析嵌入式模板失败 %s: %v", path, err)
+				logger.Error("解析嵌入式模板失�?%s: %v", path, err)
 			}
 			return nil
 		})
@@ -403,7 +403,6 @@ func main() {
 		adminAPI.GET("/host/stats", admin.GetHostStats)
 		adminAPI.GET("/containers", admin.ListContainers)
 		adminAPI.GET("/containers/:name", admin.GetContainer)
-		adminAPI.GET("/containers/:name/cpuUsage", admin.GetContainerCPUUsage)
 		adminAPI.DELETE("/containers/:name", admin.DeleteContainer)
 		adminAPI.POST("/containers/:name/action", admin.ContainerAction)
 		adminAPI.GET("/containers/:name/config", admin.GetContainerConfig)
@@ -461,7 +460,6 @@ func main() {
 	containerAPI.Use(middleware.ContainerAuth())
 	{
 		containerAPI.GET("/info", container.GetInfo)
-	containerAPI.GET("/cpuUsage", container.GetCPUUsage)
 		containerAPI.GET("/templates", container.GetTemplateList)
 		containerAPI.POST("/action", container.Action)
 		containerAPI.POST("/port-mapping/allocate", container.AllocatePortMapping)
@@ -478,7 +476,7 @@ func main() {
 	if cfg.System.Server.TLS.Enabled {
 		startWithTLS(r, addr, cfg)
 	} else {
-		logger.Info("服务启动 (HTTP)，监听: %s", addr)
+		logger.Info("服务启动 (HTTP)，监�? %s", addr)
 		if err := r.Run(addr); err != nil {
 			logger.Error("服务启动失败: %v", err)
 		}
@@ -499,16 +497,16 @@ func startWithTLS(r *gin.Engine, addr string, cfg *core.Config) {
 	if err == nil && certContent != "" && keyContent != "" {
 		logger.Info("检测到Web后台配置的证书，优先使用...")
 		if err := brandService.SaveTLSCertificates(certContent, keyContent); err != nil {
-			logger.Error("写入Web配置的证书失败: %v", err)
+			logger.Error("写入Web配置的证书失�? %v", err)
 		} else {
-			certSource = "自定义"
+			certSource = "自定�?
 			logger.OK("已加载自定义证书")
 		}
 	}
 	
 	if certSource == "" && tlsCfg.AutoGenerate {
 		generateSelfSignedCert(certMgr)
-		certSource = "自签名"
+		certSource = "自签�?
 	}
 	
 	if certSource == "" {
@@ -516,12 +514,12 @@ func startWithTLS(r *gin.Engine, addr string, cfg *core.Config) {
 	}
 	
 	logger.Info("证书来源: %s", certSource)
-	logger.Info("服务启动 (HTTPS)，监听: %s", addr)
+	logger.Info("服务启动 (HTTPS)，监�? %s", addr)
 	logger.Info("TLS证书: %s", certFile)
 	logger.Info("TLS私钥: %s", keyFile)
 	
 	if err := r.RunTLS(addr, certFile, keyFile); err != nil {
-		logger.Error("HTTPS服务器启动失败: %v", err)
+		logger.Error("HTTPS服务器启动失�? %v", err)
 	}
 }
 
@@ -539,13 +537,13 @@ func generateSelfSignedCert(certMgr *tlsManager.CertificateManager) {
 		}
 		
 		if err := certMgr.GenerateSelfSignedCert(opts); err != nil {
-			logger.Error("生成自签名证书失败: %v", err)
-			log.Fatalf("生成自签名证书失败: %v", err)
+			logger.Error("生成自签名证书失�? %v", err)
+			log.Fatalf("生成自签名证书失�? %v", err)
 		}
 		
-		logger.OK("自签名证书生成成功 (有效期10年)")
+		logger.OK("自签名证书生成成�?(有效�?0�?")
 	} else if !certMgr.ValidateCertificate() {
-		logger.Warn("现有证书无效或已过期，重新生成...")
+		logger.Warn("现有证书无效或已过期，重新生�?..")
 		opts := tlsManager.GenerateOptions{
 			Organization:  "lxdapi",
 			Country:       "US",
@@ -561,7 +559,7 @@ func generateSelfSignedCert(certMgr *tlsManager.CertificateManager) {
 			log.Fatalf("重新生成证书失败: %v", err)
 		}
 		
-		logger.OK("证书重新生成成功 (有效期10年)")
+		logger.OK("证书重新生成成功 (有效�?0�?")
 	} else {
 		logger.OK("使用现有证书")
 	}

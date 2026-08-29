@@ -11,7 +11,6 @@ import (
 	"lxdapi/internal/ipv6"
 	"lxdapi/internal/lxc"
 	"lxdapi/models"
-	"lxdapi/pkg/format"
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/plugin"
 	"math/big"
@@ -217,16 +216,6 @@ func (s *ContainerService) Create(ctx context.Context, req *models.CreateContain
 	if needRetryIPv4 || needRetryIPv6 {
 		logger.Info("启动后台任务获取容器IP (IPv4: %v, IPv6: %v)", needRetryIPv4, needRetryIPv6)
 		go s.retryGetContainerIPs(req.Name, needRetryIPv4, needRetryIPv6, "", "")
-	}
-	
-	if req.TrafficLimit > 0 {
-		traffic := &models.Traffic{
-			ContainerName: req.Name,
-			LimitGB:       req.TrafficLimit,
-		}
-		if err := db.DB.Create(traffic).Error; err != nil {
-			logger.Warn("创建流量记录失败: %v", err)
-		}
 	}
 	
 	if _, err := CreateContainerCredential(req.Name); err != nil {
@@ -469,7 +458,6 @@ func (s *ContainerService) Delete(ctx context.Context, name string) error {
 	}
 	
 	db.DB.Unscoped().Where("name = ?", name).Delete(&models.Container{})
-	db.DB.Unscoped().Where("container_name = ?", name).Delete(&models.Traffic{})
 	
 	if err := DeleteContainerCredential(name); err != nil {
 		logger.Warn("删除容器凭证失败: %v", err)
@@ -546,14 +534,13 @@ func (s *ContainerService) GetInfo(ctx context.Context, name string) (map[string
 		"cpu":                0,
 		"memory":             "",
 		"disk":               "",
-		"cpu_usage":          0.0,
-		"memory_usage":       "",
 		"memory_usage_raw":   0,
-		"disk_usage":         "",
 		"disk_usage_raw":     0,
-		"traffic_usage":       "",
-		"traffic_usage_raw":   0,
+		"traffic_usage":       container.TrafficUsage,
 		"traffic_limit":       container.TrafficLimit,
+		"rx_bytes":            container.RxBytes,
+		"tx_bytes":            container.TxBytes,
+		"locked":              container.Locked,
 		"ipv4_pool_limit":     container.IPv4PoolLimit,
 		"ipv4_mapping_limit":  container.IPv4MappingLimit,
 		"ipv6_mapping_limit":  container.IPv6MappingLimit,
@@ -599,24 +586,14 @@ func (s *ContainerService) GetInfo(ctx context.Context, name string) (map[string
 		}
 	}
 
-	var traffic models.Traffic
-	if err := db.DB.Where("container_name = ?", name).First(&traffic).Error; err == nil {
-		result["traffic_usage_raw"] = traffic.TotalGB
-		result["traffic_usage"] = fmt.Sprintf("%.2f GB", traffic.TotalGB)
-	}
-
 	if info.State != nil && info.Status == "Running" {
-		result["cpu_usage"] = cache.GetLatestCPUUsage(name)
-
 		if memUsage, ok := info.State.Memory["usage"].(float64); ok {
 			result["memory_usage_raw"] = uint64(memUsage)
-			result["memory_usage"] = format.BytesUint64(uint64(memUsage))
 		}
 
 		if diskUsage, ok := info.State.Disk["root"].(map[string]interface{}); ok {
 			if usage, ok := diskUsage["usage"].(float64); ok {
 				result["disk_usage_raw"] = uint64(usage)
-				result["disk_usage"] = format.BytesUint64(uint64(usage))
 			}
 		}
 	}
@@ -883,7 +860,6 @@ func (s *ContainerService) UpdateConfig(ctx context.Context, name string, req *m
 	if req.TrafficLimit != nil && *req.TrafficLimit >= 0 {
 		dbUpdates["traffic_limit"] = *req.TrafficLimit
 		updated = append(updated, "traffic_limit")
-		db.DB.Model(&models.Traffic{}).Where("container_name = ?", name).Update("limit_gb", *req.TrafficLimit)
 	}
 
 	if req.IPv4PoolLimit != nil && *req.IPv4PoolLimit >= 0 {

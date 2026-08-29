@@ -3,14 +3,12 @@ package container
 import (
 	"context"
 	"github.com/gin-gonic/gin"
-	"lxdapi/internal/cache"
 	"lxdapi/internal/db"
 	"lxdapi/internal/executor"
 	"lxdapi/internal/service"
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/response"
-	"time"
 )
 
 var containerService *service.ContainerService
@@ -50,28 +48,7 @@ func GetInfo(c *gin.Context) {
 		}
 	}
 
-	var traffic models.Traffic
-	if err := db.DB.Where("container_name = ?", name).First(&traffic).Error; err == nil {
-		info["traffic"] = traffic
-	}
-
 	response.Success(c, info)
-}
-
-func GetCPUUsage(c *gin.Context) {
-	containerName, _ := c.Get("container_name")
-	name := containerName.(string)
-
-	metrics := cache.GetRecentCPUMetrics(name, time.Now().Add(-time.Hour))
-	list := make([]gin.H, 0, len(metrics))
-	for _, m := range metrics {
-		list = append(list, gin.H{
-			"time":      m.CreatedAt.Format("15:04:05"),
-			"cpu_usage": m.CPUUsage,
-		})
-	}
-
-	response.Success(c, list)
 }
 
 // GetTemplateList 获取模板列表

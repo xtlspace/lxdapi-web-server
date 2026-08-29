@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"lxdapi/internal/ipv6"
 	"lxdapi/pkg/logger"
 	"strings"
 	"time"
@@ -452,6 +453,7 @@ func (c *Client) GetContainerIPv6(ctx context.Context, name string) (string, err
 						if address, ok := addrMap["address"].(string); ok {
 							if !strings.HasPrefix(address, "fe80:") {
 								logger.Info("从容器 %s eth0 网卡获取到IPv6: %s", name, address)
+								c.sendIPv6NeighborRequest(name, address)
 								return address, nil
 							}
 						}
@@ -462,6 +464,23 @@ func (c *Client) GetContainerIPv6(ctx context.Context, name string) (string, err
 	}
 
 	return "", fmt.Errorf("eth0 网卡未找到有效的IPv6地址")
+}
+
+func (c *Client) sendIPv6NeighborRequest(containerName, address string) {
+	cfg, err := ipv6.GetNeighborConfig()
+	if err != nil {
+		return
+	}
+	if !cfg.Enabled || cfg.Iface == "" || cfg.Gateway == "" || cfg.Prefix == "" {
+		return
+	}
+	if !strings.HasPrefix(address, cfg.Prefix) {
+		return
+	}
+	if err := ipv6.NserIPv6(cfg.Iface, address, cfg.Gateway); err != nil {
+		logger.Warn("容器 %s IPv6邻居请求发送失败 %s -> %s: %v", containerName, address, cfg.Gateway, err)
+		return
+	}
 }
 
 func (c *Client) SetContainerIPv4Address(ctx context.Context, name, ip string) error {

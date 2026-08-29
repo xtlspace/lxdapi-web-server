@@ -49,12 +49,13 @@ type Container struct {
 	IOWrite         int
 	ProcessesLimit  int
 	
-	MemoryUsage     string  `gorm:"size:50"`
-	MemoryUsageRaw  uint64
-	DiskUsage       string  `gorm:"size:50"`
-	DiskUsageRaw    uint64
-	TrafficUsage    string  `gorm:"size:50"`
-	TrafficUsageRaw uint64
+	MemoryUsageRaw uint64
+	DiskUsageRaw   uint64
+	TrafficUsage   string  `gorm:"size:50"` // 已用流量，单位GB，4位小数文本
+	RxBytes        int64   `gorm:"default:0"`
+	TxBytes        int64   `gorm:"default:0"`
+	Locked         bool    `gorm:"default:false"`
+	LastReset      time.Time
 	IPv4PoolLimit   int
 	IPv4MappingLimit int
 	IPv6MappingLimit int

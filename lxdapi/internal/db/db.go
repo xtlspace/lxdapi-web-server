@@ -52,9 +52,7 @@ func Init() error {
 	}
 
 	if err := DB.AutoMigrate(
-		&models.CPUMetric{},
 		&models.Container{},
-		&models.Traffic{},
 		&models.PortMappingV4{},
 		&models.PortMappingV6{},
 		&models.NATConfigV4{},
@@ -78,9 +76,12 @@ func Init() error {
 }
 
 func dropLegacyColumns() {
-	if DB.Migrator().HasColumn(&models.Container{}, "cpu_usage") {
-		if err := DB.Migrator().DropColumn(&models.Container{}, "cpu_usage"); err != nil {
-			fmt.Printf("删除 containers.cpu_usage 旧列失败: %v\n", err)
+	legacy := []string{"cpu_usage", "memory_usage", "disk_usage", "traffic_usage_raw"}
+	for _, col := range legacy {
+		if DB.Migrator().HasColumn(&models.Container{}, col) {
+			if err := DB.Migrator().DropColumn(&models.Container{}, col); err != nil {
+				fmt.Printf("删除 containers.%s 旧列失败: %v\n", col, err)
+			}
 		}
 	}
 }
