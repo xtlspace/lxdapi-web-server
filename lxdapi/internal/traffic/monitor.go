@@ -7,7 +7,7 @@ import (
 	"lxdapi/internal/db"
 	"lxdapi/internal/ipv6"
 	"lxdapi/internal/lxc"
-	"models"
+	"lxdapi/models"
 	"lxdapi/pkg/format"
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/plugin"
