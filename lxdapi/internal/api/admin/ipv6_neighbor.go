@@ -5,6 +5,7 @@ import (
 
 	"lxdapi/internal/db"
 	"lxdapi/internal/ipv6"
+	"lxdapi/internal/traffic"
 	"lxdapi/models"
 	"lxdapi/pkg/response"
 )
@@ -72,6 +73,8 @@ func SaveIPv6NeighborConfig(c *gin.Context) {
 	if req.Enabled && !wasEnabled {
 		ipv6.ApplySysctl()
 	}
+
+	traffic.ReloadNeighborConfig()
 
 	response.Success(c, config)
 }

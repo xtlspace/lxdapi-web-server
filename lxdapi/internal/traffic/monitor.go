@@ -13,6 +13,7 @@ import (
 	"lxdapi/pkg/plugin"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"gorm.io/gorm"
@@ -23,6 +24,7 @@ type Monitor struct {
 	interval  time.Duration
 	pending   map[string]*sampleState
 	listAt    time.Time
+	neighbor  atomic.Value
 }
 
 const (
@@ -47,6 +49,8 @@ func InitMonitor() error {
 		interval:  time.Duration(cfg.Interval) * time.Second,
 		pending:   make(map[string]*sampleState),
 	}
+
+	GlobalMonitor.reloadNeighborConfig()
 
 	logger.OK("流量监控器初始化成功")
 	return nil
@@ -235,10 +239,7 @@ func (m *Monitor) handleIPv6NeighborRequests(containerName string, state *contai
 		return
 	}
 
-	var cfg models.IPv6NeighborConfig
-	if err := db.DB.First(&cfg).Error; err != nil {
-		return
-	}
+	cfg := m.neighbor.Load().(models.IPv6NeighborConfig)
 	if !cfg.Enabled {
 		return
 	}
@@ -261,6 +262,25 @@ func (m *Monitor) handleIPv6NeighborRequests(containerName string, state *contai
 			continue
 		}
 		logger.OK("容器 %s IPv6邻居请求已发送: %s -> 网关 %s", containerName, ip, cfg.Gateway)
+	}
+}
+
+// reloadNeighborConfig reloads the IPv6 neighbor request configuration from the
+// database and stores it in the in-memory atomic cache used by the sampling path.
+func (m *Monitor) reloadNeighborConfig() {
+	cfg, err := ipv6.GetNeighborConfig()
+	if err != nil {
+		cfg = models.IPv6NeighborConfig{}
+	}
+	m.neighbor.Store(cfg)
+}
+
+// ReloadNeighborConfig reloads the cached IPv6 neighbor request configuration
+// in the running monitor. It is called after an admin-side config change so the
+// sampling path picks up the new value without per-container DB reads.
+func ReloadNeighborConfig() {
+	if GlobalMonitor != nil {
+		GlobalMonitor.reloadNeighborConfig()
 	}
 }
 
