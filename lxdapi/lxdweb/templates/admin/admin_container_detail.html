@@ -1390,15 +1390,16 @@
                 showToast('error', '访问码不可用');
                 return;
             }
+            const link = location.origin + '/container/dashboard?hash=' + hash;
             
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(hash).then(() => {
-                    showToast('success', '访问码已复制到剪贴板');
+                navigator.clipboard.writeText(link).then(() => {
+                    showToast('success', '访问链接已复制到剪贴板');
                 }).catch(() => {
-                    fallbackCopy(hash);
+                    fallbackCopy(link);
                 });
             } else {
-                fallbackCopy(hash);
+                fallbackCopy(link);
             }
         }
 
@@ -1411,7 +1412,7 @@
             textArea.select();
             try {
                 document.execCommand('copy');
-                showToast('success', '访问码已复制到剪贴板');
+                showToast('success', '访问链接已复制到剪贴板');
             } catch (err) {
                 showToast('error', '复制失败，请手动复制');
             }

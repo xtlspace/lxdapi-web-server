@@ -468,6 +468,7 @@ func main() {
 		containerAPI.GET("/ip", container.GetIP)
 		containerAPI.POST("/ip/allocate", container.AllocateIP)
 		containerAPI.POST("/ip/release", container.ReleaseIP)
+		containerAPI.POST("/regenerate-hash", container.RegenerateHash)
 		containerAPI.POST("/console/create-token", console.CreateToken)
 	}
 

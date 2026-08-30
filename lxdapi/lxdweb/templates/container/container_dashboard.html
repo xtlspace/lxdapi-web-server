@@ -153,6 +153,11 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                 </svg>
                             </button>
+                            <button onclick="regenerateHash()" class="p-1 text-gray-600 hover:bg-gray-200 rounded-lg transition" title="重置访问码">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -771,39 +776,22 @@
             $('#containerHash').text(hash);
         }
 
-        function loadContainerHashOld() {
-            $.ajax({
-                url: `/api/container/hash`,
-                type: 'GET',
-                headers: headers,
-                success: function(result) {
-                    if (result.code === 200 && result.data) {
-                        $('#containerHash').text(result.data.hash || '-');
-                    } else {
-                        $('#containerHash').text('-');
-                    }
-                },
-                error: function() {
-                    $('#containerHash').text('加载失败');
-                }
-            });
-        }
-
         function copyHash() {
-            const hash = $('#containerHash').text();
-            if (hash === '加载中...' || hash === '-' || hash === '加载失败') {
+            const h = $('#containerHash').text();
+            if (h === '加载中...' || h === '-' || h === '加载失败') {
                 showToast('error', '访问码不可用');
                 return;
             }
-            
+            const link = location.origin + '/container/dashboard?hash=' + h;
+
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(hash).then(() => {
-                    showToast('success', '访问码已复制到剪贴板');
+                navigator.clipboard.writeText(link).then(() => {
+                    showToast('success', '访问链接已复制到剪贴板');
                 }).catch(() => {
-                    fallbackCopy(hash);
+                    fallbackCopy(link);
                 });
             } else {
-                fallbackCopy(hash);
+                fallbackCopy(link);
             }
         }
 
@@ -816,7 +804,7 @@
             textArea.select();
             try {
                 document.execCommand('copy');
-                showToast('success', '访问码已复制到剪贴板');
+                showToast('success', '访问链接已复制到剪贴板');
             } catch (err) {
                 showToast('error', '复制失败，请手动复制');
             }
@@ -824,10 +812,6 @@
         }
 
         function regenerateHash() {
-            showToast('error', '容器用户无法重新生成访问码，请联系管理员');
-        }
-
-        function regenerateHashDisabled() {
             if (!confirm('重新生成访问码后，旧访问码将失效，确定要继续吗？')) {
                 return;
             }
@@ -839,8 +823,11 @@
                 headers: headers,
                 success: function(result) {
                     if (result.code === 200 && result.data) {
-                        $('#containerHash').text(result.data.hash);
-                        showToast('success', '访问码已重新生成');
+                        localStorage.setItem('container_hash', result.data.hash);
+                        showToast('success', '访问码已重新生成，正在刷新...');
+                        setTimeout(function() {
+                            location.href = location.origin + '/container/dashboard?hash=' + result.data.hash;
+                        }, 800);
                     } else {
                         showToast('error', result.msg || '重新生成失败');
                     }
