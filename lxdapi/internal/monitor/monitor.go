@@ -53,16 +53,20 @@ func (m *Monitor) Start(ctx context.Context) {
 		for i := range rows {
 			select {
 			case <-ctx.Done():
-				logger.Info("流量监控已停止")
 				return
 			default:
 			}
 
 			m.process(&rows[i])
+
+			if i < len(rows)-1 {
+				if !m.wait(ctx, m.interval) {
+					return
+				}
+			}
 		}
 
 		if !m.wait(ctx, m.interval) {
-			logger.Info("流量监控已停止")
 			return
 		}
 	}
