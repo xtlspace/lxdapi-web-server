@@ -113,7 +113,6 @@ type PluginConfig struct {
 }
 
 type AdminConfig struct {
-	Enabled       bool   `yaml:"enabled"`
 	Username      string `yaml:"username"`
 	Password      string `yaml:"password"`
 	SessionSecret string `yaml:"session_secret"`

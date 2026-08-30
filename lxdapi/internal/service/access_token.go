@@ -39,7 +39,3 @@ func ValidateAccessToken(token string) (*models.AccessToken, error) {
 
 	return &accessToken, nil
 }
-
-func CleanExpiredTokens() {
-	db.DB.Unscoped().Where("expires_at < ?", time.Now()).Delete(&models.AccessToken{})
-}

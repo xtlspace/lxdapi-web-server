@@ -28,10 +28,6 @@ func NewContainerService() *ContainerService {
 	}
 }
 
-func (s *ContainerService) GetLXCClient() *lxc.Client {
-	return s.lxcClient
-}
-
 func generatePassword() string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
 	const length = 16
@@ -509,11 +505,6 @@ func (s *ContainerService) ResetPassword(ctx context.Context, name, password str
 	
 	logger.OK("容器 %s 密码重置成功", name)
 	return nil
-}
-
-func GetContainerFromCache(name string) (interface{}, bool) {
-	cacheData, ok := cache.GetContainerCache(name)
-	return cacheData, ok
 }
 
 func (s *ContainerService) GetInfo(ctx context.Context, name string) (map[string]interface{}, error) {

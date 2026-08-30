@@ -15,8 +15,6 @@ import (
 
 type TaskFunc func(ctx context.Context) error
 
-type taskIDKey struct{}
-
 type Task struct {
 	ID            uint
 	ContainerName string
@@ -128,7 +126,6 @@ func (q *Queue) executeTask(task *Task) {
 	
 	timeout := time.Duration(core.GlobalConfig.Task.Timeout) * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	ctx = context.WithValue(ctx, taskIDKey{}, task.ID)
 	defer cancel()
 	
 	err := task.Func(ctx)
@@ -264,13 +261,5 @@ func CreateSyncTask(containerName, action string, fn TaskFunc) error {
 	})
 	
 	return nil
-}
-
-func UpdateTaskResult(ctx context.Context, result string) {
-	taskID, ok := ctx.Value(taskIDKey{}).(uint)
-	if !ok || taskID == 0 {
-		return
-	}
-	db.DB.Model(&models.Task{}).Where("id = ?", taskID).Update("result", result)
 }
 

@@ -65,13 +65,6 @@ func AdminTasks(c *gin.Context) {
 	}))
 }
 
-func AdminIPv4(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/admin_ipv4.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "IPv4端口映射 - LXD API 管理",
-		"username": "admin",
-	}))
-}
-
 func AdminIPPoolV4(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_ip_pool_v4.html", utils.MergeTemplateData(c, gin.H{
 		"title":    "IPv4地址池 - LXD API 管理",

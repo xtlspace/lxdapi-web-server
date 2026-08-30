@@ -111,10 +111,6 @@ func (c *Client) CreateContainerWithConfig(ctx context.Context, name, image, sto
 	return nil
 }
 
-func (c *Client) CreateContainer(ctx context.Context, name, image string) error {
-	return c.CreateContainerWithConfig(ctx, name, image, "default", 0, "", "", "", "", false, false, false, "", "", "", "", 0)
-}
-
 func (c *Client) StartContainer(ctx context.Context, name string) error {
 	logger.Info("启动容器: %s", name)
 	data, err := c.put(ctx, fmt.Sprintf("/1.0/instances/%s/state", name), map[string]interface{}{"action": "start"})
@@ -165,40 +161,6 @@ func (c *Client) RestartContainer(ctx context.Context, name string) error {
 		return fmt.Errorf("重启-启动失败: %v", err)
 	}
 	logger.OK("容器重启成功: %s", name)
-	return nil
-}
-
-func (c *Client) PauseContainer(ctx context.Context, name string) error {
-	logger.Info("暂停容器: %s", name)
-	data, err := c.put(ctx, fmt.Sprintf("/1.0/instances/%s/state", name), map[string]interface{}{"action": "freeze"})
-	if err != nil {
-		return fmt.Errorf("暂停容器失败: %v", err)
-	}
-	opPath, err := parseOperationID(data)
-	if err != nil {
-		return fmt.Errorf("解析暂停操作失败: %v", err)
-	}
-	if err := c.waitForOperation(ctx, opPath, 60); err != nil {
-		return fmt.Errorf("等待容器暂停失败: %v", err)
-	}
-	logger.OK("容器暂停成功: %s", name)
-	return nil
-}
-
-func (c *Client) ResumeContainer(ctx context.Context, name string) error {
-	logger.Info("恢复容器: %s", name)
-	data, err := c.put(ctx, fmt.Sprintf("/1.0/instances/%s/state", name), map[string]interface{}{"action": "unfreeze"})
-	if err != nil {
-		return fmt.Errorf("恢复容器失败: %v", err)
-	}
-	opPath, err := parseOperationID(data)
-	if err != nil {
-		return fmt.Errorf("解析恢复操作失败: %v", err)
-	}
-	if err := c.waitForOperation(ctx, opPath, 60); err != nil {
-		return fmt.Errorf("等待容器恢复失败: %v", err)
-	}
-	logger.OK("容器恢复成功: %s", name)
 	return nil
 }
 
@@ -259,12 +221,6 @@ func (c *Client) ContainerExists(ctx context.Context, name string) bool {
 	var info map[string]interface{}
 	err := c.get(ctx, fmt.Sprintf("/1.0/instances/%s", name), &info)
 	return err == nil
-}
-
-func (c *Client) SetContainerConfig(ctx context.Context, name, key, value string) error {
-	return c.patch(ctx, fmt.Sprintf("/1.0/instances/%s", name), map[string]interface{}{
-		"config": map[string]interface{}{key: value},
-	})
 }
 
 func (c *Client) SetRootPassword(ctx context.Context, name, password string) error {

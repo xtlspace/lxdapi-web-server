@@ -60,28 +60,6 @@ func GetAllContainersCache() []ContainerCacheJSON {
 	return result
 }
 
-func GetContainerCache(name string) (*ContainerCacheJSON, bool) {
-	containerCacheMu.RLock()
-	v, ok := containerCache[name]
-	containerCacheMu.RUnlock()
-	if ok {
-		return v, true
-	}
-
-	var container models.Container
-	if err := db.DB.Where("name = ?", name).First(&container).Error; err != nil {
-		return nil, false
-	}
-
-	cacheData := buildCacheEntry(container)
-
-	containerCacheMu.Lock()
-	containerCache[name] = cacheData
-	containerCacheMu.Unlock()
-
-	return cacheData, true
-}
-
 func DeleteContainerCache(name string) {
 	containerCacheMu.Lock()
 	delete(containerCache, name)

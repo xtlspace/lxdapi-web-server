@@ -54,8 +54,6 @@ func NewClient() *Client {
 	}
 }
 
-func (c *Client) SocketPath() string { return c.socket }
-
 func (c *Client) doRequest(ctx context.Context, method, apiPath string, body interface{}) ([]byte, error) {
 	var bodyReader io.Reader
 	if body != nil {

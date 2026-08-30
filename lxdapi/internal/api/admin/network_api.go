@@ -3,7 +3,6 @@ package admin
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -80,19 +79,4 @@ func SetNetworkNATStatus(c *gin.Context) {
 	}
 
 	response.Success(c, "设置成功")
-}
-
-func FormatNetworkStatus(v4nat, v6nat bool) string {
-	var parts []string
-	if v4nat {
-		parts = append(parts, "IPv4 NAT: ON")
-	} else {
-		parts = append(parts, "IPv4 NAT: OFF")
-	}
-	if v6nat {
-		parts = append(parts, "IPv6 NAT: ON")
-	} else {
-		parts = append(parts, "IPv6 NAT: OFF")
-	}
-	return strings.Join(parts, " | ")
 }

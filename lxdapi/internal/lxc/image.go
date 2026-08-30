@@ -47,15 +47,3 @@ func (c *Client) DeleteImage(ctx context.Context, fingerprint string) error {
 	logger.OK("镜像删除成功: %s", fingerprint)
 	return nil
 }
-
-func (c *Client) GetImageInfo(ctx context.Context, fingerprint string) (*ImageInfo, error) {
-	logger.Info("获取镜像详情: %s", fingerprint)
-
-	var info ImageInfo
-	err := c.get(ctx, "/1.0/images/"+fingerprint, &info)
-	if err != nil {
-		return nil, fmt.Errorf("获取镜像详情失败: %v", err)
-	}
-
-	return &info, nil
-}
