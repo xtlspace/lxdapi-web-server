@@ -10,10 +10,11 @@ import (
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/plugin"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/tidwall/gjson"
 )
 
 type Monitor struct {
@@ -58,13 +59,11 @@ func (m *Monitor) Start(ctx context.Context) {
 			}
 
 			m.process(&rows[i])
+		}
 
-			if i < len(rows)-1 {
-				if !m.wait(ctx, m.interval) {
-					logger.Info("流量监控已停止")
-					return
-				}
-			}
+		if !m.wait(ctx, m.interval) {
+			logger.Info("流量监控已停止")
+			return
 		}
 	}
 }
@@ -147,12 +146,12 @@ func (m *Monitor) collectRunning(c *models.Container, state *containerUsageSnaps
 	deltaTx := trafficDelta(newTx, uint64(c.TxBytes))
 	incrementGB := float64(deltaRx+deltaTx) / (1024 * 1024 * 1024)
 
-	totalGB := parseTrafficUsage(c.TrafficUsage) + incrementGB
+	totalGB := c.TrafficUsage + incrementGB
 
 	updates := map[string]interface{}{
-		"rx_bytes":     int64(newRx),
-		"tx_bytes":     int64(newTx),
-		"traffic_usage": fmt.Sprintf("%.4f", totalGB),
+		"rx_bytes":      int64(newRx),
+		"tx_bytes":      int64(newTx),
+		"traffic_usage": totalGB,
 	}
 
 	if c.TrafficLimit > 0 && totalGB >= float64(c.TrafficLimit) {
@@ -178,18 +177,6 @@ func trafficDelta(cur, base uint64) uint64 {
 		return cur - base
 	}
 	return cur
-}
-
-func parseTrafficUsage(s string) float64 {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return 0
-	}
-	v, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return 0
-	}
-	return v
 }
 
 func (m *Monitor) handleIPv6NeighborRequests(containerName string, state *containerUsageSnapshot) {
@@ -230,13 +217,6 @@ func ReloadNeighborConfig() {
 	}
 }
 
-type NetworkCounters struct {
-	BytesReceived   uint64 `json:"bytes_received"`
-	BytesSent       uint64 `json:"bytes_sent"`
-	PacketsReceived uint64 `json:"packets_received"`
-	PacketsSent     uint64 `json:"packets_sent"`
-}
-
 type containerUsageSnapshot struct {
 	Status    string
 	MemUsage  float64
@@ -246,44 +226,40 @@ type containerUsageSnapshot struct {
 	IPv6s     []string
 }
 
+// getContainerState 使用 gjson 流式按需提取 LXD state 响应字段，避免完整反序列化开销。
 func (m *Monitor) getContainerState(ctx context.Context, name string) (*containerUsageSnapshot, error) {
-	var raw struct {
-		Status string `json:"status"`
-		Memory struct {
-			Usage uint64 `json:"usage"`
-		} `json:"memory"`
-		Disk map[string]struct {
-			Usage uint64 `json:"usage"`
-		} `json:"disk"`
-		Network map[string]struct {
-			Counters  NetworkCounters `json:"counters"`
-			Addresses []struct {
-				Family  string `json:"family"`
-				Address string `json:"address"`
-			} `json:"addresses"`
-		} `json:"network"`
-	}
-	if err := m.lxcClient.Get(ctx, fmt.Sprintf("/1.0/instances/%s/state", name), &raw); err != nil {
+	data, err := m.lxcClient.GetRaw(ctx, fmt.Sprintf("/1.0/instances/%s/state", name))
+	if err != nil {
 		return nil, err
 	}
 
-	snap := &containerUsageSnapshot{Status: raw.Status}
+	stateBytes := gjson.GetBytes(data, "metadata")
 
-	snap.MemUsage = float64(raw.Memory.Usage)
-	if diskRoot, ok := raw.Disk["root"]; ok {
-		snap.DiskUsage = float64(diskRoot.Usage)
+	snap := &containerUsageSnapshot{
+		Status: stateBytes.Get("status").String(),
+	}
+
+	snap.MemUsage = stateBytes.Get("memory.usage").Float()
+
+	if root := stateBytes.Get("disk.root.usage"); root.Exists() {
+		snap.DiskUsage = root.Float()
 	}
 
 	// 仅采集 eth0 网卡
-	if eth0, ok := raw.Network["eth0"]; ok {
-		snap.RxBytes = eth0.Counters.BytesReceived
-		snap.TxBytes = eth0.Counters.BytesSent
+	if eth0 := stateBytes.Get("network.eth0"); eth0.Exists() {
+		counters := eth0.Get("counters")
+		snap.RxBytes = counters.Get("bytes_received").Uint()
+		snap.TxBytes = counters.Get("bytes_sent").Uint()
 
-		for _, addr := range eth0.Addresses {
-			if addr.Family == "inet6" && addr.Address != "" && !strings.HasPrefix(addr.Address, "fe80:") {
-				snap.IPv6s = append(snap.IPv6s, addr.Address)
+		eth0.Get("addresses").ForEach(func(_, v gjson.Result) bool {
+			if v.Get("family").String() == "inet6" {
+				addr := v.Get("address").String()
+				if addr != "" && !strings.HasPrefix(addr, "fe80:") {
+					snap.IPv6s = append(snap.IPv6s, addr)
+				}
 			}
-		}
+			return true
+		})
 	}
 
 	return snap, nil
@@ -313,7 +289,7 @@ type TrafficInfo struct {
 	ContainerName string    `json:"container_name"`
 	RxBytes       int64     `json:"rx_bytes"`
 	TxBytes       int64     `json:"tx_bytes"`
-	TrafficUsage  string    `json:"traffic_usage"`
+	TrafficUsage  float64   `json:"traffic_usage"`
 	TrafficLimit  int       `json:"traffic_limit"`
 	Locked        bool      `json:"locked"`
 	LastReset     time.Time `json:"last_reset"`
@@ -367,7 +343,7 @@ func (m *Monitor) autoResetTraffic() {
 		updates := map[string]interface{}{
 			"rx_bytes":      int64(state.RxBytes),
 			"tx_bytes":      int64(state.TxBytes),
-			"traffic_usage": "0.0000",
+			"traffic_usage": 0.0,
 			"locked":        false,
 			"last_reset":    now,
 		}
@@ -400,7 +376,7 @@ func (m *Monitor) ResetTraffic(containerName string) error {
 	err = db.DB.Model(&models.Container{}).Where("name = ?", containerName).Updates(map[string]interface{}{
 		"rx_bytes":      int64(state.RxBytes),
 		"tx_bytes":      int64(state.TxBytes),
-		"traffic_usage": "0.0000",
+		"traffic_usage": 0.0,
 		"locked":        false,
 		"last_reset":    time.Now(),
 	}).Error

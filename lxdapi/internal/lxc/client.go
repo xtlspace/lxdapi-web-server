@@ -180,6 +180,11 @@ func (c *Client) Get(ctx context.Context, apiPath string, result interface{}) er
 	return c.get(ctx, apiPath, result)
 }
 
+// GetRaw 返回原始响应字节，供 gjson 按需提取，避免完整反序列化。
+func (c *Client) GetRaw(ctx context.Context, apiPath string) ([]byte, error) {
+	return c.doRequest(ctx, "GET", apiPath, nil)
+}
+
 func (c *Client) Patch(ctx context.Context, apiPath string, body interface{}) error {
 	return c.patch(ctx, apiPath, body)
 }

@@ -659,7 +659,7 @@
             const memoryTotal = c.memory ? parseMemorySize(c.memory) : 0;
             const diskUsed = c.disk_usage_raw || 0;
             const diskTotal = c.disk ? parseMemorySize(c.disk) : 0;
-            const trafficUsedGB = parseFloat(c.traffic_usage || '0');
+            const trafficUsedGB = c.traffic_usage || 0;
             const trafficUsed = trafficUsedGB * 1024 * 1024 * 1024;
             const trafficLimit = c.traffic_limit || 0;
 

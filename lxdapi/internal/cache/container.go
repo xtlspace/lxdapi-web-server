@@ -23,7 +23,7 @@ type ContainerCacheJSON struct {
 	Disk            string                 `json:"disk"`
 	MemoryUsageRaw  uint64                 `json:"memory_usage_raw"`
 	DiskUsageRaw    uint64                 `json:"disk_usage_raw"`
-	TrafficUsage    string                 `json:"traffic_usage"`
+	TrafficUsage    float64                `json:"traffic_usage"`
 	TrafficLimit    int                    `json:"traffic_limit"`
 	RxBytes         int64                  `json:"rx_bytes"`
 	TxBytes         int64                  `json:"tx_bytes"`

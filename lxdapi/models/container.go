@@ -51,7 +51,7 @@ type Container struct {
 	
 	MemoryUsageRaw uint64
 	DiskUsageRaw   uint64
-	TrafficUsage   string  `gorm:"size:50"` // 已用流量，单位GB，4位小数文本
+	TrafficUsage   float64 // 已用流量，单位GB
 	RxBytes        int64   `gorm:"default:0"`
 	TxBytes        int64   `gorm:"default:0"`
 	Locked         bool    `gorm:"default:false"`

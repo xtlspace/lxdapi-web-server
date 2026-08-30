@@ -395,8 +395,8 @@
                             valueB = b.disk_usage_raw || 0;
                             break;
                         case 'traffic':
-                            valueA = parseFloat(a.traffic_usage || '0');
-                            valueB = parseFloat(b.traffic_usage || '0');
+                            valueA = a.traffic_usage || 0;
+                            valueB = b.traffic_usage || 0;
                             break;
                         default:
                             return 0;
@@ -481,9 +481,10 @@
                 const diskDisplay = `${diskUsed} / ${diskTotal}`;
                 
                 const trafficLimit = c.traffic_limit || 0;
+                const trafficUsedGB = c.traffic_usage || 0;
                 const trafficDisplay = trafficLimit > 0 ? 
-                    `${c.traffic_usage || '-'} / ${trafficLimit} GB` : 
-                    (c.traffic_usage || '-');
+                    `${trafficUsedGB.toFixed(4)} / ${trafficLimit} GB` : 
+                    trafficUsedGB.toFixed(4);
                 
                 html += `
                     <div class="content-box rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200">
@@ -578,9 +579,10 @@
                 const diskDisplay = `${diskUsed} / ${diskTotal}`;
                 
                 const trafficLimit = c.traffic_limit || 0;
+                const trafficUsedGB = c.traffic_usage || 0;
                 const trafficDisplay = trafficLimit > 0 ? 
-                    `${c.traffic_usage || '-'} / ${trafficLimit} GB` : 
-                    (c.traffic_usage || '-');
+                    `${trafficUsedGB.toFixed(4)} / ${trafficLimit} GB` : 
+                    trafficUsedGB.toFixed(4);
                 
                 const remarkBadge = c.remark ? 
                     `<span class="badge badge-sm bg-blue-100 text-blue-700 border-blue-200">${c.remark}</span>` : 
