@@ -230,32 +230,37 @@ type containerUsageSnapshot struct {
 	IPv6s     []string
 }
 
-// getContainerState 使用 gjson 流式按需提取 LXD state 响应字段，避免完整反序列化开销。
+// getContainerState 使用 gjson 单次扫描（GetManyBytes）提取 LXD state 响应字段，
+// 避免多次 Get 对 metadata 子串的重复词法解析。
 func (m *Monitor) getContainerState(ctx context.Context, name string) (*containerUsageSnapshot, error) {
 	data, err := m.lxcClient.GetRaw(ctx, fmt.Sprintf("/1.0/instances/%s/state", name))
 	if err != nil {
 		return nil, err
 	}
 
-	stateBytes := gjson.GetBytes(data, "metadata")
+	res := gjson.GetManyBytes(data,
+		"metadata.status",
+		"metadata.memory.usage",
+		"metadata.disk.root.usage",
+		"metadata.network.eth0.counters.bytes_received",
+		"metadata.network.eth0.counters.bytes_sent",
+		"metadata.network.eth0.addresses",
+	)
 
-	snap := &containerUsageSnapshot{
-		Status: stateBytes.Get("status").String(),
+	snap := &containerUsageSnapshot{Status: res[0].String()}
+
+	snap.MemUsage = res[1].Float()
+
+	if res[2].Exists() {
+		snap.DiskUsage = res[2].Float()
 	}
 
-	snap.MemUsage = stateBytes.Get("memory.usage").Float()
+	snap.RxBytes = res[3].Uint()
+	snap.TxBytes = res[4].Uint()
 
-	if root := stateBytes.Get("disk.root.usage"); root.Exists() {
-		snap.DiskUsage = root.Float()
-	}
-
-	// 仅采集 eth0 网卡
-	if eth0 := stateBytes.Get("network.eth0"); eth0.Exists() {
-		counters := eth0.Get("counters")
-		snap.RxBytes = counters.Get("bytes_received").Uint()
-		snap.TxBytes = counters.Get("bytes_sent").Uint()
-
-		eth0.Get("addresses").ForEach(func(_, v gjson.Result) bool {
+	// 仅采集 eth0 网卡；addresses 存在才解析过滤 inet6
+	if eth0 := res[5]; eth0.Exists() {
+		eth0.ForEach(func(_, v gjson.Result) bool {
 			if v.Get("family").String() == "inet6" {
 				addr := v.Get("address").String()
 				if addr != "" && !strings.HasPrefix(addr, "fe80:") {
