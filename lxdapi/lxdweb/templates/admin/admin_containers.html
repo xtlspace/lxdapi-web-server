@@ -87,7 +87,6 @@
                     <span class="text-xs text-gray-600">排序:</span>
                     <select id="sortField" onchange="changeSorting()" class="select select-bordered select-xs outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <option value="">默认</option>
-                        <option value="cpu">CPU</option>
                         <option value="memory">内存</option>
                         <option value="disk">磁盘</option>
                         <option value="traffic">流量</option>
@@ -387,10 +386,6 @@
                     let valueA, valueB;
                     
                     switch(sortField) {
-                        case 'cpu':
-                            valueA = a.cpu_usage || 0;
-                            valueB = b.cpu_usage || 0;
-                            break;
                         case 'memory':
                             valueA = a.memory_usage_raw || 0;
                             valueB = b.memory_usage_raw || 0;
@@ -400,8 +395,8 @@
                             valueB = b.disk_usage_raw || 0;
                             break;
                         case 'traffic':
-                            valueA = a.traffic_usage_raw || 0;
-                            valueB = b.traffic_usage_raw || 0;
+                            valueA = parseFloat(a.traffic_usage || '0');
+                            valueB = parseFloat(b.traffic_usage || '0');
                             break;
                         default:
                             return 0;
@@ -505,10 +500,6 @@
                             </div>
                             <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-3 mb-3 space-y-1.5 text-xs">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-gray-600">CPU</span>
-                                    <span class="font-medium text-gray-800">${(c.cpu_usage || 0).toFixed(1)}% / ${c.cpu || 1}核</span>
-                                </div>
-                                <div class="flex items-center justify-between">
                                     <span class="text-gray-600">内存</span>
                                     <span class="font-medium text-gray-800">${memoryDisplay}</span>
                                 </div>
@@ -550,7 +541,6 @@
                                     <th class="text-xs text-gray-600">主机名</th>
                                     <th class="text-xs text-gray-600">备注</th>
                                     <th class="text-xs text-gray-600">状态</th>
-                                    <th class="text-xs text-gray-600">CPU</th>
                                     <th class="text-xs text-gray-600">内存</th>
                                     <th class="text-xs text-gray-600">磁盘</th>
                                     <th class="text-xs text-gray-600">流量</th>
@@ -606,7 +596,6 @@
                         <td><span class="font-semibold text-gray-800 text-xs">${c.name}</span></td>
                         <td>${remarkBadge}</td>
                         <td>${statusBadge}</td>
-                        <td class="text-xs text-gray-700">${(c.cpu_usage || 0).toFixed(1)}% / ${c.cpu || 1}核</td>
                         <td class="text-xs text-gray-700">${memoryDisplay}</td>
                         <td class="text-xs text-gray-700">${diskDisplay}</td>
                         <td class="text-xs text-gray-700">${trafficDisplay}</td>
