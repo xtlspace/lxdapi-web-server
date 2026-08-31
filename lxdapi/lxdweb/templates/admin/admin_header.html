@@ -96,25 +96,12 @@
                         系统设置
                     </div>
                 </a>
-                <div class="dropdown">
-                    <div tabindex="0" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition cursor-pointer">
-                        <div class="flex items-center gap-2">
-                            <span class="iconify" data-icon="mdi:puzzle" data-width="18"></span>
-                            插件拓展
-                            <span class="iconify" data-icon="mdi:chevron-down" data-width="12"></span>
-                        </div>
+                <a href="/admin/nginx" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
+                    <div class="flex items-center gap-2">
+                        <span class="iconify" data-icon="mdi:web" data-width="18"></span>
+                        Nginx反向代理
                     </div>
-                    <ul tabindex="0" class="dropdown-content menu bg-white rounded-lg shadow-lg border border-gray-200 w-48 mt-2 p-1 z-50">
-                        <li><a href="/admin/firewall" class="text-sm flex items-center gap-2">
-                            <span class="iconify" data-icon="mdi:security" data-width="18"></span>
-                            防火墙
-                        </a></li>
-                        <li><a href="/admin/nginx" class="text-sm flex items-center gap-2">
-                            <span class="iconify" data-icon="mdi:web" data-width="18"></span>
-                            反向代理
-                        </a></li>
-                    </ul>
-                </div>
+                </a>
                 <div class="dropdown">
                     <div tabindex="0" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition cursor-pointer">
                         <div class="flex items-center gap-2">
@@ -182,27 +169,10 @@
                     <span class="iconify" data-icon="mdi:cog" data-width="20"></span>
                     系统设置
                 </a>
-                <div class="mobile-dropdown">
-                    <button onclick="toggleMobileDropdown(this)" class="flex items-center justify-between w-full gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
-                        <div class="flex items-center gap-3">
-                            <span class="iconify" data-icon="mdi:puzzle" data-width="20"></span>
-                            插件拓展
-                        </div>
-                        <span class="iconify chevron-icon smooth-transition" data-icon="mdi:chevron-down" data-width="18"></span>
-                    </button>
-                    <div class="mobile-dropdown-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
-                        <div class="pl-4 space-y-1 py-2">
-                            <a href="/admin/firewall" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
-                                <span class="iconify" data-icon="mdi:security" data-width="20"></span>
-                                防火墙
-                            </a>
-                            <a href="/admin/nginx" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
-                                <span class="iconify" data-icon="mdi:web" data-width="20"></span>
-                                反向代理
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <a href="/admin/nginx" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
+                    <span class="iconify" data-icon="mdi:web" data-width="20"></span>
+                    Nginx反向代理
+                </a>
                 <div class="mobile-dropdown">
                     <button onclick="toggleMobileDropdown(this)" class="flex items-center justify-between w-full gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
                         <div class="flex items-center gap-3">

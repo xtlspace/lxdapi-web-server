@@ -34,7 +34,6 @@ import (
 	tlsManager "lxdapi/pkg/tls"
 	"lxdapi/pkg/version"
 	"lxdapi/plugins/nginx"
-	"lxdapi/plugins/opengfw"
 	"log"
 	"os"
 	"path/filepath"
@@ -93,13 +92,6 @@ func main() {
 
 	pluginManager := plugin.InitManager()
 	logger.OK("插件管理器初始化成功")
-	
-	opengfwPlugin := opengfw.NewOpenGFWPlugin()
-	if err := pluginManager.Register(opengfwPlugin); err != nil {
-		logger.Error("注册 OpenGFW 插件失败: %v", err)
-	} else {
-		logger.OK("OpenGFW 插件注册成功")
-	}
 
 	if cfg.Plugins.Nginx.Enabled {
 		nginxPlugin := nginx.NewNginxPlugin()
@@ -358,7 +350,6 @@ func main() {
 		adminPages.GET("/port-mapping/v6", handlers.AdminPortMappingV6)
 		adminPages.GET("/templates", handlers.AdminTemplates)
 		adminPages.GET("/brand-settings", handlers.AdminBrandSettings)
-		adminPages.GET("/firewall", handlers.AdminFirewall)
 		adminPages.GET("/nginx", handlers.AdminNginx)
 		adminPages.GET("/nserIPv6", handlers.AdminIPv6Neighbor)
 	}

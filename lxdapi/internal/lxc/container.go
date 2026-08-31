@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"lxdapi/internal/core"
 	"lxdapi/internal/ipv6"
 	"lxdapi/pkg/logger"
 	"strings"
@@ -74,7 +75,7 @@ func (c *Client) CreateContainerWithConfig(ctx context.Context, name, image, sto
 		nic := map[string]interface{}{
 			"type":    "nic",
 			"nictype": "bridged",
-			"parent":  "lxdbr0",
+			"parent":  core.GlobalConfig.LXC.BridgeName(),
 		}
 		if macAddress != "" {
 			nic["hwaddr"] = macAddress

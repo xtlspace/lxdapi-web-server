@@ -107,13 +107,6 @@ func AdminBrandSettings(c *gin.Context) {
 	}))
 }
 
-func AdminFirewall(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/admin_firewall.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "防火墙管理 - LXD API 管理",
-		"username": "admin",
-	}))
-}
-
 func AdminNginx(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_nginx.html", utils.MergeTemplateData(c, gin.H{
 		"title":    "Nginx反向代理 - LXD API 管理",

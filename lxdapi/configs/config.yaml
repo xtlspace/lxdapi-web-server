@@ -62,6 +62,8 @@ lxc:
   timeout: 300
   # 默认存储池(留空则使用 default)
   storage: "default"
+  # 默认网桥名称(留空则使用 incusbr0)
+  bridge: "incusbr0"
 
 # 网络配置
 network:

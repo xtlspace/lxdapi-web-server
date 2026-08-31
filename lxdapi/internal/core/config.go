@@ -49,6 +49,15 @@ type LXCConfig struct {
 	Socket  string `yaml:"socket"`
 	Timeout int    `yaml:"timeout"`
 	Storage string `yaml:"storage"`
+	Bridge  string `yaml:"bridge"`
+}
+
+// BridgeName 返回默认网桥名称，为空时回退到 incusbr0。
+func (c *LXCConfig) BridgeName() string {
+	if c.Bridge != "" {
+		return c.Bridge
+	}
+	return "incusbr0"
 }
 
 type NetworkConfig struct {

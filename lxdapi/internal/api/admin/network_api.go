@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"lxdapi/internal/core"
 	"lxdapi/internal/lxc"
 	"lxdapi/pkg/response"
 )
@@ -16,9 +17,10 @@ func GetNetworkNATStatus(c *gin.Context) {
 
 	client := lxc.DefaultClient()
 	result := gin.H{}
+	bridge := core.GlobalConfig.LXC.BridgeName()
 
 	var v4Config map[string]interface{}
-	err := client.Get(ctx, "/1.0/networks/lxdbr0", &v4Config)
+	err := client.Get(ctx, fmt.Sprintf("/1.0/networks/%s", bridge), &v4Config)
 	if err != nil {
 		result["ipv4_nat"] = false
 		result["ipv6_nat"] = false
@@ -49,13 +51,14 @@ func SetNetworkNATStatus(c *gin.Context) {
 	defer cancel()
 
 	client := lxc.DefaultClient()
+	bridge := core.GlobalConfig.LXC.BridgeName()
 
 	if req.IPv4NAT != nil {
 		value := "false"
 		if *req.IPv4NAT {
 			value = "true"
 		}
-		err := client.Patch(ctx, "/1.0/networks/lxdbr0", map[string]interface{}{
+		err := client.Patch(ctx, fmt.Sprintf("/1.0/networks/%s", bridge), map[string]interface{}{
 			"config": map[string]interface{}{"ipv4.nat": value},
 		})
 		if err != nil {
@@ -69,7 +72,7 @@ func SetNetworkNATStatus(c *gin.Context) {
 		if *req.IPv6NAT {
 			value = "true"
 		}
-		err := client.Patch(ctx, "/1.0/networks/lxdbr0", map[string]interface{}{
+		err := client.Patch(ctx, fmt.Sprintf("/1.0/networks/%s", bridge), map[string]interface{}{
 			"config": map[string]interface{}{"ipv6.nat": value},
 		})
 		if err != nil {
