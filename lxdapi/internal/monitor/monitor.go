@@ -109,7 +109,10 @@ func (m *Monitor) process(c *models.Container) {
 		switch c.Status {
 		case "frozen":
 			m.stopFrozenContainer(c.Name)
-		case "running":
+		case "running", "stopped":
+			if c.Status == "stopped" {
+				db.DB.Model(&models.Container{}).Where("name = ?", c.Name).Update("status", "running")
+			}
 			m.collectRunning(c, state)
 		}
 	case "Stopped":
