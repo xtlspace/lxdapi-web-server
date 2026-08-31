@@ -326,14 +326,8 @@ func (c *Client) UpdateContainerConfig(ctx context.Context, name string, cpu int
 	if ingress != "" || egress != "" {
 		eth0 := map[string]interface{}{}
 		if devConfig, ok := info.Devices["eth0"].(map[string]interface{}); ok {
-			if t, ok := devConfig["type"].(string); ok {
-				eth0["type"] = t
-			}
-			if nt, ok := devConfig["nictype"].(string); ok {
-				eth0["nictype"] = nt
-			}
-			if p, ok := devConfig["parent"].(string); ok {
-				eth0["parent"] = p
+			for k, v := range devConfig {
+				eth0[k] = v
 			}
 		}
 		if ingress != "" {
@@ -347,14 +341,8 @@ func (c *Client) UpdateContainerConfig(ctx context.Context, name string, cpu int
 	if disk != "" || ioRead != "" || ioWrite != "" {
 		root := map[string]interface{}{}
 		if devConfig, ok := info.Devices["root"].(map[string]interface{}); ok {
-			if t, ok := devConfig["type"].(string); ok {
-				root["type"] = t
-			}
-			if path, ok := devConfig["path"].(string); ok {
-				root["path"] = path
-			}
-			if pool, ok := devConfig["pool"].(string); ok {
-				root["pool"] = pool
+			for k, v := range devConfig {
+				root[k] = v
 			}
 		}
 		if disk != "" {
@@ -440,10 +428,21 @@ func (c *Client) sendIPv6NeighborRequest(containerName, address string) {
 }
 
 func (c *Client) SetContainerIPv4Address(ctx context.Context, name, ip string) error {
-	err := c.patch(ctx, fmt.Sprintf("/1.0/instances/%s", name), map[string]interface{}{
-		"devices": map[string]interface{}{"eth0": map[string]interface{}{
-			"ipv4.address": ip,
-		}},
+	info, err := c.GetContainerInfo(ctx, name)
+	if err != nil {
+		return fmt.Errorf("获取容器配置失败: %v", err)
+	}
+
+	eth0 := map[string]interface{}{}
+	if devConfig, ok := info.Devices["eth0"].(map[string]interface{}); ok {
+		for k, v := range devConfig {
+			eth0[k] = v
+		}
+	}
+	eth0["ipv4.address"] = ip
+
+	err = c.patch(ctx, fmt.Sprintf("/1.0/instances/%s", name), map[string]interface{}{
+		"devices": map[string]interface{}{"eth0": eth0},
 	})
 	if err != nil {
 		return fmt.Errorf("固定容器IPv4地址失败: %v", err)
