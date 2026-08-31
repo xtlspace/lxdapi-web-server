@@ -770,12 +770,6 @@ func (s *ContainerService) UpdateConfig(ctx context.Context, name string, req *m
 	var updated []string
 	dbUpdates := make(map[string]interface{})
 
-	if req.Disk != nil && *req.Disk > 0 {
-		if *req.Disk < container.Disk {
-			return nil, fmt.Errorf("磁盘只能扩容，不能缩小: 当前 %dMB，目标 %dMB", container.Disk, *req.Disk)
-		}
-	}
-
 	cpu := 0
 	memory := ""
 	disk := ""
@@ -798,7 +792,7 @@ func (s *ContainerService) UpdateConfig(ctx context.Context, name string, req *m
 		updated = append(updated, "memory")
 	}
 
-	if req.Disk != nil && *req.Disk > 0 && *req.Disk != container.Disk {
+	if req.Disk != nil && *req.Disk >= container.Disk {
 		disk = fmt.Sprintf("%dMB", *req.Disk)
 		dbUpdates["disk"] = *req.Disk
 		updated = append(updated, "disk")
