@@ -124,12 +124,17 @@
                         </div>
                     </div>
                     <!-- IPv6 -->
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-3 border border-gray-200">
+                    <div id="ipv6Section" class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-3 border border-gray-200" style="display:none;">
                         <div class="flex items-center gap-2">
                             <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
                             <div class="flex-1">
                                 <p class="text-xs text-gray-600">IPv6</p>
-                                <p id="containerIPv6" class="text-xs font-mono font-medium text-gray-800 break-all mt-0.5">-</p>
+                                <div class="flex items-center gap-1">
+                                    <p id="containerIPv6" class="text-xs font-mono font-medium text-gray-800 break-all mt-0.5">-</p>
+                                    <button onclick="copyIPv6()" class="p-1 text-gray-600 hover:bg-gray-200 rounded transition shrink-0" title="复制">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -688,7 +693,13 @@
 
             // IPs
             $('#containerIPv4').text(c.ipv4 && c.ipv4.length > 0 ? c.ipv4.join('\n') : '无');
-            $('#containerIPv6').text(c.ipv6 && c.ipv6.length > 0 ? c.ipv6.join('\n') : '无');
+            const ipv6 = (c.ipv6 || []).filter(ip => !ip.toLowerCase().startsWith('fd'));
+            if (ipv6.length > 0) {
+                $('#containerIPv6').text(ipv6[0]);
+                $('#ipv6Section').show();
+            } else {
+                $('#ipv6Section').hide();
+            }
 
             // Resources
             const memoryUsed = c.memory_usage_raw || 0;
@@ -990,12 +1001,23 @@
                             const protocolDisplay = group.protocol.toUpperCase() === 'BOTH' ? 'TCP/UDP' : group.protocol.toUpperCase();
                             const idsStr = group.ids.join(',');
                             
-                            html += `<tr>
-                                <td>
-                                    <div class="font-mono font-bold">${publicPortText} → ${containerPortText}</div>
-                                    ${ipDisplay ? `<div class="text-xs text-gray-500">绑定公网IP: ${ipDisplay}</div>` : ''}
-                                    ${group.description ? `<div class="text-xs text-gray-500">${group.description}</div>` : ''}
-                                </td>
+                   html += `<tr>
+                       <td>
+                           <div class="font-mono font-bold">${publicPortText} → ${containerPortText}</div>
+                           ${ipDisplay ? `<div class="text-xs text-gray-500">绑定公网IP:
+                               ${group.ips.filter(ip => ip).map(ip => `
+                                   <span class="inline-flex items-center gap-1 mr-2">
+                                       <code class="text-gray-700">${ip}</code>
+                                       <button onclick="copyMappingIP('${ip}')" class="p-0.5 text-gray-600 hover:text-blue-600 rounded transition" title="复制">
+                                           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                           </svg>
+                                       </button>
+                                   </span>
+                               `).join('')}
+                           </div>` : ''}
+                           ${group.description ? `<div class="text-xs text-gray-500">${group.description}</div>` : ''}
+                       </td>
                                 <td>${protocolDisplay}</td>
                                 <td>${portCount}</td>
                                 <td class="text-right">
@@ -1114,12 +1136,23 @@ function showAddIPv6MappingModal() {
                   const protocolDisplay = group.protocol.toUpperCase() === 'BOTH' ? 'TCP/UDP' : group.protocol.toUpperCase();
                   const idsStr = group.ids.join(',');
                   
-                  html += `<tr>
-                      <td>
-                          <div class="font-mono font-bold">${publicPortText} → ${containerPortText}</div>
-                          ${ipDisplay ? `<div class="text-xs text-gray-500">绑定公网IP: ${ipDisplay}</div>` : ''}
-                          ${group.description ? `<div class="text-xs text-gray-500">${group.description}</div>` : ''}
-                      </td>
+                   html += `<tr>
+                       <td>
+                           <div class="font-mono font-bold">${publicPortText} → ${containerPortText}</div>
+                           ${ipDisplay ? `<div class="text-xs text-gray-500">绑定公网IP:
+                               ${group.ips.filter(ip => ip).map(ip => `
+                                   <span class="inline-flex items-center gap-1 mr-2">
+                                       <code class="text-gray-700">${ip}</code>
+                                       <button onclick="copyMappingIP('${ip}')" class="p-0.5 text-gray-600 hover:text-blue-600 rounded transition" title="复制">
+                                           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                           </svg>
+                                       </button>
+                                   </span>
+                               `).join('')}
+                           </div>` : ''}
+                           ${group.description ? `<div class="text-xs text-gray-500">${group.description}</div>` : ''}
+                       </td>
                       <td>${protocolDisplay}</td>
                       <td>${portCount}</td>
                       <td class="text-right">
@@ -1190,6 +1223,66 @@ function showAddIPv6MappingModal() {
         function deleteReverseProxy(id) {
              if(!confirm('确认删除？')) return;
              $.ajax({ url: `/api/container/nginx/proxies/${id}`, type: 'DELETE', headers: headers, success: function(res){ if(res.code==200){showToast('success','删除成功'); loadReverseProxyRules();} else showToast('error', res.msg); }});
+        }
+
+        // Copy IPv6
+        function copyIPv6() {
+            const ip = $('#containerIPv6').text();
+            if (!ip || ip === '-' || ip === '无') return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(ip).then(() => {
+                    showToast('success', 'IPv6已复制');
+                }).catch(() => {
+                    fallbackCopyIPv6(ip);
+                });
+            } else {
+                fallbackCopyIPv6(ip);
+            }
+        }
+
+        function fallbackCopyIPv6(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('success', 'IPv6已复制');
+            } catch (err) {
+                showToast('error', '复制失败，请手动复制');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function copyMappingIP(ip) {
+            if (!ip) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(ip).then(() => {
+                    showToast('success', '已复制');
+                }).catch(() => {
+                    fallbackCopyPlain(ip);
+                });
+            } else {
+                fallbackCopyPlain(ip);
+            }
+        }
+
+        function fallbackCopyPlain(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('success', '已复制');
+            } catch (err) {
+                showToast('error', '复制失败，请手动复制');
+            }
+            document.body.removeChild(textArea);
         }
 
         // Utils
