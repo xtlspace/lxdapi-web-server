@@ -60,6 +60,7 @@
 </head>
 <body class="text-gray-800" style="{{if .BgImage}}background-image: url('{{.BgImage}}'); background-size: cover; background-position: center; background-attachment: fixed;{{else}}background-color: #f9fafb;{{end}}">
     {{if .BgImage}}<div class="fixed inset-0 bg-white pointer-events-none" style="opacity: {{.BgOpacity}}%; z-index: 0;"></div>{{end}}
+    {{template "container/container_toast.html"}}
     <div class="relative">
         <div class="container mx-auto px-4 py-8 pb-12 max-w-7xl relative" style="z-index: 1;">
         
