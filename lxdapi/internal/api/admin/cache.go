@@ -6,14 +6,14 @@ import (
 	"lxdapi/pkg/response"
 )
 
-// GetContainersCache 获取容器缓存
+// GetContainersCache 获取容器列表
 func GetContainersCache(c *gin.Context) {
-	containers := cache.GetAllContainersCache()
+	containers := cache.GetAllContainersFromDB()
 	
 	response.Success(c, gin.H{
 		"data":       containers,
 		"count":      len(containers),
-		"from_cache": true,
+		"from_cache": false,
 	})
 }
 

@@ -70,7 +70,7 @@ network:
 
 # 流量监控配置
 traffic:
-  # 采集间隔(秒)
+  # 采集间隔(秒)，每个容器之间间隔
   interval: __TRAFFIC_INTERVAL__
 
 # 异步任务配置

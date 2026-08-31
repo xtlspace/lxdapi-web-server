@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"lxdapi/internal/db"
@@ -34,51 +33,16 @@ type ContainerCacheJSON struct {
 	Remark          string                 `json:"remark"`
 }
 
-var (
-	containerCache   = make(map[string]*ContainerCacheJSON)
-	containerCacheMu sync.RWMutex
-)
-
-func GetAllContainersCache() []ContainerCacheJSON {
-	containerCacheMu.RLock()
-	result := make([]ContainerCacheJSON, 0, len(containerCache))
-	for _, v := range containerCache {
-		result = append(result, *v)
-	}
-	containerCacheMu.RUnlock()
-	if len(result) > 0 {
-		return result
-	}
-
-	RefreshAllCache()
-	containerCacheMu.RLock()
-	result = make([]ContainerCacheJSON, 0, len(containerCache))
-	for _, v := range containerCache {
-		result = append(result, *v)
-	}
-	containerCacheMu.RUnlock()
-	return result
-}
-
-func DeleteContainerCache(name string) {
-	containerCacheMu.Lock()
-	delete(containerCache, name)
-	containerCacheMu.Unlock()
-}
-
-func RefreshAllCache() {
+// GetAllContainersFromDB 直接从数据库读取全部容器并映射为缓存结构，保证实时一致
+func GetAllContainersFromDB() []ContainerCacheJSON {
 	var containers []models.Container
 	db.DB.Find(&containers)
 
-	newCache := make(map[string]*ContainerCacheJSON, len(containers))
-	for _, c := range containers {
-		entry := buildCacheEntry(c)
-		newCache[c.Name] = entry
+	result := make([]ContainerCacheJSON, 0, len(containers))
+	for i := range containers {
+		result = append(result, *buildCacheEntry(containers[i]))
 	}
-
-	containerCacheMu.Lock()
-	containerCache = newCache
-	containerCacheMu.Unlock()
+	return result
 }
 
 func RefreshContainerCache(ctx context.Context, name string) error {
@@ -148,15 +112,10 @@ func RefreshContainerCache(ctx context.Context, name string) error {
 	}
 
 	if err := db.DB.Save(&container).Error; err != nil {
-		return fmt.Errorf("更新容器缓存失败: %v", err)
+		return fmt.Errorf("更新容器状态失败: %v", err)
 	}
 
-	entry := buildCacheEntry(container)
-	containerCacheMu.Lock()
-	containerCache[name] = entry
-	containerCacheMu.Unlock()
-
-	logger.Info("刷新容器 %s 缓存成功", name)
+	logger.Info("刷新容器 %s 状态成功", name)
 	return nil
 }
 
