@@ -134,7 +134,7 @@
                         <p class="text-xs text-gray-600">IPv6</p>
                         <div class="flex items-center gap-1">
                             <p id="containerIPv6" class="text-xs font-mono font-medium text-gray-800 break-all mt-0.5">-</p>
-                            <button onclick="copyIPv6()" class="p-1 text-gray-600 hover:bg-gray-200 rounded-lg transition shrink-0" title="复制">
+                            <button id="copyIPv6Btn" onclick="copyIPv6()" class="p-1 text-gray-600 hover:bg-gray-200 rounded-lg transition shrink-0" title="复制">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                 </svg>
@@ -662,10 +662,13 @@
             $('#containerPassword').text(c.password || '-');
 
             $('#containerIPv4').text(c.ipv4 && c.ipv4.length > 0 ? c.ipv4.join(', ') : '-');
-            const ipv6 = (c.ipv6 || []).filter(ip => !ip.toLowerCase().startsWith('fd'));
+            const ipv6 = c.ipv6 || [];
             if (ipv6.length > 0) {
-                $('#containerIPv6').text(ipv6[0]);
+                const ip = ipv6[0];
+                $('#containerIPv6').text(ip);
                 $('#ipv6Section').show();
+                const isPrivate = ip.toLowerCase().startsWith('fd');
+                $('#copyIPv6Btn').toggle(!isPrivate);
             } else {
                 $('#ipv6Section').hide();
             }
