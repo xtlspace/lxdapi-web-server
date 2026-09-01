@@ -59,7 +59,6 @@ type Container struct {
 	IPv4MappingLimit int
 	IPv6MappingLimit int
 	ReverseProxyLimit int
-	NetworkMode     string  `gorm:"size:50"`
 	ConfigJSON      string  `gorm:"type:text"`
 	CreatedAtLXD    *time.Time
 	LastSync        *time.Time
