@@ -35,15 +35,7 @@ var GlobalQueue *Queue
 
 func InitQueue() error {
 	cfg := core.GlobalConfig.Task
-	if !cfg.Enabled {
-		logger.Info("异步任务队列未启用")
-		return nil
-	}
-	
-	if cfg.Backend == "redis" {
-		return InitRedisQueue()
-	}
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
 	
 	GlobalQueue = &Queue{
@@ -77,10 +69,7 @@ func (q *Queue) Stop() {
 
 func (q *Queue) Submit(task *Task) error {
 	if q == nil {
-		if GlobalRedisQueue != nil {
-			return GlobalRedisQueue.Submit(task)
-		}
-		return task.Func(context.Background())
+		return fmt.Errorf("任务队列未启用")
 	}
 	
 	select {
@@ -198,6 +187,10 @@ func CreateTask(containerName, action string, params map[string]interface{}, fn 
 	}
 	
 	if err := GlobalQueue.Submit(queueTask); err != nil {
+		db.DB.Model(&models.Task{}).Where("id = ?", task.ID).Updates(map[string]interface{}{
+			"status":    models.TaskFailed,
+			"error_msg": fmt.Sprintf("提交任务队列失败: %v", err),
+		})
 		return nil, err
 	}
 	

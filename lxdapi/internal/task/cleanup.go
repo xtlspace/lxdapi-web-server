@@ -15,7 +15,7 @@ func StartAutoCleanup() {
 		return
 	}
 	
-	if !cfg.Task.Enabled || cfg.Task.AutoCleanupDays <= 0 {
+	if cfg.Task.AutoCleanupDays <= 0 {
 		return
 	}
 

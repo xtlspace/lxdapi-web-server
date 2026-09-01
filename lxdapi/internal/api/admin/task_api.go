@@ -49,27 +49,17 @@ func GetTask(c *gin.Context) {
 // DeleteTask 删除任务
 func DeleteTask(c *gin.Context) {
 	taskID := c.Param("id")
-	
-	if taskID != "" {
-		if err := db.DB.Unscoped().Delete(&models.Task{}, "id = ?", taskID).Error; err != nil {
-			response.Error(c, 500, "删除任务失败")
-			return
-		}
-		response.Success(c, "任务删除成功")
+
+	if taskID == "" {
+		response.Error(c, 400, "缺少任务ID")
 		return
 	}
 
-	ids := c.Query("ids")
-	if ids != "" {
-		if err := db.DB.Unscoped().Delete(&models.Task{}, "id IN ?", splitIDs(ids)).Error; err != nil {
-			response.Error(c, 500, "批量删除失败")
-			return
-		}
-		response.Success(c, "批量删除成功")
+	if err := db.DB.Unscoped().Delete(&models.Task{}, "id = ?", taskID).Error; err != nil {
+		response.Error(c, 500, "删除任务失败")
 		return
 	}
-
-	response.Error(c, 400, "缺少任务ID")
+	response.Success(c, "任务删除成功")
 }
 
 // BatchDeleteTasks 批量删除任务
@@ -97,14 +87,4 @@ func BatchDeleteTasks(c *gin.Context) {
 		"deleted": len(req.TaskIDs),
 		"message": "批量删除成功",
 	})
-}
-
-func splitIDs(ids string) []string {
-	var result []string
-	for _, id := range []byte(ids) {
-		if id != ',' {
-			result = append(result, string(id))
-		}
-	}
-	return result
 }

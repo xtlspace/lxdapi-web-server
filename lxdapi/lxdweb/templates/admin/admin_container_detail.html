@@ -693,7 +693,7 @@
 
         async function loadPortRangeConfig() {
             try {
-                const response = await fetch('/api/port-range/config');
+                const response = await fetch('/api/admin/port-range/config');
                 const result = await response.json();
                 if (result.code === 200 && result.data) {
                     portRangeConfig = result.data;

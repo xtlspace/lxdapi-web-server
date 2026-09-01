@@ -175,9 +175,8 @@ configure_lxdapi() {
     	nginx_enabled_value="false"
     fi
    
-    task_backend="memory"
     db_type="sqlite"
-   
+    
     info "写入配置文件..."
     sed -i "s|__SERVER_PORT__|$server_port|g" "$config_file"
     sed -i "s|__API_HASH__|$api_hash|g" "$config_file"
@@ -187,12 +186,7 @@ configure_lxdapi() {
     sed -i "s|__TRAFFIC_INTERVAL__|$traffic_interval|g" "$config_file"
     sed -i "s|__TRAFFIC_BATCH_SIZE__|$traffic_batch_size|g" "$config_file"
     sed -i "s|__AUTO_CLEANUP_DAYS__|$auto_cleanup_days|g" "$config_file"
-    sed -i "s|__TASK_BACKEND__|$task_backend|g" "$config_file"
     sed -i "s|__DB_TYPE__|$db_type|g" "$config_file"
-    sed -i "s|__REDIS_HOST__|localhost|g" "$config_file"
-    sed -i "s|__REDIS_PORT__|6379|g" "$config_file"
-    sed -i "s|__REDIS_PASSWORD__||g" "$config_file"
-    sed -i "s|__REDIS_DB__|0|g" "$config_file"
     sed -i "s|__MYSQL_HOST__|localhost|g" "$config_file"
     sed -i "s|__MYSQL_PORT__|3306|g" "$config_file"
     sed -i "s|__MYSQL_USER__|root|g" "$config_file"

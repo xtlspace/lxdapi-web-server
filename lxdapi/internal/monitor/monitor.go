@@ -21,6 +21,8 @@ type Monitor struct {
 	lxcClient *lxc.Client
 	interval  time.Duration
 	neighbor  atomic.Value
+
+	lastResetMonth int
 }
 
 var GlobalMonitor *Monitor
@@ -46,6 +48,9 @@ func (m *Monitor) Start(ctx context.Context) {
 
 	logger.Info("流量监控已启动，采样间隔: %v", m.interval)
 
+	// 启动时全量补重置一次未重置流量
+	m.autoResetTraffic()
+
 	for {
 		rows := m.loadRows()
 
@@ -65,7 +70,8 @@ func (m *Monitor) Start(ctx context.Context) {
 			}
 		}
 
-		m.autoResetTraffic()
+		// 仅跨月时才重新查询并重置
+		m.maybeAutoResetTraffic()
 
 		if !m.wait(ctx, m.interval) {
 			return
@@ -326,9 +332,20 @@ func (m *Monitor) GetTraffic(containerName string) (*TrafficInfo, error) {
 	}, nil
 }
 
+// maybeAutoResetTraffic 仅在跨月时才真正执行重置查询，其余周期零开销快速返回。
+func (m *Monitor) maybeAutoResetTraffic() {
+	now := time.Now()
+	cur := now.Year()*100 + int(now.Month())
+	if m.lastResetMonth == cur {
+		return
+	}
+	m.autoResetTraffic()
+}
+
 func (m *Monitor) autoResetTraffic() {
 	now := time.Now()
 	firstDayOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	m.lastResetMonth = now.Year()*100 + int(now.Month())
 
 	var containers []models.Container
 	// 具备补偿机制：记录到本月首日之前未重置或从未重置的都视为待重置

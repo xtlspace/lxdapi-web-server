@@ -199,6 +199,7 @@ func (s *ContainerService) Create(ctx context.Context, req *models.CreateContain
 		MemorySwap:   req.MemorySwap,
 		Privileged:   req.Privileged,
 		Remark:       req.Remark,
+		LastReset:    time.Now(),
 	}
 	
 	if err := db.DB.Create(container).Error; err != nil {

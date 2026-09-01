@@ -77,10 +77,6 @@ traffic:
 
 # 异步任务配置
 task:
-  # 启用异步任务
-  enabled: true
-  # 任务队列后端: memory/redis
-  backend: "__TASK_BACKEND__"
   # Worker数量
   workers: 4
   # 队列大小
@@ -89,12 +85,6 @@ task:
   timeout: 600
   # 自动清理已完成任务(天数, 0表示不清理)
   auto_cleanup_days: 7
-  # Redis配置(backend为redis时使用)
-  redis:
-    host: "__REDIS_HOST__"
-    port: __REDIS_PORT__
-    password: "__REDIS_PASSWORD__"
-    db: __REDIS_DB__
 
 # 管理员配置
 admin:

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"embed"
-	"encoding/json"
 	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -51,6 +50,11 @@ func main() {
 
 	logger.Init(cfg.System.Logger.Level, cfg.System.Logger.Colorful)
 	logger.Info("配置加载成功")
+
+	if err := validateSecurityConfig(cfg); err != nil {
+		logger.Error("安全配置校验失败: %v", err)
+		return
+	}
 
 	if err := db.Init(); err != nil {
 		logger.Error("数据库初始化失败: %v", err)
@@ -119,93 +123,6 @@ func main() {
 	container.InitContainerService(containerService)
 	admin.InitBrandService()
 	admin.SetEmbeddedFS(embeddedFiles)
-
-	executor.RegisterTaskExecutor("create", func(ctx context.Context, name string, paramsJSON string) error {
-		var params map[string]interface{}
-		if paramsJSON != "" {
-			if err := json.Unmarshal([]byte(paramsJSON), &params); err != nil {
-				return fmt.Errorf("解析创建参数失败: %v", err)
-			}
-		}
-		
-		getString := func(key string) string {
-			if v, ok := params[key]; ok {
-				if s, ok := v.(string); ok {
-					return s
-				}
-			}
-			return ""
-		}
-		getInt := func(key string) int {
-			if v, ok := params[key]; ok {
-				if f, ok := v.(float64); ok {
-					return int(f)
-				}
-			}
-			return 0
-		}
-		getBool := func(key string) bool {
-			if v, ok := params[key]; ok {
-				if b, ok := v.(bool); ok {
-					return b
-				}
-			}
-			return false
-		}
-		
-		req := &models.CreateContainerRequest{
-			Name:              getString("name"),
-			Image:             getString("image"),
-			Password:          getString("password"),
-			CPU:               getInt("cpu"),
-			Memory:            getInt("memory"),
-			Disk:              getInt("disk"),
-			Ingress:           getInt("ingress"),
-			Egress:            getInt("egress"),
-			TrafficLimit:      getInt("traffic_limit"),
-			AllowNesting:      getBool("allow_nesting"),
-			MemorySwap:        getBool("memory_swap"),
-			Privileged:        getBool("privileged"),
-			IPv4PoolLimit:     getInt("ipv4_pool_limit"),
-			IPv4MappingLimit:  getInt("ipv4_mapping_limit"),
-			IPv6MappingLimit:  getInt("ipv6_mapping_limit"),
-			ReverseProxyLimit: getInt("reverse_proxy_limit"),
-			CPUAllowance:      getInt("cpu_allowance"),
-			IORead:            getInt("io_read"),
-			IOWrite:           getInt("io_write"),
-			ProcessesLimit:    getInt("processes_limit"),
-		}
-		
-		return containerService.Create(ctx, req)
-	})
-	executor.RegisterTaskExecutor("start", func(ctx context.Context, name string, paramsJSON string) error {
-		return containerService.Start(ctx, name)
-	})
-	executor.RegisterTaskExecutor("stop", func(ctx context.Context, name string, paramsJSON string) error {
-		return containerService.Stop(ctx, name)
-	})
-	executor.RegisterTaskExecutor("restart", func(ctx context.Context, name string, paramsJSON string) error {
-		return containerService.Restart(ctx, name)
-	})
-	executor.RegisterTaskExecutor("delete", func(ctx context.Context, name string, paramsJSON string) error {
-		return containerService.Delete(ctx, name)
-	})
-	executor.RegisterTaskExecutor("reinstall", func(ctx context.Context, name string, paramsJSON string) error {
-		var params map[string]interface{}
-		image := ""
-		password := ""
-		if paramsJSON != "" {
-			if err := json.Unmarshal([]byte(paramsJSON), &params); err == nil {
-				if v, ok := params["image"].(string); ok {
-					image = v
-				}
-				if v, ok := params["password"].(string); ok {
-					password = v
-				}
-			}
-		}
-		return containerService.Reinstall(ctx, name, image, password)
-	})
 
 	executor.ClearPendingTasks()
 
@@ -385,7 +302,7 @@ func main() {
 		systemAPI.GET("/admin/access-token", system.GetAdminAccessToken)
 	}
 
-	r.GET("/api/port-range/config", admin.GetPortRangeConfig)
+	r.GET("/api/public/port-range-config", admin.GetPortRangeConfigPublic)
 
 	adminAPI := r.Group("/api/admin")
 	adminAPI.Use(middleware.AdminAuth())
@@ -473,6 +390,17 @@ func main() {
 			logger.Error("服务启动失败: %v", err)
 		}
 	}
+}
+
+// validateSecurityConfig 校验关键安全配置，避免使用占位符或空值导致认证失效
+func validateSecurityConfig(cfg *core.Config) error {
+	if cfg.System.Security.APIHash == "" || cfg.System.Security.APIHash == "__API_HASH__" {
+		return fmt.Errorf("安全配置 api_hash 未正确设置（不能为空或占位符）")
+	}
+	if cfg.Admin.SessionSecret == "" || cfg.Admin.SessionSecret == "__SESSION_SECRET__" {
+		return fmt.Errorf("安全配置 session_secret 未正确设置（不能为空或占位符）")
+	}
+	return nil
 }
 
 func startWithTLS(r *gin.Engine, addr string, cfg *core.Config) {

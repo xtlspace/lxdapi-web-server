@@ -25,6 +25,29 @@ func GetPortRangeConfig(c *gin.Context) {
 	response.Success(c, config)
 }
 
+// GetPortRangeConfigPublic 公开只读端口范围配置（仅对容器用户暴露端口区间，不含管理员字段）
+func GetPortRangeConfigPublic(c *gin.Context) {
+	var config models.PortRangeConfig
+	
+	if err := db.DB.First(&config).Error; err != nil {
+		config = models.PortRangeConfig{
+			V4PortStart:      10000,
+			V4PortEnd:        65535,
+			V6PortStart:      10000,
+			V6PortEnd:        65535,
+			V4AutoAllocate22: false,
+			V6AutoAllocate22: false,
+		}
+	}
+
+	response.Success(c, gin.H{
+		"v4_port_start": config.V4PortStart,
+		"v4_port_end":   config.V4PortEnd,
+		"v6_port_start": config.V6PortStart,
+		"v6_port_end":   config.V6PortEnd,
+	})
+}
+
 func SavePortRangeConfig(c *gin.Context) {
 	var req struct {
 		V4PortStart      int  `json:"v4_port_start" binding:"required"`

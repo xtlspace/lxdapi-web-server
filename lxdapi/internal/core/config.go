@@ -69,20 +69,10 @@ type TrafficConfig struct {
 }
 
 type TaskConfig struct {
-	Enabled         bool        `yaml:"enabled"`
-	Backend         string      `yaml:"backend"`
-	Workers         int         `yaml:"workers"`
-	QueueSize       int         `yaml:"queue_size"`
-	Timeout         int         `yaml:"timeout"`
-	AutoCleanupDays int         `yaml:"auto_cleanup_days"`
-	Redis           RedisConfig `yaml:"redis"`
-}
-
-type RedisConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Password string `yaml:"password"`
-	DB       int    `yaml:"db"`
+	Workers         int `yaml:"workers"`
+	QueueSize       int `yaml:"queue_size"`
+	Timeout         int `yaml:"timeout"`
+	AutoCleanupDays int `yaml:"auto_cleanup_days"`
 }
 
 type DatabaseConfig struct {

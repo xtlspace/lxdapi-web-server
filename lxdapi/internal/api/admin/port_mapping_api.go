@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"lxdapi/internal/db"
 	"lxdapi/internal/service"
 	"lxdapi/models"
@@ -415,24 +416,31 @@ func SaveNATConfig(c *gin.Context) {
 	}
 
 	if version == "v4" {
-		db.DB.Unscoped().Where("1 = 1").Delete(&models.NATConfigV4{})
-
-		for _, config := range configs {
-			displayIP := config.DisplayIP
-			if displayIP == "" {
-				displayIP = config.IP
+		err := db.DB.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Unscoped().Where("1 = 1").Delete(&models.NATConfigV4{}).Error; err != nil {
+				return err
 			}
-			natConfig := models.NATConfigV4{
-				IP:        config.IP,
-				DisplayIP: displayIP,
-				Interface: config.Interface,
-				Protocol:  config.Protocol,
+			for _, config := range configs {
+				displayIP := config.DisplayIP
+				if displayIP == "" {
+					displayIP = config.IP
+				}
+				natConfig := models.NATConfigV4{
+					IP:        config.IP,
+					DisplayIP: displayIP,
+					Interface: config.Interface,
+					Protocol:  config.Protocol,
+				}
+				if err := tx.Create(&natConfig).Error; err != nil {
+					return err
+				}
 			}
-			if err := db.DB.Create(&natConfig).Error; err != nil {
-				logger.Error("保存NAT配置失败: %v", err)
-				response.Error(c, 500, "保存失败")
-				return
-			}
+			return nil
+		})
+		if err != nil {
+			logger.Error("保存IPv4 NAT配置失败: %v", err)
+			response.Error(c, 500, "保存失败")
+			return
 		}
 
 		logger.OK("IPv4 NAT配置已更新，共 %d 条规则", len(configs))
@@ -441,24 +449,31 @@ func SaveNATConfig(c *gin.Context) {
 			"message": "配置保存成功",
 		})
 	} else {
-		db.DB.Unscoped().Where("1 = 1").Delete(&models.NATConfigV6{})
-
-		for _, config := range configs {
-			displayIP := config.DisplayIP
-			if displayIP == "" {
-				displayIP = config.IP
+		err := db.DB.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Unscoped().Where("1 = 1").Delete(&models.NATConfigV6{}).Error; err != nil {
+				return err
 			}
-			natConfig := models.NATConfigV6{
-				IP:        config.IP,
-				DisplayIP: displayIP,
-				Interface: config.Interface,
-				Protocol:  config.Protocol,
+			for _, config := range configs {
+				displayIP := config.DisplayIP
+				if displayIP == "" {
+					displayIP = config.IP
+				}
+				natConfig := models.NATConfigV6{
+					IP:        config.IP,
+					DisplayIP: displayIP,
+					Interface: config.Interface,
+					Protocol:  config.Protocol,
+				}
+				if err := tx.Create(&natConfig).Error; err != nil {
+					return err
+				}
 			}
-			if err := db.DB.Create(&natConfig).Error; err != nil {
-				logger.Error("保存NAT配置失败: %v", err)
-				response.Error(c, 500, "保存失败")
-				return
-			}
+			return nil
+		})
+		if err != nil {
+			logger.Error("保存IPv6 NAT配置失败: %v", err)
+			response.Error(c, 500, "保存失败")
+			return
 		}
 
 		logger.OK("IPv6 NAT配置已更新，共 %d 条规则", len(configs))

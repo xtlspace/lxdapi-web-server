@@ -296,13 +296,26 @@ func ReleasePortMapping(c *gin.Context) {
 			}
 		}
 
+		deleted := 0
+		var failedIDs []uint
 		for _, mapping := range mappings {
 			if err := pmService.ReleaseV4Mapping(mapping.ID); err != nil {
 				logger.Error("释放IPv4端口映射失败 ID=%d: %v", mapping.ID, err)
+				failedIDs = append(failedIDs, mapping.ID)
+				continue
 			}
+			deleted++
 		}
 
-		response.Success(c, gin.H{"deleted": len(mappings)})
+		if len(failedIDs) > 0 {
+			response.ErrorWithData(c, 500, "部分IPv4端口映射释放失败", gin.H{
+				"deleted": deleted,
+				"failed":  failedIDs,
+			})
+			return
+		}
+
+		response.Success(c, gin.H{"deleted": deleted})
 
 	} else {
 		var mappings []models.PortMappingV6
@@ -323,13 +336,26 @@ func ReleasePortMapping(c *gin.Context) {
 			}
 		}
 
+		deleted := 0
+		var failedIDs []uint
 		for _, mapping := range mappings {
 			if err := pmService.ReleaseV6Mapping(mapping.ID); err != nil {
 				logger.Error("释放IPv6端口映射失败 ID=%d: %v", mapping.ID, err)
+				failedIDs = append(failedIDs, mapping.ID)
+				continue
 			}
+			deleted++
 		}
 
-		response.Success(c, gin.H{"deleted": len(mappings)})
+		if len(failedIDs) > 0 {
+			response.ErrorWithData(c, 500, "部分IPv6端口映射释放失败", gin.H{
+				"deleted": deleted,
+				"failed":  failedIDs,
+			})
+			return
+		}
+
+		response.Success(c, gin.H{"deleted": deleted})
 	}
 }
 

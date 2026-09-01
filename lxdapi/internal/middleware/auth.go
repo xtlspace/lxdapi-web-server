@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"crypto/subtle"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"lxdapi/internal/core"
@@ -14,7 +16,7 @@ import (
 func SystemAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiHash := c.GetHeader("X-API-Hash")
-		if apiHash != core.GlobalConfig.System.Security.APIHash {
+		if subtle.ConstantTimeCompare([]byte(apiHash), []byte(core.GlobalConfig.System.Security.APIHash)) != 1 {
 			response.Error(c, 401, "系统级认证失败")
 			c.Abort()
 			return
@@ -44,11 +46,14 @@ func AdminAuth() gin.HandlerFunc {
 
 func AdminPageAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Query("token") != "" {
-			c.Next()
-			return
+		if tk := c.Query("token"); tk != "" {
+			accessToken, err := service.ValidateAccessToken(tk)
+			if err == nil && accessToken.Type == "admin" {
+				c.Next()
+				return
+			}
 		}
-		
+
 		session := sessions.Default(c)
 		loggedIn := session.Get("admin_logged_in")
 		
