@@ -26,8 +26,12 @@ func CreateToken(c *gin.Context) {
 	var req struct {
 		Hostname string `json:"hostname" binding:"required"`
 	}
-	
-	if err := c.ShouldBindJSON(&req); err != nil {
+
+	// 容器级鉴权下强制绑定到已验证的容器，防止越权获取其他容器控制台
+	authContainer := c.GetString("container_name")
+	if authContainer != "" {
+		req.Hostname = authContainer
+	} else if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, 400, "参数错误")
 		return
 	}

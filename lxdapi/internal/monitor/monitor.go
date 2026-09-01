@@ -48,7 +48,6 @@ func (m *Monitor) Start(ctx context.Context) {
 
 	for {
 		rows := m.loadRows()
-		m.autoResetTraffic()
 
 		for i := range rows {
 			select {
@@ -65,6 +64,8 @@ func (m *Monitor) Start(ctx context.Context) {
 				}
 			}
 		}
+
+		m.autoResetTraffic()
 
 		if !m.wait(ctx, m.interval) {
 			return
