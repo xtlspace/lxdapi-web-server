@@ -113,7 +113,6 @@ func DeleteContainer(c *gin.Context) {
 		"container_name": name,
 		"image":          container.Image,
 		"status":         container.Status,
-		"created_at":     container.CreatedAt,
 	}
 
 	task, err := executor.CreateTask(name, "delete", params, func(ctx context.Context) error {

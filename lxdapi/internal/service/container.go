@@ -456,10 +456,6 @@ func (s *ContainerService) Delete(ctx context.Context, name string) error {
 	
 	db.DB.Unscoped().Where("name = ?", name).Delete(&models.Container{})
 	
-	if err := DeleteContainerCredential(name); err != nil {
-		logger.Warn("删除容器凭证失败: %v", err)
-	}
-	
 	logger.OK("容器及相关数据已清理: %s", name)
 	
 	if mgr := plugin.GetManager(); mgr != nil {

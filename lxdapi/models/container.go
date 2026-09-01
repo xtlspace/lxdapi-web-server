@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 var containerNameRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
@@ -24,8 +22,9 @@ func ValidateContainerName(name string) error {
 }
 
 type Container struct {
-	gorm.Model
+	ID           uint   `gorm:"primaryKey"`
 	Name         string `gorm:"uniqueIndex;size:255"`
+	Hash         string `gorm:"uniqueIndex;size:255"`
 	Image        string `gorm:"size:255"`
 	Password     string `gorm:"size:255"`
 	Status       string `gorm:"size:50"`

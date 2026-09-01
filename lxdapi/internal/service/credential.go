@@ -8,6 +8,11 @@ import (
 	"lxdapi/models"
 )
 
+type ContainerCredentialData struct {
+	ContainerName string
+	Hash          string
+}
+
 func generateContainerHash() (string, error) {
 	bytes := make([]byte, 8)
 	if _, err := rand.Read(bytes); err != nil {
@@ -16,56 +21,54 @@ func generateContainerHash() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-func CreateContainerCredential(containerName string) (*models.ContainerCredential, error) {
-	var existing models.ContainerCredential
-	if err := db.DB.Where("container_name = ?", containerName).First(&existing).Error; err == nil {
-		return &existing, nil
+func CreateContainerCredential(containerName string) (*ContainerCredentialData, error) {
+	var container models.Container
+	if err := db.DB.Where("name = ?", containerName).First(&container).Error; err != nil {
+		return nil, fmt.Errorf("容器不存在")
 	}
 
-	hash, err := generateContainerHash()
-	if err != nil {
-		return nil, fmt.Errorf("生成容器Hash失败: %v", err)
+	if container.Hash == "" {
+		hash, err := generateContainerHash()
+		if err != nil {
+			return nil, fmt.Errorf("生成容器Hash失败: %v", err)
+		}
+		if err := db.DB.Model(&container).Update("hash", hash).Error; err != nil {
+			return nil, err
+		}
+		container.Hash = hash
 	}
 
-	credential := &models.ContainerCredential{
-		ContainerName: containerName,
-		Hash:          hash,
-	}
-
-	if err := db.DB.Create(credential).Error; err != nil {
-		return nil, err
-	}
-
-	return credential, nil
+	return &ContainerCredentialData{
+		ContainerName: container.Name,
+		Hash:          container.Hash,
+	}, nil
 }
 
-func GetContainerCredential(containerName string) (*models.ContainerCredential, error) {
-	var credential models.ContainerCredential
-	if err := db.DB.Where("container_name = ?", containerName).First(&credential).Error; err != nil {
+func GetContainerCredential(containerName string) (*ContainerCredentialData, error) {
+	var container models.Container
+	if err := db.DB.Where("name = ?", containerName).First(&container).Error; err != nil {
 		return nil, fmt.Errorf("容器凭证不存在")
 	}
-	return &credential, nil
+	return &ContainerCredentialData{
+		ContainerName: container.Name,
+		Hash:          container.Hash,
+	}, nil
 }
 
-func GetContainerByHash(hash string) (*models.ContainerCredential, error) {
-	var credential models.ContainerCredential
-	if err := db.DB.Where("hash = ?", hash).First(&credential).Error; err != nil {
+func GetContainerByHash(hash string) (*ContainerCredentialData, error) {
+	var container models.Container
+	if err := db.DB.Where("hash = ?", hash).First(&container).Error; err != nil {
 		return nil, fmt.Errorf("无效的容器Hash")
 	}
-	return &credential, nil
+	return &ContainerCredentialData{
+		ContainerName: container.Name,
+		Hash:          container.Hash,
+	}, nil
 }
 
-func DeleteContainerCredential(containerName string) error {
-	result := db.DB.Unscoped().Where("container_name = ?", containerName).Delete(&models.ContainerCredential{})
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
-}
-
-func RegenerateContainerHash(containerName string) (*models.ContainerCredential, error) {
-	var credential models.ContainerCredential
-	if err := db.DB.Where("container_name = ?", containerName).First(&credential).Error; err != nil {
+func RegenerateContainerHash(containerName string) (*ContainerCredentialData, error) {
+	var container models.Container
+	if err := db.DB.Where("name = ?", containerName).First(&container).Error; err != nil {
 		return nil, fmt.Errorf("容器凭证不存在")
 	}
 
@@ -74,11 +77,13 @@ func RegenerateContainerHash(containerName string) (*models.ContainerCredential,
 		return nil, fmt.Errorf("生成容器Hash失败: %v", err)
 	}
 
-	credential.Hash = hash
-	if err := db.DB.Save(&credential).Error; err != nil {
+	if err := db.DB.Model(&container).Update("hash", hash).Error; err != nil {
 		return nil, err
 	}
+	container.Hash = hash
 
-	return &credential, nil
+	return &ContainerCredentialData{
+		ContainerName: container.Name,
+		Hash:          container.Hash,
+	}, nil
 }
-

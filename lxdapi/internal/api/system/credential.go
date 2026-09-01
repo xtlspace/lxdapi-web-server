@@ -30,7 +30,6 @@ func GetContainerCredential(c *gin.Context) {
 		"container_name": credential.ContainerName,
 		"access_code":    credential.Hash,
 		"jump_url":       "/container/dashboard?hash=" + credential.Hash,
-		"created_at":     credential.CreatedAt,
 	})
 }
 
@@ -54,6 +53,5 @@ func RegenerateContainerCredential(c *gin.Context) {
 		"container_name": credential.ContainerName,
 		"access_code":    credential.Hash,
 		"jump_url":       "/container/dashboard?hash=" + credential.Hash,
-		"updated_at":     credential.UpdatedAt,
 	})
 }
