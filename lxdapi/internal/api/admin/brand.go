@@ -1,10 +1,6 @@
 package admin
 
 import (
-	"embed"
-	"io/fs"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"lxdapi/internal/service"
 	"lxdapi/models"
@@ -13,14 +9,9 @@ import (
 )
 
 var brandService *service.BrandService
-var embeddedFS embed.FS
 
 func InitBrandService() {
 	brandService = service.NewBrandService()
-}
-
-func SetEmbeddedFS(efs embed.FS) {
-	embeddedFS = efs
 }
 
 // GetBrandSettings 获取品牌设置
@@ -82,11 +73,6 @@ func UpdateBrandSettings(c *gin.Context) {
 		return
 	}
 	
-	if len(req.FooterText) > 200 {
-		response.Error(c, 400, "页脚文本长度不能超过200字符")
-		return
-	}
-	
 	if err := brandService.UpdateSettings(&req); err != nil {
 		response.Error(c, 500, "更新品牌设置失败")
 		return
@@ -94,42 +80,4 @@ func UpdateBrandSettings(c *gin.Context) {
 	
 	logger.OK("品牌设置已更新")
 	response.Success(c, "更新成功")
-}
-
-func GetContainerTemplates(c *gin.Context) {
-	liteTemplates := []string{}
-	baseTemplates := []string{}
-	
-	containerFS, err := fs.Sub(embeddedFS, "templates/container")
-	if err == nil {
-		fs.WalkDir(containerFS, ".", func(path string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() {
-				return nil
-			}
-			name := d.Name()
-			if strings.HasPrefix(name, "container_dashboard_") && strings.HasSuffix(name, ".html") {
-				tmplName := strings.TrimPrefix(name, "container_dashboard_")
-				tmplName = strings.TrimSuffix(tmplName, ".html")
-				
-				if strings.HasPrefix(tmplName, "lite") {
-					liteTemplates = append(liteTemplates, tmplName)
-				} else if strings.HasPrefix(tmplName, "base") {
-					baseTemplates = append(baseTemplates, tmplName)
-				}
-			}
-			return nil
-		})
-	}
-	
-	if len(liteTemplates) == 0 {
-		liteTemplates = []string{"lite1"}
-	}
-	if len(baseTemplates) == 0 {
-		baseTemplates = []string{"base1"}
-	}
-	
-	response.Success(c, gin.H{
-		"lite": liteTemplates,
-		"base": baseTemplates,
-	})
 }

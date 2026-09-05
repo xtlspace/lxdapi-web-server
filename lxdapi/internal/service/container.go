@@ -173,8 +173,14 @@ func (s *ContainerService) Create(ctx context.Context, req *models.CreateContain
 		logger.Warn("首次未获取到容器内网IPv6，将在后台任务中重试")
 	}
 	
+	containerHash, err := generateContainerHash()
+	if err != nil {
+		return fmt.Errorf("生成容器Hash失败: %v", err)
+	}
+
 	container := &models.Container{
 		Name:         req.Name,
+		Hash:         containerHash,
 		Image:        imageAlias,
 		Password:     actualPassword,
 		Status:       "stopped",

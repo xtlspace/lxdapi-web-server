@@ -29,12 +29,6 @@ func MergeTemplateData(c *gin.Context, data gin.H) gin.H {
 	if containerNoticeOpacity, exists := c.Get("ContainerNoticeOpacity"); exists {
 		data["ContainerNoticeOpacity"] = containerNoticeOpacity
 	}
-	if footerText, exists := c.Get("FooterText"); exists {
-		data["FooterText"] = footerText
-	}
-	if faviconUrl, exists := c.Get("FaviconUrl"); exists {
-		data["FaviconUrl"] = faviconUrl
-	}
 
 	if _, exists := data["title"]; !exists {
 		path := c.Request.URL.Path
@@ -56,13 +50,10 @@ func MergeTemplateData(c *gin.Context, data gin.H) gin.H {
 				data["ContentOpacity"] = settings.ContainerContentOpacity
 				data["ContainerNoticeOpacity"] = settings.ContainerNoticeOpacity
 			}
-			data["FaviconUrl"] = settings.FaviconUrl
-			data["FooterText"] = settings.FooterText
 		} else {
 			data["SystemName"] = "LXD API - 管理后台"
 			data["title"] = "管理后台 - LXD容器管理系统"
 			data["LoginTitle"] = "管理员登录"
-			data["FooterText"] = "LXD API 容器管理平台"
 		}
 	}
 	return data

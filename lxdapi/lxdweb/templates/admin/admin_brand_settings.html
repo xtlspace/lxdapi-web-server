@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }} - 系统设置</title>
-    {{if .FaviconUrl}}<link rel="icon" href="{{.FaviconUrl}}">{{end}}
     
     <link href="/static/css/daisyui.min.css" rel="stylesheet">
     <script src="/static/js/tailwindcss.js"></script>
@@ -53,8 +52,6 @@
         <div class="flex gap-1 lg:gap-2 content-box rounded-lg p-1 mb-4 lg:mb-6 overflow-x-auto w-fit">
             <a id="appearanceTabBtn" class="custom-tab-active px-3 py-1.5 text-xs font-medium rounded cursor-pointer transition whitespace-nowrap" onclick="switchTab('appearance')">外观设置</a>
             <a id="noticeTabBtn" class="custom-tab-inactive px-3 py-1.5 text-xs font-medium rounded cursor-pointer transition whitespace-nowrap" onclick="switchTab('notice')">公告设置</a>
-            <a id="generalTabBtn" class="custom-tab-inactive px-3 py-1.5 text-xs font-medium rounded cursor-pointer transition whitespace-nowrap" onclick="switchTab('general')">通用设置</a>
-            <a id="templateTabBtn" class="custom-tab-inactive px-3 py-1.5 text-xs font-medium rounded cursor-pointer transition whitespace-nowrap" onclick="switchTab('template')">模板设置</a>
         </div>
 
         <form id="brandForm">
@@ -149,77 +146,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div id="generalTab" class="tab-pane" style="display: none;">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                        <div class="content-box border border-gray-200 rounded-lg p-4 shadow-sm">
-                            <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-1.5">
-                                <span class="iconify" data-icon="mdi:image" data-width="18"></span>
-                                Favicon图标
-                            </h3>
-                            <input type="text" id="faviconUrl" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="https://example.com/favicon.ico" maxlength="500">
-                        </div>
-
-                        <div class="content-box border border-gray-200 rounded-lg p-4 shadow-sm">
-                            <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-1.5">
-                                <span class="iconify" data-icon="mdi:text" data-width="18"></span>
-                                页脚文字
-                            </h3>
-                            <input type="text" id="footerText" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="LXD API 容器管理平台" maxlength="200">
-                        </div>
-
-                    </div>
-
-                    <div class="content-box border border-gray-200 rounded-lg p-4 shadow-sm mb-4">
-                        <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-1.5">
-                            <span class="iconify" data-icon="mdi:certificate" data-width="18"></span>
-                            HTTPS证书配置
-                        </h3>
-                        <div class="text-xs text-gray-600 mb-3 p-2 bg-orange-50 border border-orange-200 rounded">
-                            <p class="text-orange-700 font-medium">修改证书后需要执行命令重启服务：systemctl restart lxdapi</p>
-                        </div>
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">SSL证书内容 (server.crt)</label>
-                                <textarea id="tlsCertContent" rows="8" class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" placeholder="-----BEGIN CERTIFICATE-----&#10;证书内容...&#10;-----END CERTIFICATE-----"></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">SSL私钥内容 (server.key)</label>
-                                <textarea id="tlsKeyContent" rows="8" class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono" placeholder="-----BEGIN PRIVATE KEY-----&#10;私钥内容...&#10;-----END PRIVATE KEY-----"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="templateTab" class="tab-pane" style="display: none;">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                        <div class="content-box border border-gray-200 rounded-lg p-4 shadow-sm">
-                            <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-1.5">
-                                <span class="iconify" data-icon="mdi:file-document-outline" data-width="18"></span>
-                                Lite 模板
-                            </h3>
-                            <div class="space-y-2">
-                                <label class="block text-xs font-medium text-gray-700 mb-1">选择模板文件</label>
-                                <select id="containerLiteTemplate" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                    <option value="lite">lite</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="content-box border border-gray-200 rounded-lg p-4 shadow-sm">
-                            <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-1.5">
-                                <span class="iconify" data-icon="mdi:file-document-outline" data-width="18"></span>
-                                Base 模板
-                            </h3>
-                            <div class="space-y-2">
-                                <label class="block text-xs font-medium text-gray-700 mb-1">选择模板文件</label>
-                                <select id="containerBaseTemplate" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                    <option value="base">base</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="flex gap-3">
@@ -235,8 +161,8 @@
     
     <script>
         function switchTab(tabName) {
-            $('#appearanceTab, #noticeTab, #generalTab, #templateTab').hide();
-            $('#appearanceTabBtn, #noticeTabBtn, #generalTabBtn, #templateTabBtn').removeClass('custom-tab-active').addClass('custom-tab-inactive');
+            $('#appearanceTab, #noticeTab').hide();
+            $('#appearanceTabBtn, #noticeTabBtn').removeClass('custom-tab-active').addClass('custom-tab-inactive');
             
             if (tabName === 'appearance') {
                 $('#appearanceTab').show();
@@ -244,38 +170,12 @@
             } else if (tabName === 'notice') {
                 $('#noticeTab').show();
                 $('#noticeTabBtn').removeClass('custom-tab-inactive').addClass('custom-tab-active');
-            } else if (tabName === 'general') {
-                $('#generalTab').show();
-                $('#generalTabBtn').removeClass('custom-tab-inactive').addClass('custom-tab-active');
-            } else if (tabName === 'template') {
-                $('#templateTab').show();
-                $('#templateTabBtn').removeClass('custom-tab-inactive').addClass('custom-tab-active');
             }
         }
 
         $(document).ready(function() {
-            loadTemplateOptions();
             loadSettings();
         });
-
-        function loadTemplateOptions() {
-            $.get('/api/admin/container-templates', function(result) {
-                if (result.code === 200 && result.data) {
-                    const liteSelect = $('#containerLiteTemplate');
-                    const baseSelect = $('#containerBaseTemplate');
-                    
-                    liteSelect.empty();
-                    result.data.lite.forEach(function(t) {
-                        liteSelect.append($('<option>').val(t).text(t));
-                    });
-                    
-                    baseSelect.empty();
-                    result.data.base.forEach(function(t) {
-                        baseSelect.append($('<option>').val(t).text(t));
-                    });
-                }
-            });
-        }
 
         function loadSettings() {
             $.ajax({
@@ -302,12 +202,6 @@
                         $('#containerNotice').val(result.data.container_notice || '');
                         $('#containerNoticeOpacity').val(result.data.container_notice_opacity || 85);
                         $('#containerNoticeOpacityValue').text((result.data.container_notice_opacity || 85) + '%');
-                        $('#faviconUrl').val(result.data.favicon_url || '');
-                        $('#footerText').val(result.data.footer_text);
-                        $('#containerLiteTemplate').val(result.data.container_lite_template || 'lite');
-                        $('#containerBaseTemplate').val(result.data.container_base_template || 'base');
-                        $('#tlsCertContent').val(result.data.tls_cert_content || '');
-                        $('#tlsKeyContent').val(result.data.tls_key_content || '');
                     }
                 }
             });
@@ -334,23 +228,10 @@
                     container_content_opacity: parseInt($('#containerContentOpacity').val()),
                     container_notice: $('#containerNotice').val().trim(),
                     container_notice_opacity: parseInt($('#containerNoticeOpacity').val()),
-                    favicon_url: $('#faviconUrl').val().trim(),
-                    footer_text: $('#footerText').val().trim(),
-                    container_lite_template: $('#containerLiteTemplate').val().trim() || 'lite',
-                    container_base_template: $('#containerBaseTemplate').val().trim() || 'base',
-                    tls_cert_content: $('#tlsCertContent').val().trim(),
-                    tls_key_content: $('#tlsKeyContent').val().trim()
                 }),
                 success: function(result) {
                     if (result.code === 200) {
-                        const certContent = $('#tlsCertContent').val().trim();
-                        const keyContent = $('#tlsKeyContent').val().trim();
-                        
-                        if (certContent && keyContent) {
-                            alert('保存成功！证书已更新，请执行以下命令重启服务：\n\nsystemctl restart lxdapi');
-                        } else {
-                            alert('保存成功！');
-                        }
+                        alert('保存成功！');
                         location.reload();
                     } else {
                         alert('保存失败: ' + (result.msg || '未知错误'));

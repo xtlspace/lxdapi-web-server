@@ -16,7 +16,6 @@ func GetBrandSettings(c *gin.Context) {
 		response.Success(c, gin.H{
 			"system_name":  "LXD API",
 			"system_title": "LXD容器管理系统",
-			"footer_text":  "LXD API 容器管理平台",
 		})
 		return
 	}

@@ -24,8 +24,6 @@ func BrandMiddleware() gin.HandlerFunc {
 				c.Set("SystemTitle", "容器管理 - LXD容器管理系统")
 				c.Set("LoginTitle", "容器登录")
 			}
-			c.Set("FaviconUrl", "")
-			c.Set("FooterText", "LXD API 容器管理平台")
 		} else {
 			if len(path) >= 6 && path[:6] == "/admin" {
 				c.Set("SystemName", settings.AdminSystemName)
@@ -43,8 +41,6 @@ func BrandMiddleware() gin.HandlerFunc {
 				c.Set("ContentOpacity", settings.ContainerContentOpacity)
 				c.Set("ContainerNoticeOpacity", settings.ContainerNoticeOpacity)
 			}
-			c.Set("FaviconUrl", settings.FaviconUrl)
-			c.Set("FooterText", settings.FooterText)
 		}
 		
 		c.Next()

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }} - 容器控制</title>
-    {{if .FaviconUrl}}<link rel="icon" href="{{.FaviconUrl}}">{{end}}
     
     <link href="/static/css/daisyui.min.css" rel="stylesheet">
     <script src="/static/js/tailwindcss.js"></script>
@@ -1872,10 +1871,6 @@
                 type: 'GET',
                 success: function(result) {
                     if (result.code === 200 && result.data) {
-                        if (result.data.footer_text) {
-                            $('#brandFooterText').text(result.data.footer_text);
-                        }
-                        
                         if (result.data.container_notice) {
                             const notice = result.data.container_notice.trim();
                             if (notice) {

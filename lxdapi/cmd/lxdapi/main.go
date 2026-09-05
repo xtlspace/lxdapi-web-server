@@ -122,7 +122,6 @@ func main() {
 	system.InitIPv4Service(ipv4Service)
 	container.InitContainerService(containerService)
 	admin.InitBrandService()
-	admin.SetEmbeddedFS(embeddedFiles)
 
 	executor.ClearPendingTasks()
 
@@ -346,7 +345,6 @@ func main() {
 		adminAPI.POST("/templates/batch-delete", admin.BatchDeleteTemplates)
 		adminAPI.GET("/brand-settings", admin.GetBrandSettings)
 		adminAPI.POST("/brand-settings", admin.UpdateBrandSettings)
-		adminAPI.GET("/container-templates", admin.GetContainerTemplates)
 		adminAPI.GET("/port-range/config", admin.GetPortRangeConfig)
 		adminAPI.POST("/port-range/config", admin.SavePortRangeConfig)
 		adminAPI.GET("/nserIPv6/settings", admin.GetIPv6NeighborConfig)
@@ -411,20 +409,7 @@ func startWithTLS(r *gin.Engine, addr string, cfg *core.Config) {
 	keyFile := tlsCfg.KeyFile
 	certSource := ""
 
-	brandService := service.NewBrandService()
-	certContent, keyContent, err := brandService.LoadTLSCertificates()
-	
-	if err == nil && certContent != "" && keyContent != "" {
-		logger.Info("检测到Web后台配置的证书，优先使用...")
-		if err := brandService.SaveTLSCertificates(certContent, keyContent); err != nil {
-			logger.Error("写入Web配置的证书失败: %v", err)
-		} else {
-			certSource = "自定义"
-			logger.OK("已加载自定义证书")
-		}
-	}
-	
-	if certSource == "" && tlsCfg.AutoGenerate {
+	if tlsCfg.AutoGenerate {
 		generateSelfSignedCert(certMgr)
 		certSource = "自签名"
 	}

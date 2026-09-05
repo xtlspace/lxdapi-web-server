@@ -57,7 +57,7 @@ func TestMergeTemplateData_PresetTitleAvoidsDB(t *testing.T) {
 
 func TestMergeTemplateData_MissingKeysNotInjected(t *testing.T) {
 	data := MergeTemplateData(newTestContext(nil), gin.H{"title": "x"})
-	for _, k := range []string{"SystemName", "BgImage", "FooterText", "FaviconUrl"} {
+	for _, k := range []string{"SystemName", "BgImage", "ContainerNoticeOpacity"} {
 		if _, ok := data[k]; ok {
 			t.Errorf("上下文未设置时不应注入 %s", k)
 		}

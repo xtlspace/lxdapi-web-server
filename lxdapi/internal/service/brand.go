@@ -1,15 +1,9 @@
 package service
 
 import (
-	"lxdapi/internal/core"
 	"lxdapi/internal/db"
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
-	"os"
-	"path/filepath"
-
-	"gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger"
 )
 
 type BrandService struct{}
@@ -36,8 +30,6 @@ func (s *BrandService) GetSettings() (*models.BrandSettings, error) {
 			ContainerBgOpacity:      75,
 			ContainerContentOpacity: 85,
 			ContainerNotice:         "",
-			FaviconUrl:              "",
-			FooterText:              "LXD API 容器管理平台",
 		}
 
 		if err := db.DB.Create(&settings).Error; err != nil {
@@ -76,24 +68,10 @@ func (s *BrandService) UpdateSettings(settings *models.BrandSettings) error {
 	existing.ContainerContentOpacity = settings.ContainerContentOpacity
 	existing.ContainerNotice = settings.ContainerNotice
 	existing.ContainerNoticeOpacity = settings.ContainerNoticeOpacity
-	existing.FaviconUrl = settings.FaviconUrl
-	existing.FooterText = settings.FooterText
-	existing.ContainerLiteTemplate = settings.ContainerLiteTemplate
-	existing.ContainerBaseTemplate = settings.ContainerBaseTemplate
-	existing.TLSCertContent = settings.TLSCertContent
-	existing.TLSKeyContent = settings.TLSKeyContent
 
 	if err := db.DB.Save(&existing).Error; err != nil {
 		logger.Error("更新品牌设置失败: %v", err)
 		return err
-	}
-
-	if settings.TLSCertContent != "" && settings.TLSKeyContent != "" {
-		if err := s.SaveTLSCertificates(settings.TLSCertContent, settings.TLSKeyContent); err != nil {
-			logger.Error("保存TLS证书失败: %v", err)
-			return err
-		}
-		logger.OK("TLS证书已更新")
 	}
 
 	logger.OK("品牌设置更新成功")
@@ -120,10 +98,6 @@ func (s *BrandService) ResetToDefault() error {
 	settings.ContainerBgOpacity = 75
 	settings.ContainerContentOpacity = 85
 	settings.ContainerNotice = ""
-	settings.FaviconUrl = ""
-	settings.FooterText = "LXD API 容器管理平台"
-	settings.TLSCertContent = ""
-	settings.TLSKeyContent = ""
 
 	if err := db.DB.Save(&settings).Error; err != nil {
 		logger.Error("重置品牌设置失败: %v", err)
@@ -132,45 +106,4 @@ func (s *BrandService) ResetToDefault() error {
 
 	logger.OK("品牌设置已重置为默认值")
 	return nil
-}
-
-func (s *BrandService) SaveTLSCertificates(certContent, keyContent string) error {
-	cfg := core.GlobalConfig
-	if cfg == nil {
-		return nil
-	}
-
-	certFile := cfg.System.Server.TLS.CertFile
-	keyFile := cfg.System.Server.TLS.KeyFile
-
-	certDir := filepath.Dir(certFile)
-	if err := os.MkdirAll(certDir, 0755); err != nil {
-		return err
-	}
-
-	keyDir := filepath.Dir(keyFile)
-	if err := os.MkdirAll(keyDir, 0755); err != nil {
-		return err
-	}
-
-	if err := os.WriteFile(certFile, []byte(certContent), 0644); err != nil {
-		return err
-	}
-
-	if err := os.WriteFile(keyFile, []byte(keyContent), 0600); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *BrandService) LoadTLSCertificates() (certContent, keyContent string, err error) {
-	var settings models.BrandSettings
-
-	result := db.DB.Session(&gorm.Session{Logger: gormlogger.Discard}).First(&settings)
-	if result.Error != nil {
-		return "", "", result.Error
-	}
-
-	return settings.TLSCertContent, settings.TLSKeyContent, nil
 }
