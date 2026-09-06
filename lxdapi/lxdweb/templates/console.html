@@ -51,6 +51,24 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
+        #toast {
+            position: fixed;
+            top: 64px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(17, 24, 39, 0.92);
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        #toast.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-black overflow-hidden h-screen flex flex-col">
@@ -63,6 +81,8 @@
             <div class="flex items-center gap-1 lg:gap-1.5">
                 <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="font-decrease" title="减小字体">字体 -</button>
                 <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="font-increase" title="增大字体">字体 +</button>
+                <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="copy-btn" title="复制选中内容">复制</button>
+                <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="paste-btn" title="粘贴剪贴板内容">粘贴</button>
                 <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="clear-terminal" title="清屏">清屏</button>
                 <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="fullscreen" title="全屏">全屏</button>
             </div>
@@ -92,6 +112,7 @@
             </div>
         </div>
     </div>
+    <div id="toast"></div>
 
     
     <script src="/static/js/xterm.js"></script>
@@ -241,6 +262,80 @@
                 document.documentElement.requestFullscreen();
             } else {
                 document.exitFullscreen();
+            }
+        });
+        
+        const toast = document.getElementById('toast');
+        let toastTimer = null;
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+        
+        function legacyCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;opacity:0;left:-9999px;top:0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                return document.execCommand('copy');
+            } catch (e) {
+                return false;
+            } finally {
+                document.body.removeChild(ta);
+            }
+        }
+        
+        function legacyReadClipboard() {
+            const ta = document.createElement('textarea');
+            ta.style.cssText = 'position:fixed;opacity:0;left:-9999px;top:0';
+            document.body.appendChild(ta);
+            ta.value = '';
+            ta.focus();
+            try {
+                document.execCommand('paste');
+            } catch (e) {
+            }
+            const text = ta.value || '';
+            document.body.removeChild(ta);
+            return text;
+        }
+        
+        document.getElementById('copy-btn').addEventListener('click', async () => {
+            const text = term.getSelection() || '';
+            if (!text) {
+                showToast('没有选中内容，请先用鼠标框选终端文本');
+                return;
+            }
+            let ok = false;
+            if (navigator.clipboard && window.isSecureContext) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    ok = true;
+                } catch (e) {
+                }
+            }
+            if (!ok) ok = legacyCopy(text);
+            showToast(ok ? '已复制' : '复制失败，请手动 Ctrl+C 复制');
+        });
+        
+        document.getElementById('paste-btn').addEventListener('click', async () => {
+            let text = '';
+            if (navigator.clipboard && window.isSecureContext) {
+                try {
+                    text = await navigator.clipboard.readText();
+                } catch (e) {
+                }
+            }
+            if (!text) text = legacyReadClipboard();
+            if (text) {
+                term.paste(text);
+                showToast('已粘贴');
+            } else {
+                showToast('无法读取剪贴板，请点入终端后按 Ctrl+V 粘贴');
             }
         });
         
