@@ -29,15 +29,14 @@ func NewContainerService() *ContainerService {
 }
 
 func generatePassword() string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
-	const length = 16
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const length = 12
 	
 	password := make([]byte, length)
 	
 	upper := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	lower := "abcdefghijklmnopqrstuvwxyz"
 	digits := "0123456789"
-	special := "!@#$%^&*"
 	
 	n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(upper))))
 	password[0] = upper[n.Int64()]
@@ -48,10 +47,7 @@ func generatePassword() string {
 	n, _ = rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
 	password[2] = digits[n.Int64()]
 	
-	n, _ = rand.Int(rand.Reader, big.NewInt(int64(len(special))))
-	password[3] = special[n.Int64()]
-	
-	for i := 4; i < length; i++ {
+	for i := 3; i < length; i++ {
 		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
 		password[i] = charset[n.Int64()]
 	}
