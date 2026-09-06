@@ -74,7 +74,14 @@
                         <h1 id="containerName" class="text-sm lg:text-base font-semibold text-gray-800 truncate">加载中...</h1>
                         <div class="flex flex-col sm:flex-row sm:gap-3 lg:gap-4 text-xs mt-0.5">
                             <p class="text-gray-500 truncate">镜像: <span id="containerImage" class="font-medium text-gray-800">加载中...</span></p>
-                            <p class="text-gray-500 truncate">密码: <span id="containerPassword" class="font-mono font-medium text-gray-800">-</span></p>
+                            <p class="text-gray-500 truncate">密码:
+                                <span class="inline-flex items-center gap-1 align-middle">
+                                    <span id="containerPassword" class="font-mono font-medium text-gray-800 truncate">-</span>
+                                    <button type="button" onclick="copyPassword()" class="p-1 text-gray-600 hover:bg-gray-200 rounded transition shrink-0" title="复制密码">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                    </button>
+                                </span>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -1257,6 +1264,23 @@ function showAddIPv6MappingModal() {
                 showToast('error', '复制失败，请手动复制');
             }
             document.body.removeChild(textArea);
+        }
+
+        function copyPassword() {
+            const text = ($('#containerPassword').text() || '').trim();
+            if (!text || text === '-') {
+                showToast('error', '暂无密码可复制');
+                return;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('success', '密码已复制');
+                }).catch(() => {
+                    fallbackCopyPlain(text);
+                });
+            } else {
+                fallbackCopyPlain(text);
+            }
         }
 
         function copyMappingIP(ip) {
