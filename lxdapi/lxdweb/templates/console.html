@@ -81,7 +81,7 @@
             <div class="flex items-center gap-1 lg:gap-1.5">
                 <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="font-decrease" title="减小字体">字体 -</button>
                 <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="font-increase" title="增大字体">字体 +</button>
-                <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="copy-btn" title="复制选中内容">复制</button>
+                <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="copy-btn" title="复制全屏内容">复制</button>
                 <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="paste-btn" title="粘贴剪贴板内容">粘贴</button>
                 <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="clear-terminal" title="清屏">清屏</button>
                 <button class="bg-white border border-gray-300 rounded-md px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium" id="fullscreen" title="全屏">全屏</button>
@@ -304,10 +304,25 @@
             return text;
         }
         
+        function getScreenText() {
+            const buffer = term.buffer.active;
+            const rows = term.rows;
+            const start = buffer.viewportY;
+            const lines = [];
+            for (let i = 0; i < rows; i++) {
+                const line = buffer.getLine(start + i);
+                lines.push(line ? line.translateToString(true) : '');
+            }
+            while (lines.length && lines[lines.length - 1] === '') {
+                lines.pop();
+            }
+            return lines.join('\n');
+        }
+        
         document.getElementById('copy-btn').addEventListener('click', async () => {
-            const text = term.getSelection() || '';
+            const text = getScreenText();
             if (!text) {
-                showToast('没有选中内容，请先用鼠标框选终端文本');
+                showToast('终端没有内容可复制');
                 return;
             }
             let ok = false;
@@ -319,7 +334,7 @@
                 }
             }
             if (!ok) ok = legacyCopy(text);
-            showToast(ok ? '已复制' : '复制失败，请手动 Ctrl+C 复制');
+            showToast(ok ? '已复制全屏内容' : '复制失败，请手动复制');
         });
         
         document.getElementById('paste-btn').addEventListener('click', async () => {
