@@ -55,7 +55,7 @@ func DeleteTask(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Unscoped().Delete(&models.Task{}, "id = ?", taskID).Error; err != nil {
+	if err := db.DB.Delete(&models.Task{}, "id = ?", taskID).Error; err != nil {
 		response.Error(c, 500, "删除任务失败")
 		return
 	}
@@ -78,7 +78,7 @@ func BatchDeleteTasks(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Unscoped().Delete(&models.Task{}, "id IN ?", req.TaskIDs).Error; err != nil {
+	if err := db.DB.Delete(&models.Task{}, "id IN ?", req.TaskIDs).Error; err != nil {
 		response.Error(c, 500, "批量删除失败")
 		return
 	}

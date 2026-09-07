@@ -2,7 +2,6 @@ package models
 
 import (
 	"time"
-	"gorm.io/gorm"
 )
 
 const (
@@ -13,7 +12,9 @@ const (
 )
 
 type Task struct {
-	gorm.Model
+	ID            uint       `gorm:"primarykey" json:"ID"`
+	CreatedAt     time.Time  `json:"CreatedAt"`
+	UpdatedAt     time.Time  `json:"UpdatedAt"`
 	ContainerName string     `gorm:"index;size:255" json:"container_name"`
 	Action        string     `gorm:"size:100" json:"action"`
 	Type          string     `gorm:"size:50" json:"type"`
