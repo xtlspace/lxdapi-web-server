@@ -453,7 +453,10 @@ func (s *ContainerService) Delete(ctx context.Context, name string) error {
 	}
 
 	if err := s.lxcClient.DeleteContainer(ctx, name); err != nil {
-		logger.Warn("删除LXD容器失败: %v，继续清理数据库和缓存", err)
+		if s.lxcClient.ContainerExists(ctx, name) {
+			return fmt.Errorf("删除Incus容器失败，容器记录保留: %v", err)
+		}
+		logger.Warn("Incus容器已不存在，继续清理数据库: %v", err)
 	}
 	
 	db.DB.Unscoped().Where("name = ?", name).Delete(&models.Container{})

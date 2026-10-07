@@ -167,8 +167,10 @@ func (c *Client) RestartContainer(ctx context.Context, name string) error {
 
 func (c *Client) DeleteContainer(ctx context.Context, name string) error {
 	logger.Info("删除容器: %s", name)
-	if err := c.StopContainer(ctx, name); err != nil {
-		return fmt.Errorf("停止容器失败: %v", err)
+	if status, err := c.GetContainerStatus(ctx, name); err == nil && status == "Running" {
+		if err := c.StopContainer(ctx, name); err != nil {
+			return fmt.Errorf("停止容器失败: %v", err)
+		}
 	}
 	data, err := c.deleteReq(ctx, fmt.Sprintf("/1.0/instances/%s", name))
 	if err != nil {
