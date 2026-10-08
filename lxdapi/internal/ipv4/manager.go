@@ -8,6 +8,7 @@ import (
 	"lxdapi/models"
 	"lxdapi/pkg/logger"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 )
@@ -20,12 +21,14 @@ var GlobalManager *Manager
 
 func FlushNftTables() error {
 	for _, table := range []string{"lxdnat", "lxdip"} {
-		exec.Command("nft", "add", "table", "inet", table).Run()
-		if output, err := exec.Command("nft", "flush", "table", "inet", table).CombinedOutput(); err != nil {
-			return fmt.Errorf("清空nftables表 %s 失败: %v, output: %s", table, err, string(output))
+		// 删除整张表（含表内 set/集合对象）；表不存在时 nft 会报错，忽略即可
+		if output, err := exec.Command("nft", "delete", "table", "inet", table).CombinedOutput(); err != nil {
+			if !strings.Contains(string(output), "No such file") {
+				return fmt.Errorf("删除nftables表 %s 失败: %v, output: %s", table, err, string(output))
+			}
 		}
 	}
-	logger.OK("已清空 nftables NAT 表: lxdnat, lxdip")
+	logger.OK("已删除 nftables NAT 表: lxdnat, lxdip")
 	return nil
 }
 
