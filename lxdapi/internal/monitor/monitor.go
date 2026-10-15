@@ -11,6 +11,7 @@ import (
 	"lxdapi/pkg/logger"
 	"lxdapi/pkg/plugin"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -23,7 +24,15 @@ type Monitor struct {
 	neighbor  atomic.Value
 
 	lastResetMonth int
+
+	proxyMu      sync.Mutex
+	cycleDesired map[string]struct{}
+	proxyMissing map[string]int
 }
+
+// proxyNDPStaleGrace 为一个代理NDP条目连续缺席多少个监控周期后才被清理，
+// 用于规避单次采集抖动导致的短暂断网。
+const proxyNDPStaleGrace = 2
 
 var GlobalMonitor *Monitor
 
@@ -54,6 +63,8 @@ func (m *Monitor) Start(ctx context.Context) {
 	for {
 		rows := m.loadRows()
 
+		m.beginProxyCycle()
+
 		for i := range rows {
 			select {
 			case <-ctx.Done():
@@ -69,6 +80,9 @@ func (m *Monitor) Start(ctx context.Context) {
 				}
 			}
 		}
+
+		// 本周期结束后对账：补齐缺失的代理NDP条目，清理连续缺席的残留条目
+		m.reconcileProxyNDP()
 
 		// 仅跨月时才重新查询并重置
 		m.maybeAutoResetTraffic()
@@ -205,15 +219,142 @@ func (m *Monitor) handleIPv6NeighborRequests(containerName string, state *contai
 
 	seen := make(map[string]bool)
 	for _, ip := range state.IPv6s {
-		if !strings.HasPrefix(ip, cfg.Prefix) || seen[ip] {
+		if !ipv6.InPrefix(ip, cfg.Prefix) || seen[ip] {
 			continue
 		}
 		seen[ip] = true
 
-		if err := ipv6.NserIPv6(cfg.Iface, ip, cfg.Gateway); err != nil {
+		if cfg.ProxyNDP {
+			m.markDesired(ip)
+		}
+
+		if err := ipv6.AnnounceNeighbor(cfg.Iface, ip, cfg.Gateway, cfg.ProxyNDP); err != nil {
 			logger.Warn("容器 %s IPv6邻居请求发送失败 %s -> %s: %v", containerName, ip, cfg.Gateway, err)
 			continue
 		}
+	}
+}
+
+func (m *Monitor) beginProxyCycle() {
+	m.proxyMu.Lock()
+	m.cycleDesired = make(map[string]struct{})
+	m.proxyMu.Unlock()
+}
+
+func (m *Monitor) markDesired(addr string) {
+	m.proxyMu.Lock()
+	if m.cycleDesired != nil {
+		m.cycleDesired[addr] = struct{}{}
+	}
+	m.proxyMu.Unlock()
+}
+
+// reconcileProxyNDP 在每个监控周期结束时对账内核代理NDP条目：
+//   - 主开关或代理NDP开关关闭时，清理本前缀的全部条目；
+//   - 否则补齐“应存在但内核缺失”的条目；
+//   - 对“本前缀内、且连续缺席达到 proxyNDPStaleGrace 个周期”的条目执行清理，
+//     前缀外的条目一律不触碰。
+func (m *Monitor) reconcileProxyNDP() {
+	cfg := m.neighbor.Load().(models.IPv6NeighborConfig)
+
+	if !cfg.Enabled || !cfg.ProxyNDP {
+		m.resetProxyState()
+		if cfg.Iface != "" && cfg.Prefix != "" {
+			if err := ipv6.FlushProxyNDP(cfg.Iface, cfg.Prefix); err != nil {
+				logger.Warn("清理IPv6代理NDP条目失败 dev %s: %v", cfg.Iface, err)
+			}
+		}
+		return
+	}
+
+	if cfg.Iface == "" || cfg.Gateway == "" || cfg.Prefix == "" {
+		return
+	}
+
+	m.proxyMu.Lock()
+	desired := make(map[string]struct{}, len(m.cycleDesired))
+	for k := range m.cycleDesired {
+		desired[k] = struct{}{}
+	}
+	m.proxyMu.Unlock()
+
+	cur, err := ipv6.ListProxyNDP(cfg.Iface)
+	if err != nil {
+		logger.Warn("查询IPv6代理NDP条目失败 dev %s: %v", cfg.Iface, err)
+		return
+	}
+
+	current := make(map[string]struct{}, len(cur))
+	for _, ip := range cur {
+		current[ip.String()] = struct{}{}
+	}
+
+	m.proxyMu.Lock()
+	if m.proxyMissing == nil {
+		m.proxyMissing = make(map[string]int)
+	}
+
+	// 方向A：清理残留（仅限本前缀，连续缺席达到宽限才删）
+	for key := range current {
+		if !ipv6.InPrefix(key, cfg.Prefix) {
+			continue
+		}
+		if _, ok := desired[key]; ok {
+			delete(m.proxyMissing, key)
+			continue
+		}
+		m.proxyMissing[key]++
+		if m.proxyMissing[key] >= proxyNDPStaleGrace {
+			if err := ipv6.DelProxyNDP(cfg.Iface, key); err != nil {
+				logger.Warn("清理残留代理NDP条目失败 %s dev %s: %v", key, cfg.Iface, err)
+			} else {
+				logger.Info("已清理残留IPv6代理NDP条目 %s dev %s", key, cfg.Iface)
+			}
+			delete(m.proxyMissing, key)
+		}
+	}
+
+	// 清理计数中已不在内核里的地址
+	for key := range m.proxyMissing {
+		if _, ok := current[key]; !ok {
+			delete(m.proxyMissing, key)
+		}
+	}
+	m.proxyMu.Unlock()
+
+	// 方向B：补齐应存在但内核缺失的条目
+	for key := range desired {
+		if _, ok := current[key]; ok {
+			continue
+		}
+		if err := ipv6.AddProxyNDP(cfg.Iface, key); err != nil {
+			logger.Warn("补齐IPv6代理NDP条目失败 %s dev %s: %v", key, cfg.Iface, err)
+		}
+	}
+}
+
+func (m *Monitor) resetProxyState() {
+	m.proxyMu.Lock()
+	m.proxyMissing = nil
+	m.proxyMu.Unlock()
+}
+
+// refreshProxyNDP 供配置保存后立即生效：查询当前运行中的容器并补发邻居请求、
+// 添加代理NDP条目，无需等待下一个监控周期。
+func (m *Monitor) refreshProxyNDP() {
+	cfg := m.neighbor.Load().(models.IPv6NeighborConfig)
+	if !cfg.Enabled || !cfg.ProxyNDP || cfg.Iface == "" || cfg.Gateway == "" || cfg.Prefix == "" {
+		return
+	}
+
+	for _, c := range m.loadRows() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		state, err := m.getContainerState(ctx, c.Name)
+		cancel()
+		if err != nil || state.Status != "Running" {
+			continue
+		}
+		m.handleIPv6NeighborRequests(c.Name, state)
 	}
 }
 
@@ -228,6 +369,13 @@ func (m *Monitor) reloadNeighborConfig() {
 func ReloadNeighborConfig() {
 	if GlobalMonitor != nil {
 		GlobalMonitor.reloadNeighborConfig()
+	}
+}
+
+// RefreshProxyNDP 在配置保存后立即对运行中容器生效（补发邻居请求、添加代理NDP条目）。
+func RefreshProxyNDP() {
+	if GlobalMonitor != nil {
+		GlobalMonitor.refreshProxyNDP()
 	}
 }
 
@@ -255,6 +403,7 @@ func (m *Monitor) getContainerState(ctx context.Context, name string) (*containe
 		"metadata.network.eth0.counters.bytes_received",
 		"metadata.network.eth0.counters.bytes_sent",
 		"metadata.network.eth0.addresses",
+		"metadata.network.eth1.addresses",
 	)
 
 	snap := &containerUsageSnapshot{Status: res[0].String()}
@@ -268,17 +417,19 @@ func (m *Monitor) getContainerState(ctx context.Context, name string) (*containe
 	snap.RxBytes = res[3].Uint()
 	snap.TxBytes = res[4].Uint()
 
-	// 仅采集 eth0 网卡；addresses 存在才解析过滤 inet6
-	if eth0 := res[5]; eth0.Exists() {
-		eth0.ForEach(func(_, v gjson.Result) bool {
-			if v.Get("family").String() == "inet6" {
-				addr := v.Get("address").String()
-				if addr != "" && !strings.HasPrefix(addr, "fe80:") {
-					snap.IPv6s = append(snap.IPv6s, addr)
+	// 采集 eth0/eth1 网卡；addresses 存在才解析过滤 inet6
+	for _, i := range []int{5, 6} {
+		if addrs := res[i]; addrs.Exists() {
+			addrs.ForEach(func(_, v gjson.Result) bool {
+				if v.Get("family").String() == "inet6" {
+					addr := v.Get("address").String()
+					if addr != "" && !strings.HasPrefix(addr, "fe80:") {
+						snap.IPv6s = append(snap.IPv6s, addr)
+					}
 				}
-			}
-			return true
-		})
+				return true
+			})
+		}
 	}
 
 	return snap, nil

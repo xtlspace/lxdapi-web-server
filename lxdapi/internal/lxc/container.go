@@ -421,10 +421,10 @@ func (c *Client) sendIPv6NeighborRequest(containerName, address string) {
 	if !cfg.Enabled || cfg.Iface == "" || cfg.Gateway == "" || cfg.Prefix == "" {
 		return
 	}
-	if !strings.HasPrefix(address, cfg.Prefix) {
+	if !ipv6.InPrefix(address, cfg.Prefix) {
 		return
 	}
-	if err := ipv6.NserIPv6(cfg.Iface, address, cfg.Gateway); err != nil {
+	if err := ipv6.AnnounceNeighbor(cfg.Iface, address, cfg.Gateway, cfg.ProxyNDP); err != nil {
 		logger.Warn("容器 %s IPv6邻居请求发送失败 %s -> %s: %v", containerName, address, cfg.Gateway, err)
 		return
 	}

@@ -37,6 +37,18 @@ func NserIPv6(iface string, srcIP, dstIP string) error {
 	return sendNS(iface, sourceIP, targetIP)
 }
 
+// AnnounceNeighbor 对单个容器 IPv6 地址执行邻居学习：
+// proxyNDP 为真时先添加内核代理NDP条目（等价 ip -6 neigh add proxy），
+// 随后发送邻居请求。代理条目添加失败仅记录告警，不影响邻居请求发送。
+func AnnounceNeighbor(iface, addr, gateway string, proxyNDP bool) error {
+	if proxyNDP {
+		if err := AddProxyNDP(iface, addr); err != nil {
+			logger.Warn("添加IPv6代理NDP条目失败 %s dev %s: %v", addr, iface, err)
+		}
+	}
+	return NserIPv6(iface, addr, gateway)
+}
+
 // sendNS builds and sends a Neighbor Solicitation packet using native Go raw sockets.
 func sendNS(ifaceName string, sourceIP, targetIP net.IP) error {
 	iface, err := net.InterfaceByName(ifaceName)
@@ -94,6 +106,6 @@ func sendNS(ifaceName string, sourceIP, targetIP net.IP) error {
 		return fmt.Errorf("failed to write packet: %w", err)
 	}
 
-	logger.Info("nser: 已发送IPv6邻居请求 %s -> 网关 %s (iface %s)", sourceIP, targetIP, ifaceName)
+	logger.OK("nser: 已发送IPv6邻居请求 %s -> 网关 %s (iface %s)", sourceIP, targetIP, ifaceName)
 	return nil
 }

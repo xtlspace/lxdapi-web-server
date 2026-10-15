@@ -424,6 +424,11 @@ func (s *ContainerService) Reinstall(ctx context.Context, name, image, password 
 }
 
 func (s *ContainerService) Delete(ctx context.Context, name string) error {
+	var container models.Container
+	if err := db.DB.Where("name = ?", name).First(&container).Error; err == nil && container.PrivateIPv6 != "" {
+		ipv6.CleanupProxyNDPForAddress(container.PrivateIPv6)
+	}
+
 	var mappingsV4 []models.PortMappingV4
 	if err := db.DB.Where("container_name = ?", name).Find(&mappingsV4).Error; err == nil {
 		pmService := NewPortMappingService()
@@ -726,6 +731,14 @@ func (s *ContainerService) updateContainerIPv4Rules(containerName, oldIP, newIP 
 }
 
 func (s *ContainerService) updateContainerIPv6Rules(containerName, oldIP, newIP string) {
+	// 重装换址：清理旧地址的代理NDP条目，按当前配置为新地址补建条目
+	if oldIP != "" && oldIP != newIP {
+		ipv6.CleanupProxyNDPForAddress(oldIP)
+	}
+	if newIP != "" {
+		ipv6.EnsureProxyNDPForAddress(newIP)
+	}
+
 	if ipv6.GlobalManager == nil {
 		return
 	}
