@@ -16,10 +16,9 @@ func GetIPv6NeighborConfig(c *gin.Context) {
 	if err := db.DB.First(&config).Error; err != nil {
 		config = models.IPv6NeighborConfig{
 			Enabled:  false,
-			ProxyNDP: false,
-			Iface:    "",
-			Prefix:   "",
-			Gateway:  "",
+			Iface:   "",
+			Prefix:  "",
+			Gateway: "",
 		}
 		db.DB.Create(&config)
 	}
@@ -30,10 +29,9 @@ func GetIPv6NeighborConfig(c *gin.Context) {
 func SaveIPv6NeighborConfig(c *gin.Context) {
 	var req struct {
 		Enabled  bool   `json:"enabled"`
-		ProxyNDP bool   `json:"proxy_ndp"`
-		Iface    string `json:"iface"`
-		Prefix   string `json:"prefix"`
-		Gateway  string `json:"gateway"`
+		Iface   string `json:"iface"`
+		Prefix  string `json:"prefix"`
+		Gateway string `json:"gateway"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,12 +60,10 @@ func SaveIPv6NeighborConfig(c *gin.Context) {
 	}
 
 	wasEnabled := config.Enabled
-	wasProxyNDP := config.ProxyNDP
 	oldIface := config.Iface
 	oldPrefix := config.Prefix
 
 	config.Enabled = req.Enabled
-	config.ProxyNDP = req.ProxyNDP
 	config.Iface = req.Iface
 	config.Prefix = req.Prefix
 	config.Gateway = req.Gateway
@@ -83,18 +79,10 @@ func SaveIPv6NeighborConfig(c *gin.Context) {
 
 	monitor.ReloadNeighborConfig()
 
-	// 代理NDP状态迁移处理
-	proxyWasActive := wasEnabled && wasProxyNDP
-	proxyNowActive := req.Enabled && req.ProxyNDP
-	if proxyWasActive && !proxyNowActive {
-		// 关闭代理NDP（或关闭主开关）：清理旧配置下的代理NDP条目
-		ipv6.FlushProxyNDP(oldIface, oldPrefix)
-	} else if proxyWasActive && proxyNowActive && (oldIface != req.Iface || oldPrefix != req.Prefix) {
-		// 网卡/前缀变更：清理旧配置下的条目
+	if wasEnabled && (!req.Enabled || oldIface != req.Iface || oldPrefix != req.Prefix) {
 		ipv6.FlushProxyNDP(oldIface, oldPrefix)
 	}
-
-	if proxyNowActive {
+	if req.Enabled {
 		monitor.RefreshProxyNDP()
 	}
 

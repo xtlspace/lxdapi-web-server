@@ -224,11 +224,9 @@ func (m *Monitor) handleIPv6NeighborRequests(containerName string, state *contai
 		}
 		seen[ip] = true
 
-		if cfg.ProxyNDP {
-			m.markDesired(ip)
-		}
+		m.markDesired(ip)
 
-		if err := ipv6.AnnounceNeighbor(cfg.Iface, ip, cfg.Gateway, cfg.ProxyNDP); err != nil {
+		if err := ipv6.AnnounceNeighbor(cfg.Iface, ip, cfg.Gateway); err != nil {
 			logger.Warn("容器 %s IPv6邻居请求发送失败 %s -> %s: %v", containerName, ip, cfg.Gateway, err)
 			continue
 		}
@@ -257,7 +255,7 @@ func (m *Monitor) markDesired(addr string) {
 func (m *Monitor) reconcileProxyNDP() {
 	cfg := m.neighbor.Load().(models.IPv6NeighborConfig)
 
-	if !cfg.Enabled || !cfg.ProxyNDP {
+	if !cfg.Enabled {
 		m.resetProxyState()
 		if cfg.Iface != "" && cfg.Prefix != "" {
 			if err := ipv6.FlushProxyNDP(cfg.Iface, cfg.Prefix); err != nil {
@@ -343,7 +341,7 @@ func (m *Monitor) resetProxyState() {
 // 添加代理NDP条目，无需等待下一个监控周期。
 func (m *Monitor) refreshProxyNDP() {
 	cfg := m.neighbor.Load().(models.IPv6NeighborConfig)
-	if !cfg.Enabled || !cfg.ProxyNDP || cfg.Iface == "" || cfg.Gateway == "" || cfg.Prefix == "" {
+	if !cfg.Enabled || cfg.Iface == "" || cfg.Gateway == "" || cfg.Prefix == "" {
 		return
 	}
 

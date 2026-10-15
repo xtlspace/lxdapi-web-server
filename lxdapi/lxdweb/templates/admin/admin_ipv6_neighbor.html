@@ -53,13 +53,7 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox" id="proxyNdp" class="toggle toggle-sm toggle-primary" style="height: 1.25rem; width: 2.5rem;">
-                        <div>
-                            <div class="text-sm font-medium text-gray-800">启用IPv6代理NDP</div>
-                            <div class="text-xs text-gray-500">为匹配前缀的容器IPv6添加内核代理邻居条目，使网关能持续解析并转发；主开关关闭时同时停用</div>
-                        </div>
-                    </div>
+
 
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">网卡接口 (iface)</label>
@@ -97,8 +91,8 @@
                     <li>启用后，本服务每隔一个流量监控采集周期，对每个运行中容器中匹配前缀的IPv6地址发送邻居请求。</li>
                     <li>请求目标为配置的网关地址，使网关学习到该IPv6对应的邻居转发关系。</li>
                     <li>发送的源地址为容器自身的IPv6地址。</li>
-                    <li>“启用IPv6代理NDP”开启后，会为每个匹配前缀的容器IPv6添加内核代理邻居条目（等价 ip -6 neigh add proxy），网关重新解析地址时本机可持续应答；主开关关闭时该子功能一并停用。</li>
-                    <li>关闭“启用IPv6代理NDP”或修改网卡/前缀时，会自动清理匹配前缀的代理NDP条目；容器删除或重装换址时也会清理旧条目。</li>
+                    <li>开启后会为每个匹配前缀的容器IPv6添加内核代理邻居条目（等价 ip -6 neigh add proxy），网关重新解析地址时本机可持续应答。</li>
+                    <li>关闭主开关、修改网卡/前缀时，会自动清理匹配前缀的代理NDP条目；容器删除或重装换址时也会清理旧条目。</li>
                     <li>关闭主开关后停止发送（不执行内核参数设置）。</li>
                 </ul>
             </div>
@@ -113,7 +107,7 @@
             $.get('/api/admin/nserIPv6/settings', function(result) {
                 if (result.code === 200 && result.data) {
                     $('#enabled').prop('checked', !!result.data.enabled);
-                    $('#proxyNdp').prop('checked', !!result.data.proxy_ndp);
+
                     $('#iface').val(result.data.iface || '');
                     $('#prefix').val(result.data.prefix || '');
                     $('#gateway').val(result.data.gateway || '');
@@ -125,7 +119,7 @@
 
         function saveConfig() {
             const enabled = $('#enabled').is(':checked');
-            const proxyNdp = $('#proxyNdp').is(':checked');
+
             const iface = $('#iface').val().trim();
             const prefix = $('#prefix').val().trim();
             const gateway = $('#gateway').val().trim();
@@ -140,7 +134,7 @@
                 url: '/api/admin/nserIPv6/settings',
                 type: 'PUT',
                 contentType: 'application/json',
-                data: JSON.stringify({ enabled: enabled, proxy_ndp: proxyNdp, iface: iface, prefix: prefix, gateway: gateway }),
+                data: JSON.stringify({ enabled: enabled, iface: iface, prefix: prefix, gateway: gateway }),
                 success: function(result) {
                     if (result.code === 200) {
                         alert('保存成功！');
