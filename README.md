@@ -1,4 +1,4 @@
-# LXD API 服务器及对接插件 lxdapi-web-server
+# LXC API 服务器及对接插件 lxcapi-web-server
 
 ## 联系方式
 

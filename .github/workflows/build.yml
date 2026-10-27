@@ -23,45 +23,45 @@ jobs:
 
       - name: Download Dependencies
         run: |
-          cd lxdapi
+          cd lxcapi
           go mod tidy
           go mod download
 
       - name: Generate Swagger Docs
         run: |
-          cd lxdapi
+          cd lxcapi
           if command -v swag &> /dev/null; then
-            swag init -g cmd/lxdapi/main.go --output docs --parseDependency --parseInternal
+            swag init -g cmd/lxcapi/main.go --output docs --parseDependency --parseInternal
           elif [ -f ~/go/bin/swag ]; then
-            ~/go/bin/swag init -g cmd/lxdapi/main.go --output docs --parseDependency --parseInternal
+            ~/go/bin/swag init -g cmd/lxcapi/main.go --output docs --parseDependency --parseInternal
           else
             echo "警告: 未找到 swag 命令，跳过 Swagger 文档生成"
           fi
 
       - name: Prepare Embedded Resources
         run: |
-          cd lxdapi
-          rm -rf cmd/lxdapi/templates cmd/lxdapi/docs cmd/lxdapi/static
-          cp -r ./lxdweb/templates cmd/lxdapi/
-          cp -r ./lxdweb/static cmd/lxdapi/
+          cd lxcapi
+          rm -rf cmd/lxcapi/templates cmd/lxcapi/docs cmd/lxcapi/static
+          cp -r ./lxdweb/templates cmd/lxcapi/
+          cp -r ./lxdweb/static cmd/lxcapi/
 
       - name: Build linux/amd64
         run: |
-          cd lxdapi/cmd/lxdapi
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../../lxdapi-amd64 .
+          cd lxcapi/cmd/lxcapi
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../../lxcapi-amd64 .
           cd ../..
-          ls -lh lxdapi-amd64
+          ls -lh lxcapi-amd64
 
       - name: Build linux/arm64
         run: |
-          cd lxdapi/cmd/lxdapi
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../../lxdapi-arm64 .
+          cd lxcapi/cmd/lxcapi
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../../lxcapi-arm64 .
           cd ../..
-          ls -lh lxdapi-arm64
+          ls -lh lxcapi-arm64
 
       - name: Extract Version
         run: |
-          echo "RELEASE_TAG=$(grep -oP 'Version\s*=\s*"\K[^"]+' lxdapi/pkg/version/version.go)" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=$(grep -oP 'Version\s*=\s*"\K[^"]+' lxcapi/pkg/version/version.go)" >> "$GITHUB_ENV"
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
@@ -69,5 +69,5 @@ jobs:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ env.RELEASE_TAG }}
           files: |
-            lxdapi/lxdapi-amd64
-            lxdapi/lxdapi-arm64
+            lxcapi/lxcapi-amd64
+            lxcapi/lxcapi-arm64

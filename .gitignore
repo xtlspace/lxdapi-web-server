@@ -1,11 +1,11 @@
 # Binary files
-lxdapi-amd64
-lxdapi-arm64
-cmd/lxdapi/templates/
-cmd/lxdapi/docs/
-cmd/lxdapi/lxdapi
+lxcapi-amd64
+lxcapi-arm64
+cmd/lxcapi/templates/
+cmd/lxcapi/docs/
+cmd/lxcapi/lxcapi
 fmis/fossbilling/Product
 zjmf-n/
 1.txt
-lxdapi/release/
+lxcapi/release/
 AGENTS.md

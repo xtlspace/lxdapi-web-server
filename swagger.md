@@ -1,4 +1,4 @@
-# lxdapi API 文档
+# lxcapi API 文档
 
 > 本文件由 `docs/swagger.json` 自动转换生成，仅供阅读参考。
 
@@ -21,8 +21,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -45,9 +45,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 更新成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 更新失败 | lxdapi_pkg_response.Response |
+| 200 | 更新成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 更新失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -65,7 +65,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -87,8 +87,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 刷新成功 | lxdapi_pkg_response.Response |
-| 500 | 刷新失败 | lxdapi_pkg_response.Response |
+| 200 | 刷新成功 | lxcapi_pkg_response.Response |
+| 500 | 刷新失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -107,7 +107,7 @@
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
 | 200 | 生成成功 | {captcha_id: string, code: integer, image: string} |
-| 500 | 生成失败 | lxdapi_pkg_response.Response |
+| 500 | 生成失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -129,9 +129,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 登录成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误或验证码错误 | lxdapi_pkg_response.Response |
-| 401 | 用户名或密码错误 | lxdapi_pkg_response.Response |
+| 200 | 登录成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误或验证码错误 | lxcapi_pkg_response.Response |
+| 401 | 用户名或密码错误 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -147,7 +147,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 登出成功 | lxdapi_pkg_response.Response |
+| 200 | 登出成功 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -171,8 +171,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -194,9 +194,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -218,10 +218,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 删除任务已创建 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 删除失败 | lxdapi_pkg_response.Response |
+| 200 | 删除任务已创建 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 删除失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -229,7 +229,7 @@
 
 `POST` `/api/admin/containers/:name/action`
 
-对容器执行操作: start/stop/restart/pause/resume/reinstall/reset-password/reset-traffic
+对容器执行操作: start/stop/restart/pause/resume/reinstall/reset-password/reset-traffic/unlimit
 
 - **认证**: SessionAuth
 
@@ -245,10 +245,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 操作成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 操作失败 | lxdapi_pkg_response.Response |
+| 200 | 操作成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 操作失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -270,9 +270,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -295,10 +295,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 更新成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 更新失败 | lxdapi_pkg_response.Response |
+| 200 | 更新成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 更新失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -320,9 +320,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 500 | 创建失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 500 | 创建失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -344,9 +344,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 生成成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 500 | 生成失败 | lxdapi_pkg_response.Response |
+| 200 | 生成成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 500 | 生成失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -369,9 +369,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -395,10 +395,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 分配成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 分配失败 | lxdapi_pkg_response.Response |
+| 200 | 分配成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 分配失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -416,7 +416,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -432,8 +432,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -457,8 +457,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -481,10 +481,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 分配成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 分配失败 | lxdapi_pkg_response.Response |
+| 200 | 分配成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 分配失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -506,7 +506,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -529,10 +529,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 更新成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | IP不存在 | lxdapi_pkg_response.Response |
-| 500 | 更新失败 | lxdapi_pkg_response.Response |
+| 200 | 更新成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | IP不存在 | lxcapi_pkg_response.Response |
+| 500 | 更新失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -555,9 +555,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 添加成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 添加失败 | lxdapi_pkg_response.Response |
+| 200 | 添加成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 添加失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -580,10 +580,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 删除成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误或IP正在使用 | lxdapi_pkg_response.Response |
-| 404 | IP不存在 | lxdapi_pkg_response.Response |
-| 500 | 删除失败 | lxdapi_pkg_response.Response |
+| 200 | 删除成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误或IP正在使用 | lxcapi_pkg_response.Response |
+| 404 | IP不存在 | lxcapi_pkg_response.Response |
+| 500 | 删除失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -606,9 +606,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 添加成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 添加失败 | lxdapi_pkg_response.Response |
+| 200 | 添加成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 添加失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -631,9 +631,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 释放成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 释放失败 | lxdapi_pkg_response.Response |
+| 200 | 释放成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 释放失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -657,8 +657,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -681,9 +681,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 保存成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 保存失败 | lxdapi_pkg_response.Response |
+| 200 | 保存成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 保存失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -708,8 +708,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -732,9 +732,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 分配成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 分配失败 | lxdapi_pkg_response.Response |
+| 200 | 分配成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 分配失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -757,9 +757,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 释放成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 释放失败 | lxdapi_pkg_response.Response |
+| 200 | 释放成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 释放失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -777,7 +777,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | OK | lxdapi_pkg_response.Response |
+| 200 | OK | lxcapi_pkg_response.Response |
 
 ---
 
@@ -800,7 +800,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | OK | lxdapi_pkg_response.Response |
+| 200 | OK | lxcapi_pkg_response.Response |
 
 ---
 
@@ -816,7 +816,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | OK | lxdapi_pkg_response.Response |
+| 200 | OK | lxcapi_pkg_response.Response |
 
 ---
 
@@ -840,8 +840,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -863,9 +863,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 404 | 任务不存在 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 404 | 任务不存在 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -888,9 +888,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 删除成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 500 | 删除失败 | lxdapi_pkg_response.Response |
+| 200 | 删除成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 500 | 删除失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -912,9 +912,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 删除成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 删除失败 | lxdapi_pkg_response.Response |
+| 200 | 删除成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 删除失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -932,8 +932,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -956,9 +956,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 删除成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 500 | 删除失败 | lxdapi_pkg_response.Response |
+| 200 | 删除成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 500 | 删除失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -980,8 +980,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 404 | 模板不存在 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 404 | 模板不存在 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1004,10 +1004,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 设置成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | 模板不存在 | lxdapi_pkg_response.Response |
-| 500 | 设置失败 | lxdapi_pkg_response.Response |
+| 200 | 设置成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | 模板不存在 | lxcapi_pkg_response.Response |
+| 500 | 设置失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1029,9 +1029,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 删除成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 删除失败 | lxdapi_pkg_response.Response |
+| 200 | 删除成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 删除失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1047,8 +1047,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 同步成功 | lxdapi_pkg_response.Response |
-| 500 | 同步失败 | lxdapi_pkg_response.Response |
+| 200 | 同步成功 | lxcapi_pkg_response.Response |
+| 500 | 同步失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1072,9 +1072,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 404 | 用户不存在 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 404 | 用户不存在 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1096,9 +1096,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 创建成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 创建失败 | lxdapi_pkg_response.Response |
+| 200 | 创建成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 创建失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1121,9 +1121,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 更新成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 更新失败 | lxdapi_pkg_response.Response |
+| 200 | 更新成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 更新失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1145,9 +1145,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 删除成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 500 | 删除失败 | lxdapi_pkg_response.Response |
+| 200 | 删除成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 500 | 删除失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1169,9 +1169,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 生成成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少参数 | lxdapi_pkg_response.Response |
-| 500 | 生成失败 | lxdapi_pkg_response.Response |
+| 200 | 生成成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少参数 | lxcapi_pkg_response.Response |
+| 500 | 生成失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1195,9 +1195,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 创建成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 生成失败 | lxdapi_pkg_response.Response |
+| 200 | 创建成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 生成失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1238,10 +1238,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 操作成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 操作失败 | lxdapi_pkg_response.Response |
+| 200 | 操作成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 操作失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1260,7 +1260,7 @@
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
 | 200 | 生成成功 | {captcha_id: string, code: integer, image: string} |
-| 500 | 生成失败 | lxdapi_pkg_response.Response |
+| 500 | 生成失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1282,9 +1282,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 验证成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 401 | 验证失败 | lxdapi_pkg_response.Response |
+| 200 | 验证成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 401 | 验证失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1302,8 +1302,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1319,8 +1319,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1344,8 +1344,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1368,9 +1368,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 分配成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 分配失败 | lxdapi_pkg_response.Response |
+| 200 | 分配成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 分配失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1393,9 +1393,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 释放成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 释放失败 | lxdapi_pkg_response.Response |
+| 200 | 释放成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 释放失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1419,8 +1419,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1443,9 +1443,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 分配成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 分配失败 | lxdapi_pkg_response.Response |
+| 200 | 分配成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 分配失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1468,9 +1468,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 释放成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 释放失败 | lxdapi_pkg_response.Response |
+| 200 | 释放成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 释放失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1488,7 +1488,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1506,8 +1506,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1529,9 +1529,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 创建成功，返回任务ID | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 创建失败 | lxdapi_pkg_response.Response |
+| 200 | 创建成功，返回任务ID | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 创建失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1553,10 +1553,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少容器名称 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少容器名称 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1578,10 +1578,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 删除任务已创建 | lxdapi_pkg_response.Response |
-| 400 | 缺少容器名称 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 创建任务失败 | lxdapi_pkg_response.Response |
+| 200 | 删除任务已创建 | lxcapi_pkg_response.Response |
+| 400 | 缺少容器名称 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 创建任务失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1605,10 +1605,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 操作成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 操作失败 | lxdapi_pkg_response.Response |
+| 200 | 操作成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 操作失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1631,10 +1631,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 更新成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 更新失败 | lxdapi_pkg_response.Response |
+| 200 | 更新成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 更新失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1658,9 +1658,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少容器名称 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少容器名称 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1682,9 +1682,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 生成成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少容器名称 | lxdapi_pkg_response.Response |
-| 500 | 生成失败 | lxdapi_pkg_response.Response |
+| 200 | 生成成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少容器名称 | lxcapi_pkg_response.Response |
+| 500 | 生成失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1709,9 +1709,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少容器名称 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少容器名称 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1734,9 +1734,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 分配成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 分配失败 | lxdapi_pkg_response.Response |
+| 200 | 分配成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 分配失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1759,9 +1759,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 释放成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 释放失败 | lxdapi_pkg_response.Response |
+| 200 | 释放成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 释放失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1786,8 +1786,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1810,10 +1810,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 分配成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 分配失败 | lxdapi_pkg_response.Response |
+| 200 | 分配成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 分配失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1836,9 +1836,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 释放成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 释放失败 | lxdapi_pkg_response.Response |
+| 200 | 释放成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 释放失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1862,8 +1862,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1885,9 +1885,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 404 | 任务不存在 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 404 | 任务不存在 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1911,9 +1911,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少容器名称 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少容器名称 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1935,9 +1935,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 重置成功 | lxdapi_pkg_response.Response |
-| 400 | 缺少容器名称 | lxdapi_pkg_response.Response |
-| 500 | 重置失败 | lxdapi_pkg_response.Response |
+| 200 | 重置成功 | lxcapi_pkg_response.Response |
+| 400 | 缺少容器名称 | lxcapi_pkg_response.Response |
+| 500 | 重置失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1961,10 +1961,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 刷新成功 | lxdapi_pkg_response.Response |
-| 403 | 无权操作 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 刷新失败 | lxdapi_pkg_response.Response |
+| 200 | 刷新成功 | lxcapi_pkg_response.Response |
+| 403 | 无权操作 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 刷新失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -1980,7 +1980,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2002,9 +2002,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 创建成功，返回任务ID | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 500 | 创建失败 | lxdapi_pkg_response.Response |
+| 200 | 创建成功，返回任务ID | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 500 | 创建失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2026,9 +2026,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 403 | 无权访问 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 403 | 无权访问 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2050,10 +2050,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 删除任务已创建 | lxdapi_pkg_response.Response |
-| 403 | 无权操作 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 删除失败 | lxdapi_pkg_response.Response |
+| 200 | 删除任务已创建 | lxcapi_pkg_response.Response |
+| 403 | 无权操作 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 删除失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2077,11 +2077,11 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 操作成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 403 | 无权操作 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 操作失败 | lxdapi_pkg_response.Response |
+| 200 | 操作成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 403 | 无权操作 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 操作失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2103,9 +2103,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 403 | 无权访问 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 403 | 无权访问 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2128,11 +2128,11 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 更新成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 403 | 无权操作 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 更新失败 | lxdapi_pkg_response.Response |
+| 200 | 更新成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 403 | 无权操作 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 更新失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2154,10 +2154,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 403 | 无权访问 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 403 | 无权访问 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2179,10 +2179,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 生成成功 | lxdapi_pkg_response.Response |
-| 403 | 无权操作 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 生成失败 | lxdapi_pkg_response.Response |
+| 200 | 生成成功 | lxcapi_pkg_response.Response |
+| 403 | 无权操作 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 生成失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2201,7 +2201,7 @@
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
 | 200 | 生成成功 | {captcha_id: string, code: integer, image: string} |
-| 500 | 生成失败 | lxdapi_pkg_response.Response |
+| 500 | 生成失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2217,7 +2217,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2239,10 +2239,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 登录成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 401 | 认证失败 | lxdapi_pkg_response.Response |
-| 500 | 登录失败 | lxdapi_pkg_response.Response |
+| 200 | 登录成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 401 | 认证失败 | lxcapi_pkg_response.Response |
+| 500 | 登录失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2258,7 +2258,7 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 登出成功 | lxdapi_pkg_response.Response |
+| 200 | 登出成功 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2283,10 +2283,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 403 | 无权访问 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 403 | 无权访问 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2310,11 +2310,11 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 分配成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 403 | 无权操作 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 分配失败 | lxdapi_pkg_response.Response |
+| 200 | 分配成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 403 | 无权操作 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 分配失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2338,11 +2338,11 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 释放成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 403 | 无权操作 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 释放失败 | lxdapi_pkg_response.Response |
+| 200 | 释放成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 403 | 无权操作 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 释放失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2367,10 +2367,10 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 403 | 无权访问 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 403 | 无权访问 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2393,11 +2393,11 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 分配成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 403 | 无权操作 | lxdapi_pkg_response.Response |
-| 404 | 容器不存在 | lxdapi_pkg_response.Response |
-| 500 | 分配失败 | lxdapi_pkg_response.Response |
+| 200 | 分配成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 403 | 无权操作 | lxcapi_pkg_response.Response |
+| 404 | 容器不存在 | lxcapi_pkg_response.Response |
+| 500 | 分配失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2420,11 +2420,11 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 释放成功 | lxdapi_pkg_response.Response |
-| 400 | 参数错误 | lxdapi_pkg_response.Response |
-| 403 | 无权操作 | lxdapi_pkg_response.Response |
-| 404 | 端口映射不存在 | lxdapi_pkg_response.Response |
-| 500 | 释放失败 | lxdapi_pkg_response.Response |
+| 200 | 释放成功 | lxcapi_pkg_response.Response |
+| 400 | 参数错误 | lxcapi_pkg_response.Response |
+| 403 | 无权操作 | lxcapi_pkg_response.Response |
+| 404 | 端口映射不存在 | lxcapi_pkg_response.Response |
+| 500 | 释放失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2448,9 +2448,9 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 403 | 无权访问 | lxdapi_pkg_response.Response |
-| 404 | 任务不存在 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 403 | 无权访问 | lxcapi_pkg_response.Response |
+| 404 | 任务不存在 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2468,8 +2468,8 @@
 
 | 状态码 | 描述 | Schema |
 | --- | --- | --- |
-| 200 | 获取成功 | lxdapi_pkg_response.Response |
-| 500 | 获取失败 | lxdapi_pkg_response.Response |
+| 200 | 获取成功 | lxcapi_pkg_response.Response |
+| 500 | 获取失败 | lxcapi_pkg_response.Response |
 
 ---
 
@@ -2662,7 +2662,7 @@
 }
 ```
 
-### `lxdapi_pkg_response.Response`
+### `lxcapi_pkg_response.Response`
 
 ```json
 {
@@ -2880,6 +2880,20 @@
     "traffic_limit": {
       "type": "integer"
     },
+    "traffic_over_action": {
+      "type": "string",
+      "enum": ["frozen", "limited"],
+      "description": "流量用尽后动作：frozen 暂停容器，limited 限速"
+    },
+    "traffic_over_limitspeed": {
+      "type": "integer",
+      "description": "流量用尽后限速（Mbit/s）"
+    },
+    "traffic_reset_cycle": {
+      "type": "string",
+      "enum": ["monthly", "daily"],
+      "description": "流量重置周期"
+    },
     "username": {
       "type": "string"
     }
@@ -2949,6 +2963,20 @@
     },
     "traffic_limit": {
       "type": "integer"
+    },
+    "traffic_over_action": {
+      "type": "string",
+      "enum": ["frozen", "limited"],
+      "description": "流量用尽后动作：frozen 暂停容器，limited 限速"
+    },
+    "traffic_over_limitspeed": {
+      "type": "integer",
+      "description": "流量用尽后限速（Mbit/s）"
+    },
+    "traffic_reset_cycle": {
+      "type": "string",
+      "enum": ["monthly", "daily"],
+      "description": "流量重置周期"
     }
   }
 }

@@ -1,0 +1,284 @@
+package container
+
+import (
+	"context"
+	"github.com/gin-gonic/gin"
+	"lxcapi/internal/db"
+	"lxcapi/internal/executor"
+	"lxcapi/internal/service"
+	"lxcapi/models"
+	"lxcapi/pkg/logger"
+	"lxcapi/pkg/response"
+)
+
+var containerService *service.ContainerService
+
+func InitContainerService(svc *service.ContainerService) {
+	containerService = svc
+}
+
+// GetInfo 获取容器信息（合并info+status+traffic）
+func GetInfo(c *gin.Context) {
+	containerName, _ := c.Get("container_name")
+	name := containerName.(string)
+
+	container, err := containerService.Get(name)
+	if err != nil {
+		logger.Error("获取容器信息失败: %v", err)
+		response.Error(c, 404, err.Error())
+		return
+	}
+
+	svc := service.NewContainerService()
+	info, err := svc.GetInfo(c.Request.Context(), name)
+	if err != nil {
+		logger.Warn("获取容器详细信息失败，返回基本信息: %v", err)
+		info = map[string]interface{}{
+			"name":   name,
+			"status": container.Status,
+		}
+	}
+
+	response.Success(c, info)
+}
+
+// GetTemplateList 获取模板列表
+func GetTemplateList(c *gin.Context) {
+	svc := service.NewTemplateService()
+
+	templates, err := svc.List()
+	if err != nil {
+		logger.Error("获取模板列表失败: %v", err)
+		response.Error(c, 500, "获取模板列表失败: "+err.Error())
+		return
+	}
+
+	response.Success(c, gin.H{
+		"templates": templates,
+		"count":     len(templates),
+	})
+}
+
+// Action 容器操作统一接口
+func Action(c *gin.Context) {
+	containerName, _ := c.Get("container_name")
+	name := containerName.(string)
+
+	action := c.Query("action")
+	if action == "" {
+		response.Error(c, 400, "缺少操作类型")
+		return
+	}
+
+	var dbContainer models.Container
+	if err := db.DB.Where("name = ?", name).First(&dbContainer).Error; err != nil {
+		response.Error(c, 404, "容器不存在")
+		return
+	}
+
+	switch action {
+	case "start":
+		err := executor.CreateSyncTask(name, "start", func(ctx context.Context) error {
+			return containerService.Start(ctx, name)
+		})
+		if err != nil {
+			response.Error(c, 500, err.Error())
+			return
+		}
+		logger.OK("容器启动成功: %s", name)
+		response.Success(c, "容器启动成功")
+
+	case "stop":
+		err := executor.CreateSyncTask(name, "stop", func(ctx context.Context) error {
+			return containerService.Stop(ctx, name)
+		})
+		if err != nil {
+			response.Error(c, 500, err.Error())
+			return
+		}
+		logger.OK("容器停止成功: %s", name)
+		response.Success(c, "容器停止成功")
+
+	case "restart":
+		err := executor.CreateSyncTask(name, "restart", func(ctx context.Context) error {
+			return containerService.Restart(ctx, name)
+		})
+		if err != nil {
+			response.Error(c, 500, err.Error())
+			return
+		}
+		logger.OK("容器重启成功: %s", name)
+		response.Success(c, "容器重启成功")
+
+	case "reinstall":
+		var req struct {
+			Image    string `json:"image"`
+			Password string `json:"password"`
+		}
+		c.ShouldBindJSON(&req)
+
+		finalImage := req.Image
+		if finalImage == "" {
+			finalImage = dbContainer.Image
+		}
+
+		params := map[string]interface{}{
+			"container_name": name,
+			"original_image": dbContainer.Image,
+			"new_image":      finalImage,
+			"password_set":   req.Password != "",
+			"image":          finalImage,
+			"password":       req.Password,
+		}
+
+		task, err := executor.CreateTask(name, "reinstall", params, func(ctx context.Context) error {
+			return containerService.Reinstall(ctx, name, req.Image, req.Password)
+		})
+		if err != nil {
+			response.Error(c, 500, "创建任务失败: "+err.Error())
+			return
+		}
+		logger.OK("容器重装任务已创建: %s, 任务ID: %d", name, task.ID)
+		response.Success(c, gin.H{
+			"task_id": task.ID,
+			"message": "重装任务已创建，正在后台执行",
+		})
+
+	case "reset-password":
+		var req struct {
+			Password string `json:"password" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			response.Error(c, 400, "参数错误: 缺少password")
+			return
+		}
+
+		svc := service.NewContainerService()
+		if err := svc.ResetPassword(c.Request.Context(), name, req.Password); err != nil {
+			response.Error(c, 500, err.Error())
+			return
+		}
+		logger.OK("容器密码重置成功: %s", name)
+		response.Success(c, "密码重置成功")
+
+	default:
+		response.Error(c, 400, "不支持的操作类型: "+action)
+	}
+}
+
+// GetIP 获取容器IP地址（统一接口）
+func GetIP(c *gin.Context) {
+	containerName, _ := c.Get("container_name")
+	name := containerName.(string)
+
+	version := c.DefaultQuery("version", "all")
+	result := gin.H{"container": name}
+
+	if version == "v4" || version == "all" {
+		var bindings []models.IPv4Binding
+		if err := db.DB.Where("container_name = ?", name).Find(&bindings).Error; err != nil {
+			if version == "v4" {
+				response.Error(c, 500, err.Error())
+				return
+			}
+			bindings = []models.IPv4Binding{}
+		}
+		result["ipv4"] = bindings
+		result["ipv4_count"] = len(bindings)
+	}
+
+	response.Success(c, result)
+}
+
+// AllocateIP 分配IP地址（统一接口）
+func AllocateIP(c *gin.Context) {
+	containerName, _ := c.Get("container_name")
+	name := containerName.(string)
+
+	version := c.Query("version")
+	if version != "v4" && version != "v6" {
+		response.Error(c, 400, "version参数必须是v4或v6")
+		return
+	}
+
+	var req struct {
+		Count int `json:"count"`
+	}
+	c.ShouldBindJSON(&req)
+	if req.Count <= 0 {
+		req.Count = 1
+	}
+
+	if err := db.DB.Where("name = ?", name).First(&models.Container{}).Error; err != nil {
+		response.Error(c, 404, "容器不存在")
+		return
+	}
+
+	ctx := context.Background()
+
+	if version == "v4" {
+		ipv4Svc := service.NewIPv4Service()
+		ips, err := ipv4Svc.AllocateIPv4(ctx, name, req.Count)
+		if err != nil {
+			logger.Error("分配IPv4失败: %v", err)
+			response.Error(c, 500, err.Error())
+			return
+		}
+		logger.OK("容器 %s 分配IPv4成功: %v", name, ips)
+		response.Success(c, gin.H{
+			"container": name,
+			"ipv4":      ips,
+			"count":     len(ips),
+		})
+	} else {
+		response.Error(c, 400, "IPv6地址池分配已移除，仅支持IPv4")
+		return
+	}
+}
+
+// ReleaseIP 释放IP地址（统一接口）
+func ReleaseIP(c *gin.Context) {
+	containerName, _ := c.Get("container_name")
+	name := containerName.(string)
+
+	version := c.Query("version")
+	if version != "v4" && version != "v6" {
+		response.Error(c, 400, "version参数必须是v4或v6")
+		return
+	}
+
+	var settings models.IPPoolSettings
+	db.DB.First(&settings)
+	
+	if version == "v4" && !settings.AllowContainerReleaseIPv4 {
+		response.Error(c, 403, "管理员未开放容器释放IPv4权限")
+		return
+	}
+
+	var req struct {
+		IP string `json:"ip" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, 400, "缺少ip参数")
+		return
+	}
+
+	if version == "v4" {
+		ipv4Svc := service.NewIPv4Service()
+		if err := ipv4Svc.ReleaseIPv4(name, req.IP); err != nil {
+			logger.Error("释放IPv4失败: %v", err)
+			response.Error(c, 500, err.Error())
+			return
+		}
+		logger.OK("容器 %s 释放IPv4成功: %s", name, req.IP)
+		response.Success(c, gin.H{
+			"container": name,
+			"ip":        req.IP,
+			"message":   "IPv4释放成功",
+		})
+	} else {
+		response.Error(c, 400, "IPv6地址池释放已移除，仅支持IPv4")
+		return
+	}
+}
+
