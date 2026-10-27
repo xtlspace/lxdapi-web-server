@@ -4,53 +4,9 @@
 
 ## 概述
 
-- API 路径数量: **65**
-- 接口数量: **77**
+- API 路径数量: **63**
+- 接口数量: **74**
 - Swagger 版本: 2.0
-
-## Admin API - 品牌设置
-
-### 获取品牌设置
-
-`GET` `/api/admin/brand-settings`
-
-获取系统品牌自定义设置
-
-- **认证**: SessionAuth
-
-**响应**
-
-| 状态码 | 描述 | Schema |
-| --- | --- | --- |
-| 200 | 获取成功 | lxcapi_pkg_response.Response |
-| 500 | 获取失败 | lxcapi_pkg_response.Response |
-
----
-
-### 更新品牌设置
-
-`POST` `/api/admin/brand-settings`
-
-更新系统品牌自定义设置，reset=true时重置为默认
-
-- **认证**: SessionAuth
-
-**参数**
-
-| 参数名 | 位置 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- | --- |
-| reset | query | string | 否 | 是否重置为默认值 |
-| request | body | models.BrandSettings | 否 | 品牌设置 |
-
-**响应**
-
-| 状态码 | 描述 | Schema |
-| --- | --- | --- |
-| 200 | 更新成功 | lxcapi_pkg_response.Response |
-| 400 | 参数错误 | lxcapi_pkg_response.Response |
-| 500 | 更新失败 | lxcapi_pkg_response.Response |
-
----
 
 ## Admin API - 缓存管理
 
@@ -1352,24 +1308,6 @@
 
 ---
 
-## Public API
-
-### 获取品牌设置
-
-`GET` `/api/public/brand`
-
-获取公开的品牌设置
-
-- **认证**: 无
-
-**响应**
-
-| 状态码 | 描述 | Schema |
-| --- | --- | --- |
-| 200 | 获取成功 | lxcapi_pkg_response.Response |
-
----
-
 ## System API - 容器管理
 
 ### 获取容器列表
@@ -1852,112 +1790,6 @@
       "items": {
         "type": "string"
       }
-    }
-  }
-}
-```
-
-### `models.BrandSettings`
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "admin_bg_image": {
-      "type": "string"
-    },
-    "admin_bg_opacity": {
-      "type": "integer"
-    },
-    "admin_content_opacity": {
-      "type": "integer"
-    },
-    "admin_login_title": {
-      "type": "string"
-    },
-    "admin_system_name": {
-      "type": "string"
-    },
-    "admin_system_title": {
-      "type": "string"
-    },
-    "container_base_template": {
-      "type": "string"
-    },
-    "container_bg_image": {
-      "type": "string"
-    },
-    "container_bg_opacity": {
-      "type": "integer"
-    },
-    "container_content_opacity": {
-      "type": "integer"
-    },
-    "container_lite_template": {
-      "type": "string"
-    },
-    "container_login_title": {
-      "type": "string"
-    },
-    "container_notice": {
-      "type": "string"
-    },
-    "container_notice_opacity": {
-      "type": "integer"
-    },
-    "container_system_name": {
-      "type": "string"
-    },
-    "container_system_title": {
-      "type": "string"
-    },
-    "created_at": {
-      "type": "string"
-    },
-    "favicon_url": {
-      "type": "string"
-    },
-    "footer_text": {
-      "type": "string"
-    },
-    "id": {
-      "type": "integer"
-    },
-    "tls_cert_content": {
-      "type": "string"
-    },
-    "tls_key_content": {
-      "type": "string"
-    },
-    "updated_at": {
-      "type": "string"
-    },
-    "use_local_cdn": {
-      "type": "boolean"
-    },
-    "user_bg_image": {
-      "type": "string"
-    },
-    "user_bg_opacity": {
-      "type": "integer"
-    },
-    "user_content_opacity": {
-      "type": "integer"
-    },
-    "user_login_title": {
-      "type": "string"
-    },
-    "user_notice": {
-      "type": "string"
-    },
-    "user_notice_opacity": {
-      "type": "integer"
-    },
-    "user_system_name": {
-      "type": "string"
-    },
-    "user_system_title": {
-      "type": "string"
     }
   }
 }

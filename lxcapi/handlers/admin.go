@@ -4,6 +4,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"lxcapi/internal/console"
+	"lxcapi/internal/core"
 	"lxcapi/internal/db"
 	"lxcapi/internal/service"
 	"lxcapi/models"
@@ -19,7 +20,7 @@ func AdminLogout(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
 	session.Save()
-	c.Redirect(http.StatusFound, "/admin/login")
+	c.Redirect(http.StatusFound, core.AdminBasePath()+"/login")
 }
 
 func AdminDashboard(c *gin.Context) {
@@ -31,20 +32,18 @@ func AdminDashboard(c *gin.Context) {
 			session.Set("admin_logged_in", true)
 			session.Set("admin_username", accessToken.Target)
 			session.Save()
-			c.Redirect(http.StatusFound, "/admin/dashboard")
+			c.Redirect(http.StatusFound, core.AdminBasePath()+"/dashboard")
 			return
 		}
 	}
 
 	c.HTML(http.StatusOK, "admin/admin_dashboard.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "仪表盘 - LXD API 管理",
 		"username": "admin",
 	}))
 }
 
 func AdminContainers(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_containers.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "容器管理 - LXD API 管理",
 		"username": "admin",
 	}))
 }
@@ -52,7 +51,6 @@ func AdminContainers(c *gin.Context) {
 func AdminContainerDetail(c *gin.Context) {
 	containerName := c.Param("name")
 	c.HTML(http.StatusOK, "admin/admin_container_detail.html", utils.MergeTemplateData(c, gin.H{
-		"title":          "容器详情 - LXD API 管理",
 		"username":       "admin",
 		"container_name": containerName,
 	}))
@@ -60,56 +58,42 @@ func AdminContainerDetail(c *gin.Context) {
 
 func AdminTasks(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_tasks.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "任务管理 - LXD API 管理",
 		"username": "admin",
 	}))
 }
 
 func AdminIPPoolV4(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_ip_pool_v4.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "IPv4地址池 - LXD API 管理",
 		"username": "admin",
 	}))
 }
 
 func AdminPortMappingV4(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_port_mapping_v4.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "IPv4端口映射 - LXD API 管理",
 		"username": "admin",
 	}))
 }
 
 func AdminPortMappingV6(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_port_mapping_v6.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "IPv6端口映射 - LXD API 管理",
 		"username": "admin",
 	}))
 }
 
 func AdminIPv6Neighbor(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_ipv6_neighbor.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "IPv6邻居请求 - LXD API 管理",
 		"username": "admin",
 	}))
 }
 
 func AdminTemplates(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_templates.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "模板管理 - LXD API 管理",
-		"username": "admin",
-	}))
-}
-
-func AdminBrandSettings(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/admin_brand_settings.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "主题设置 - LXD API 管理",
 		"username": "admin",
 	}))
 }
 
 func AdminNginx(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/admin_nginx.html", utils.MergeTemplateData(c, gin.H{
-		"title":    "Nginx反向代理 - LXD API 管理",
 		"username": "admin",
 	}))
 }

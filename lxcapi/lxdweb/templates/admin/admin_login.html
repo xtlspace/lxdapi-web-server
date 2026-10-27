@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .title }} - 管理员登录</title>
+    <title>管理后台 - LXC容器管理系统 - 管理员登录</title>
     <link href="/static/fonts/inter.css" rel="stylesheet">
     
     <script src="/static/js/tailwindcss.js"></script>
@@ -13,7 +13,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         :root {
-            --content-opacity: {{if .ContentOpacity}}{{.ContentOpacity}}{{else}}85{{end}};
+            --content-opacity: 85;
         }
         .content-box {
             background-color: rgba(255, 255, 255, calc(var(--content-opacity) / 100)) !important;
@@ -26,10 +26,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center relative" style="{{if .BgImage}}background-image: url('{{.BgImage}}'); background-size: cover; background-position: center;{{else}}background: linear-gradient(135deg, rgb(239 246 255) 0%, rgb(224 231 255) 50%, rgb(237 233 254) 100%);{{end}}">
-    {{if .BgImage}}
-    <div class="absolute inset-0 bg-white" style="opacity: {{.BgOpacity}}%;"></div>
-    {{end}}
+<body class="min-h-screen flex items-center justify-center relative" style="background: linear-gradient(135deg, rgb(239 246 255) 0%, rgb(224 231 255) 50%, rgb(237 233 254) 100%);">
     <div class="relative z-10 w-full max-w-lg px-3 sm:px-4">
     <div class="content-box rounded-2xl shadow-2xl p-4 sm:p-6 w-full">
         <div class="text-center mb-4 sm:mb-6">
@@ -38,7 +35,7 @@
                     <span class="iconify text-white" data-icon="mdi:server-network" data-width="32" data-height="32"></span>
                 </div>
             </div>
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1">{{ .LoginTitle }}</h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1">管理员登录</h1>
             <p class="text-xs sm:text-sm text-gray-600 flex items-center justify-center gap-1.5 sm:gap-2">
                 <span class="iconify" data-icon="mdi:lock" data-width="12"></span>
                 请登录以继续

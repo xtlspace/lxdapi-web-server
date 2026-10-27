@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .title }} - 容器控制</title>
+    <title>容器管理 - LXC容器管理系统 - 容器控制</title>
     
     <link href="/static/css/daisyui.min.css" rel="stylesheet">
     <script src="/static/js/tailwindcss.js"></script>
@@ -11,14 +11,10 @@
     
     <style>
         :root {
-            --content-opacity: {{if .ContentOpacity}}{{.ContentOpacity}}{{else}}85{{end}};
-            --container-notice-opacity: {{if .ContainerNoticeOpacity}}{{.ContainerNoticeOpacity}}{{else}}85{{end}};
+            --content-opacity: 85;
         }
         .content-box {
             background-color: rgba(255, 255, 255, calc(var(--content-opacity) / 100)) !important;
-        }
-        .notice-box {
-            background-color: rgba(255, 255, 255, calc(var(--container-notice-opacity) / 100)) !important;
         }
         .custom-tab-active {
             background-color: #2563eb !important;
@@ -40,31 +36,9 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
-    <div id="noticeFloat" style="display: none; position: fixed; top: 80px; left: 20px; z-index: 9999; max-width: 400px; width: calc(100% - 40px);">
-        <div class="notice-box rounded-xl shadow-xl border border-blue-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 flex items-center justify-between">
-                <div class="flex items-center gap-2 text-white">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
-                    </svg>
-                    <span class="font-semibold text-sm">系统公告</span>
-                </div>
-                <button onclick="closeNotice()" class="text-white hover:bg-white hover:bg-opacity-20 p-1 rounded transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="p-4">
-                <div id="noticeContent" class="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed"></div>
-            </div>
-        </div>
-    </div>
-    
     {{template "container/container_header.html" .}}
     
-    <div class="flex-1 relative" style="{{if .BgImage}}background-image: url('{{.BgImage}}'); background-size: cover; background-position: center; background-attachment: fixed;{{else}}background-color: #f9fafb;{{end}}">
-        {{if .BgImage}}<div class="absolute inset-0 bg-white pointer-events-none" style="opacity: {{.BgOpacity}}%; z-index: 0;"></div>{{end}}
+    <div class="flex-1 relative" style="background-color: #f9fafb;">
         <div class="relative container mx-auto px-4 py-8 pb-12 max-w-7xl" style="z-index: 1;">
 
         <div class="content-box rounded-lg border border-gray-200 p-3 lg:p-4 mb-3 lg:mb-4">
@@ -1831,90 +1805,7 @@
     {{template "container/container_footer.html" .}}
     
     
-    <script src="/static/js/marked.min.js"></script>
-    <script src="/static/js/dompurify.min.js"></script>
     
 
-    <script>
-        marked.setOptions({
-            breaks: true,
-            gfm: true
-        });
-
-        function showNotice(content) {
-            const dirtyHTML = marked.parse(content);
-            const cleanHTML = DOMPurify.sanitize(dirtyHTML, {
-                ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'hr'],
-                ALLOWED_ATTR: ['href', 'title', 'target']
-            });
-            
-            $('#noticeContent').html(cleanHTML);
-            
-            $('#noticeContent a').css({
-                color: '#3b82f6',
-                textDecoration: 'underline'
-            }).attr('target', '_blank');
-            
-            $('#noticeContent code').css({
-                backgroundColor: '#f3f4f6',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '13px',
-                fontFamily: 'monospace'
-            });
-            
-            $('#noticeContent pre').css({
-                backgroundColor: '#f3f4f6',
-                padding: '12px',
-                borderRadius: '6px',
-                overflow: 'auto',
-                marginTop: '8px',
-                marginBottom: '8px'
-            });
-            
-            $('#noticeContent blockquote').css({
-                borderLeft: '3px solid #3b82f6',
-                paddingLeft: '12px',
-                color: '#6b7280',
-                fontStyle: 'italic',
-                marginTop: '8px',
-                marginBottom: '8px'
-            });
-
-            $('#noticeFloat').slideDown(400);
-        }
-
-        function closeNotice() {
-            $('#noticeFloat').slideUp(300);
-            localStorage.setItem('containerNoticeClosedAt', Date.now());
-        }
-
-        function loadBrandSettings() {
-            $.ajax({
-                url: '/api/public/brand-settings',
-                type: 'GET',
-                success: function(result) {
-                    if (result.code === 200 && result.data) {
-                        if (result.data.container_notice) {
-                            const notice = result.data.container_notice.trim();
-                            if (notice) {
-                                const closedAt = localStorage.getItem('containerNoticeClosedAt');
-                                const now = Date.now();
-                                const thirtyMinutes = 30 * 60 * 1000;
-                                
-                                if (!closedAt || (now - parseInt(closedAt)) > thirtyMinutes) {
-                                    setTimeout(() => showNotice(notice), 500);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        $(document).ready(function() {
-            loadBrandSettings();
-        });
-    </script>
 </body>
 </html>

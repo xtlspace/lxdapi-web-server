@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .title }} - IPv4NAT管理</title>
+    <title>管理后台 - LXC容器管理系统 - IPv4NAT管理</title>
     
     <link href="/static/css/daisyui.min.css" rel="stylesheet">
     <script src="/static/js/tailwindcss.js"></script>
@@ -14,31 +14,7 @@
     <script src="/static/js/icons-bundle.js"></script>
     <style>
         :root {
-            --content-opacity: {
-                    {
-                    if .ContentOpacity
-                }
-            }
-
-                {
-                    {
-                    .ContentOpacity
-                }
-            }
-
-                {
-                    {
-                    else
-                }
-            }
-
-            85 {
-                    {
-                    end
-                }
-            }
-
-            ;
+            --content-opacity: 85;
         }
 
         .content-box {
@@ -51,9 +27,7 @@
     {{template "admin/admin_header.html" .}}
 
     <div class="flex-1 relative"
-        style="{{if .BgImage}}background-image: url('{{.BgImage}}'); background-size: cover; background-position: center; background-attachment: fixed;{{else}}background-color: #f9fafb;{{end}}">
-        {{if .BgImage}}<div class="absolute inset-0 bg-white pointer-events-none" style="opacity: {{.BgOpacity}}%;">
-        </div>{{end}}
+        style="background-color: #f9fafb;">
         <div class="relative container mx-auto px-4 py-8 pb-12">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
                 <div class="px-4 py-3 rounded-lg shadow-sm" style="background-color: rgba(255, 255, 255, 0.85);">

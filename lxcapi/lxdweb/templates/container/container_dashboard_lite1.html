@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .title }} - 容器控制台</title>
+    <title>容器管理 - LXC容器管理系统 - 容器控制台</title>
     
     <link href="/static/css/daisyui.min.css" rel="stylesheet">
 	<link href="/static/fonts/inter.css" rel="stylesheet">
@@ -17,7 +17,7 @@
             --z-modal-backdrop: 1000;
             --z-modal-content: 1001;
             --z-toast: 99999;
-            --content-opacity: {{if .ContentOpacity}}{{.ContentOpacity}}{{else}}85{{end}};
+            --content-opacity: 85;
         }
         .content-box {
             background-color: rgba(255, 255, 255, calc(var(--content-opacity) / 100)) !important;
@@ -57,8 +57,7 @@
         html { scrollbar-width: none; -ms-overflow-style: none; }
     </style>
 </head>
-<body class="text-gray-800" style="{{if .BgImage}}background-image: url('{{.BgImage}}'); background-size: cover; background-position: center; background-attachment: fixed;{{else}}background-color: #f9fafb;{{end}}">
-    {{if .BgImage}}<div class="fixed inset-0 bg-white pointer-events-none" style="opacity: {{.BgOpacity}}%; z-index: 0;"></div>{{end}}
+<body class="text-gray-800" style="background-color: #f9fafb;">
     {{template "container/container_toast.html"}}
     <div class="relative">
         <div class="container mx-auto px-4 py-8 pb-12 max-w-7xl relative" style="z-index: 1;">
@@ -593,7 +592,6 @@
                 $('#reverseProxyCustomCertFields').toggle(this.value === 'custom');
             });
 
-            loadBrandSettings();
         });
 
         // --- Tab Handling ---
@@ -1316,7 +1314,6 @@ function showAddIPv6MappingModal() {
         // Utils
         function parseMemorySize(s) { if(!s)return 0; const m=String(s).match(/^(\d+(?:\.\d+)?)\s*(MB|GB|KB|B)?$/i); if(!m)return 0; const v=parseFloat(m[1]), u=(m[2]||'B').toUpperCase(); const ks={'B':1,'KB':1024,'MB':1024**2,'GB':1024**3}; return v*(ks[u]||1); }
         function formatBytes(b) { if(b===0)return '0 B'; const k=1024, s=['B','KB','MB','GB','TB'], i=Math.floor(Math.log(b)/Math.log(k)); return parseFloat((b/Math.pow(k,i)).toFixed(2))+' '+s[i]; }
-        function loadBrandSettings() { /* Stub */ }
     </script>
 </body>
 </html>

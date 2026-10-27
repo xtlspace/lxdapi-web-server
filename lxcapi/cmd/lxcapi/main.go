@@ -14,7 +14,6 @@ import (
 	"lxcapi/internal/api/admin"
 	"lxcapi/internal/api/console"
 	"lxcapi/internal/api/container"
-	"lxcapi/internal/api/public"
 	"lxcapi/internal/api/system"
 	"lxcapi/internal/core"
 	"lxcapi/internal/db"
@@ -28,14 +27,14 @@ import (
 	"lxcapi/models"
 	"lxcapi/pkg/logger"
 	"lxcapi/pkg/plugin"
-	"lxcapi/pkg/response"
-	sysinfo "lxcapi/pkg/system"
 	tlsManager "lxcapi/pkg/tls"
 	"lxcapi/pkg/version"
 	"lxcapi/plugins/nginx"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 )
 
 //go:embed templates static
@@ -121,7 +120,6 @@ func main() {
 	system.InitContainerService(containerService)
 	system.InitIPv4Service(ipv4Service)
 	container.InitContainerService(containerService)
-	admin.InitBrandService()
 
 	executor.ClearPendingTasks()
 
@@ -162,7 +160,6 @@ func main() {
 		SameSite: 2,
 	})
 	r.Use(sessions.Sessions("lxcapi_session", store))
-	r.Use(middleware.BrandMiddleware())
 
 	tmpl := template.New("").Funcs(template.FuncMap{})
 	
@@ -225,18 +222,14 @@ func main() {
 	pluginManager.RegisterRoutes(r)
 
 	r.GET("/", func(c *gin.Context) {
-		sysInfo := sysinfo.GetSystemInfo()
-		response.Success(c, gin.H{
-			"author":       "xkatld",
-			"project":      "https://github.com/xkatld/lxdapi-web-server",
-			"description":  "主流财务系统对接支持，提供完整的Web管理界面与RESTful API",
-			"version":      version.Version,
-			"name":         sysInfo.Name,
-			"os":           sysInfo.OS,
-			"arch":         sysInfo.Arch,
-			"lxd_version":  sysInfo.LXDVersion,
-			"distribution": sysInfo.Distribution,
-			"kernel":       sysInfo.Kernel,
+		c.JSON(http.StatusOK, struct {
+			Code    int    `json:"code"`
+			Arch    string `json:"arch"`
+			Version string `json:"version"`
+		}{
+			Code:    200,
+			Arch:    runtime.GOARCH,
+			Version: version.Version,
 		})
 	})
 	
@@ -250,11 +243,21 @@ func main() {
 	r.GET("/container/dashboard/lite", handlers.ContainerDashboardLite)
 	r.GET("/container/dashboard/base", handlers.ContainerDashboardBase)
 	
-	r.GET("/admin/login", handlers.AdminLogin)
+	adminPath := core.AdminBasePath()
+	for _, reserved := range []string{"/api", "/static", "/container", "/console", "/ws"} {
+		if adminPath == reserved || strings.HasPrefix(adminPath, reserved+"/") {
+			log.Fatalf("admin.path 配置 %q 与系统保留路径 %q 冲突，请修改 configs/config.yaml", adminPath, reserved)
+		}
+	}
+
+	r.GET(adminPath, handlers.AdminLogin)
+	if !strings.HasSuffix(adminPath, "/login") {
+		r.GET(adminPath+"/login", handlers.AdminLogin)
+	}
 	r.GET("/api/admin/captcha", admin.GetCaptcha)
 	r.POST("/api/admin/login", admin.Login)
 	
-	adminPages := r.Group("/admin")
+	adminPages := r.Group(adminPath)
 	adminPages.Use(middleware.AdminPageAuth())
 	{
 		adminPages.GET("/dashboard", handlers.AdminDashboard)
@@ -265,13 +268,12 @@ func main() {
 		adminPages.GET("/port-mapping/v4", handlers.AdminPortMappingV4)
 		adminPages.GET("/port-mapping/v6", handlers.AdminPortMappingV6)
 		adminPages.GET("/templates", handlers.AdminTemplates)
-		adminPages.GET("/brand-settings", handlers.AdminBrandSettings)
 		adminPages.GET("/nginx", handlers.AdminNginx)
 		adminPages.GET("/nserIPv6", handlers.AdminIPv6Neighbor)
 	}
 	
 	r.POST("/api/admin/logout", admin.Logout)
-	r.GET("/admin/logout", handlers.AdminLogout)
+	r.GET(adminPath+"/logout", handlers.AdminLogout)
 	
 	r.GET("/container/login", handlers.ContainerLogin)
 	r.GET("/container/dashboard", handlers.ContainerDashboard)
@@ -343,8 +345,6 @@ func main() {
 		adminAPI.POST("/templates/sync", admin.SyncTemplates)
 		adminAPI.DELETE("/templates/:fingerprint", admin.DeleteTemplate)
 		adminAPI.POST("/templates/batch-delete", admin.BatchDeleteTemplates)
-		adminAPI.GET("/brand-settings", admin.GetBrandSettings)
-		adminAPI.POST("/brand-settings", admin.UpdateBrandSettings)
 		adminAPI.GET("/port-range/config", admin.GetPortRangeConfig)
 		adminAPI.POST("/port-range/config", admin.SavePortRangeConfig)
 		adminAPI.GET("/nserIPv6/settings", admin.GetIPv6NeighborConfig)
@@ -356,7 +356,6 @@ func main() {
 		adminAPI.POST("/network/nat", admin.SetNetworkNATStatus)
 	}
 
-	r.GET("/api/public/brand-settings", public.GetBrandSettings)
 	r.GET("/api/public/ip-pool-settings", admin.GetIPPoolSettingsPublic)
 	
 	r.GET("/api/container/captcha", container.GetCaptcha)

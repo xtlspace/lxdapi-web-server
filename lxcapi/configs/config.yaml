@@ -94,6 +94,9 @@ admin:
   password: "__ADMIN_PASS__"
   # Session密钥(请修改为随机字符串)
   session_secret: "__SESSION_SECRET__"
+  # 管理面板访问路径(留空或 / 则使用 /admin)
+  # 例如填 "/test" 后，访问 https://域名/test 即为管理员登录页
+  path: "/admin"
 
 # 插件配置
 plugins:

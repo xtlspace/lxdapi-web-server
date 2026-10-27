@@ -58,7 +58,7 @@ func AdminPageAuth() gin.HandlerFunc {
 		loggedIn := session.Get("admin_logged_in")
 		
 		if loggedIn == nil || loggedIn != true {
-			c.Redirect(302, "/admin/login")
+			c.Redirect(302, core.AdminBasePath()+"/login")
 			c.Abort()
 			return
 		}

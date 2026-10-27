@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .title }} - 容器管理</title>
+    <title>管理后台 - LXC容器管理系统 - 容器管理</title>
     
     <link href="/static/css/daisyui.min.css" rel="stylesheet">
     <script src="/static/js/tailwindcss.js"></script>
@@ -11,7 +11,7 @@
     
     <style>
         :root {
-            --content-opacity: {{if .ContentOpacity}}{{.ContentOpacity}}{{else}}85{{end}};
+            --content-opacity: 85;
         }
         .content-box {
             background-color: rgba(255, 255, 255, calc(var(--content-opacity) / 100)) !important;
@@ -21,8 +21,7 @@
 <body class="min-h-screen flex flex-col">
     {{template "admin/admin_header.html" .}}
     
-    <div class="flex-1 relative" style="{{if .BgImage}}background-image: url('{{.BgImage}}'); background-size: cover; background-position: center; background-attachment: fixed;{{else}}background-color: #f9fafb;{{end}}">
-        {{if .BgImage}}<div class="absolute inset-0 bg-white pointer-events-none" style="opacity: {{.BgOpacity}}%;"></div>{{end}}
+    <div class="flex-1 relative" style="background-color: #f9fafb;">
         <div class="relative container mx-auto px-4 py-8 pb-12">
 
         <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
@@ -534,7 +533,7 @@
                                 </div>
                             </div>
                             <div class="flex gap-2">
-                                <a href="/admin/containers/${c.name}" class="flex-1 px-2 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition text-center block">详情</a>
+                                <a href="{{.AdminPath}}/containers/${c.name}" class="flex-1 px-2 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition text-center block">详情</a>
                                 <button onclick="showUpdateConfigModal('${c.name}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded transition text-center">配置</button>
                                 ${status === 'limited' ? `<button onclick="unlimitContainer('${c.name}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded transition text-center">解除限速</button>` : ''}
                                 <button onclick="deleteContainer('${c.name}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition text-center">删除</button>
@@ -626,7 +625,7 @@
                         <td class="text-xs text-gray-700">${trafficDisplay}</td>
                         <td>
                             <div class="flex gap-1">
-                                <a href="/admin/containers/${c.name}" class="px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition">详情</a>
+                                <a href="{{.AdminPath}}/containers/${c.name}" class="px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition">详情</a>
                                 <button onclick="showUpdateConfigModal('${c.name}')" class="px-2 py-1 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded transition">配置</button>
                                 ${status === 'limited' ? `<button onclick="unlimitContainer('${c.name}')" class="px-2 py-1 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded transition">解除限速</button>` : ''}
                                 <button onclick="deleteContainer('${c.name}')" class="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition">删除</button>
@@ -1047,7 +1046,7 @@
 
         function generateHostname() {
             const randomNum = Math.floor(100000 + Math.random() * 900000);
-            const hostname = 'lxd-' + randomNum;
+            const hostname = 'lxc-' + randomNum;
             $('#inputHostname').val(hostname);
         }
 

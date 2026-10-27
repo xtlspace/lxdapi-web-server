@@ -143,7 +143,7 @@ func Login(c *gin.Context) {
 
 	response.Success(c, gin.H{
 		"username": req.Username,
-		"redirect": "/admin/dashboard",
+		"redirect": core.AdminBasePath() + "/dashboard",
 	})
 }
 
@@ -154,7 +154,7 @@ func Logout(c *gin.Context) {
 	session.Save()
 	
 	response.Success(c, gin.H{
-		"redirect": "/admin/login",
+		"redirect": core.AdminBasePath() + "/login",
 	})
 }
 

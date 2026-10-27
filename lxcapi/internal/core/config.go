@@ -3,6 +3,7 @@ package core
 import (
 	"gopkg.in/yaml.v3"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -115,6 +116,32 @@ type AdminConfig struct {
 	Username      string `yaml:"username"`
 	Password      string `yaml:"password"`
 	SessionSecret string `yaml:"session_secret"`
+	Path          string `yaml:"path"`
+}
+
+// AdminPath 返回管理面板路径，未配置或配置为根路径时回退到 /admin。
+// 返回值保证以 / 开头且不带结尾斜杠。
+func (c *AdminConfig) AdminPath() string {
+	p := strings.TrimSpace(c.Path)
+	if p == "" || p == "/" {
+		return "/admin"
+	}
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	p = strings.TrimRight(p, "/")
+	if p == "" {
+		return "/admin"
+	}
+	return p
+}
+
+// AdminBasePath 返回当前生效的管理面板路径，配置未加载时回退到 /admin。
+func AdminBasePath() string {
+	if GlobalConfig == nil {
+		return "/admin"
+	}
+	return GlobalConfig.Admin.AdminPath()
 }
 
 var GlobalConfig *Config

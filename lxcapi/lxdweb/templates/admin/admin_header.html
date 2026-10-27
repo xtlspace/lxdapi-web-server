@@ -59,44 +59,38 @@
     <div class="container mx-auto px-4">
         <div class="flex justify-between items-center py-3 md:py-4">
             <div class="flex items-center space-x-2 md:space-x-4">
-                <a href="/admin/dashboard" class="flex items-center space-x-2 smooth-transition hover:scale-105">
+                <a href="{{.AdminPath}}/dashboard" class="flex items-center space-x-2 smooth-transition hover:scale-105">
                     <span class="iconify text-blue-600" data-icon="mdi:server-network" data-width="28" data-height="28" class="md:w-8 md:h-8"></span>
-                    <h1 class="text-lg md:text-2xl font-bold text-blue-600">{{ .SystemName }}</h1>
+                    <h1 class="text-lg md:text-2xl font-bold text-blue-600">LXC API - 管理后台</h1>
                 </a>
             </div>
 
             <div class="hidden lg:flex items-center space-x-2">
-                <a href="/admin/dashboard" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
+                <a href="{{.AdminPath}}/dashboard" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
                     <div class="flex items-center gap-2">
                         <span class="iconify" data-icon="mdi:view-dashboard" data-width="18"></span>
                         仪表盘
                     </div>
                 </a>
-                <a href="/admin/containers" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
+                <a href="{{.AdminPath}}/containers" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
                     <div class="flex items-center gap-2">
                         <span class="iconify" data-icon="mdi:cube-outline" data-width="18"></span>
                         容器管理
                     </div>
                 </a>
-                <a href="/admin/templates" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
+                <a href="{{.AdminPath}}/templates" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
                     <div class="flex items-center gap-2">
                         <span class="iconify" data-icon="mdi:image-multiple" data-width="18"></span>
                         镜像模板
                     </div>
                 </a>
-                <a href="/admin/tasks" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
+                <a href="{{.AdminPath}}/tasks" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
                     <div class="flex items-center gap-2">
                         <span class="iconify" data-icon="mdi:clipboard-list-outline" data-width="18"></span>
                         任务管理
                     </div>
                 </a>
-                <a href="/admin/brand-settings" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
-                    <div class="flex items-center gap-2">
-                        <span class="iconify" data-icon="mdi:cog" data-width="18"></span>
-                        系统设置
-                    </div>
-                </a>
-                <a href="/admin/nginx" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
+                <a href="{{.AdminPath}}/nginx" class="text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium smooth-transition">
                     <div class="flex items-center gap-2">
                         <span class="iconify" data-icon="mdi:web" data-width="18"></span>
                         Nginx反向代理
@@ -111,20 +105,20 @@
                         </div>
                     </div>
                     <ul tabindex="0" class="dropdown-content menu bg-white rounded-lg shadow-lg border border-gray-200 w-48 mt-2 p-1 z-50">
-                        <li><a href="/admin/ip-pool/v4" class="text-sm flex items-center gap-2">
+                        <li><a href="{{.AdminPath}}/ip-pool/v4" class="text-sm flex items-center gap-2">
                             <span class="iconify" data-icon="mdi:ip-network" data-width="18"></span>
                             独立IPv4管理
                         </a></li>
-                        <li><a href="/admin/nserIPv6" class="text-sm flex items-center gap-2">
+                        <li><a href="{{.AdminPath}}/nserIPv6" class="text-sm flex items-center gap-2">
                             <span class="iconify" data-icon="mdi:access-point-network" data-width="18"></span>
                             IPv6邻居请求
                         </a></li>
 
-                        <li><a href="/admin/port-mapping/v4" class="text-sm flex items-center gap-2">
+                        <li><a href="{{.AdminPath}}/port-mapping/v4" class="text-sm flex items-center gap-2">
                             <span class="iconify" data-icon="mdi:ethernet" data-width="18"></span>
                             IPv4NAT管理
                         </a></li>
-                        <li><a href="/admin/port-mapping/v6" class="text-sm flex items-center gap-2">
+                        <li><a href="{{.AdminPath}}/port-mapping/v6" class="text-sm flex items-center gap-2">
                             <span class="iconify" data-icon="mdi:ethernet" data-width="18"></span>
                             IPv6NAT管理
                         </a></li>
@@ -137,7 +131,7 @@
                     <span class="iconify text-gray-500" data-icon="mdi:account-circle" data-width="18"></span>
                     <span class="text-sm font-medium">{{.username}}</span>
                 </div>
-                <a href="/admin/logout" class="hidden md:flex bg-red-500 hover:bg-red-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm font-medium btn-hover shadow-sm items-center gap-2">
+                <a href="{{.AdminPath}}/logout" class="hidden md:flex bg-red-500 hover:bg-red-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm font-medium btn-hover shadow-sm items-center gap-2">
                     <span class="iconify" data-icon="mdi:logout" data-width="16"></span>
                     退出
                 </a>
@@ -149,27 +143,23 @@
 
         <div id="mobileMenu" class="mobile-menu lg:hidden border-t border-gray-100">
             <div class="py-3 space-y-1">
-                <a href="/admin/dashboard" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
+                <a href="{{.AdminPath}}/dashboard" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
                     <span class="iconify" data-icon="mdi:view-dashboard" data-width="20"></span>
                     仪表盘
                 </a>
-                <a href="/admin/containers" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
+                <a href="{{.AdminPath}}/containers" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
                     <span class="iconify" data-icon="mdi:cube-outline" data-width="20"></span>
                     容器管理
                 </a>
-                <a href="/admin/templates" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
+                <a href="{{.AdminPath}}/templates" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
                     <span class="iconify" data-icon="mdi:image-multiple" data-width="20"></span>
                     镜像模板
                 </a>
-                <a href="/admin/tasks" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
+                <a href="{{.AdminPath}}/tasks" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
                     <span class="iconify" data-icon="mdi:clipboard-list-outline" data-width="20"></span>
                     任务管理
                 </a>
-                <a href="/admin/brand-settings" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
-                    <span class="iconify" data-icon="mdi:cog" data-width="20"></span>
-                    系统设置
-                </a>
-                <a href="/admin/nginx" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
+                <a href="{{.AdminPath}}/nginx" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
                     <span class="iconify" data-icon="mdi:web" data-width="20"></span>
                     Nginx反向代理
                 </a>
@@ -183,20 +173,20 @@
                     </button>
                     <div class="mobile-dropdown-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
                         <div class="pl-4 space-y-1 py-2">
-                            <a href="/admin/ip-pool/v4" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
+                            <a href="{{.AdminPath}}/ip-pool/v4" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
                                 <span class="iconify" data-icon="mdi:ip-network" data-width="20"></span>
                                 独立IPv4管理
                             </a>
-                            <a href="/admin/nserIPv6" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
+                            <a href="{{.AdminPath}}/nserIPv6" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
                                 <span class="iconify" data-icon="mdi:access-point-network" data-width="20"></span>
                                 IPv6邻居请求
                             </a>
 
-                            <a href="/admin/port-mapping/v4" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
+                            <a href="{{.AdminPath}}/port-mapping/v4" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
                                 <span class="iconify" data-icon="mdi:ethernet" data-width="20"></span>
                                 IPv4NAT管理
                             </a>
-                            <a href="/admin/port-mapping/v6" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
+                            <a href="{{.AdminPath}}/port-mapping/v6" class="flex items-center gap-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm smooth-transition">
                                 <span class="iconify" data-icon="mdi:ethernet" data-width="20"></span>
                                 IPv6NAT管理
                             </a>
@@ -204,7 +194,7 @@
                     </div>
                 </div>
                 <div class="border-t border-gray-100 mt-2 pt-2">
-                    <a href="/admin/logout" class="flex items-center gap-3 text-red-600 hover:bg-red-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
+                    <a href="{{.AdminPath}}/logout" class="flex items-center gap-3 text-red-600 hover:bg-red-50 px-4 py-3 rounded-lg text-sm font-medium smooth-transition">
                         <span class="iconify" data-icon="mdi:logout" data-width="20"></span>
                         退出登录
                     </a>

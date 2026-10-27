@@ -2,6 +2,7 @@ package system
 
 import (
 	"github.com/gin-gonic/gin"
+	"lxcapi/internal/core"
 	"lxcapi/internal/service"
 	"lxcapi/pkg/response"
 	"time"
@@ -16,7 +17,7 @@ func GetAdminAccessToken(c *gin.Context) {
 
 	response.Success(c, gin.H{
 		"token":      token.Token,
-		"jump_url":   "/admin/dashboard?token=" + token.Token,
+		"jump_url":   core.AdminBasePath() + "/dashboard?token=" + token.Token,
 		"expires_at": token.ExpiresAt,
 	})
 }

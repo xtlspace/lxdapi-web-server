@@ -66,7 +66,6 @@ func Init() error {
 		&models.IPv4Pool{},
 		&models.Task{},
 		&models.Template{},
-		&models.BrandSettings{},
 		&models.PortRangeConfig{},
 		&models.IPPoolSettings{},
 		&models.AccessToken{},
