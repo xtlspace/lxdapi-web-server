@@ -1,15 +1,15 @@
 <?php
 
-namespace addons\lxd_traffic_reset;
+namespace addons\lxc_traffic_reset;
 
 use think\Db;
 
-class LxdTrafficResetPlugin extends \app\admin\lib\Plugin
+class LxcTrafficResetPlugin extends \app\admin\lib\Plugin
 {
     public $info = [
-        'name'        => 'LxdTrafficReset',
-        'title'       => 'LXD流量重置支付回调',
-        'description' => '监听账单支付成功事件，自动执行LXD容器流量重置（配合 lxcapiserver 服务器模块使用）',
+        'name'        => 'LxcTrafficReset',
+        'title'       => 'LXC流量重置支付回调',
+        'description' => '监听账单支付成功事件，自动执行LXC容器流量重置（配合 lxcapiserver 服务器模块使用）',
         'status'      => 1,
         'author'      => 'xkatld',
         'version'     => '1.0.0',
@@ -37,7 +37,7 @@ class LxdTrafficResetPlugin extends \app\admin\lib\Plugin
         }
 
         try {
-            $pending = Db::name('lxd_traffic_reset')
+            $pending = Db::name('lxc_traffic_reset')
                 ->where('invoiceid', $invoiceid)
                 ->where('status', 'pending')
                 ->find();
@@ -55,7 +55,7 @@ class LxdTrafficResetPlugin extends \app\admin\lib\Plugin
 
             $moduleFile = WEB_ROOT . 'plugins/servers/lxcapiserver/lxcapiserver.php';
             if (!file_exists($moduleFile)) {
-                Db::name('lxd_traffic_reset')->where('id', $pending['id'])->update([
+                Db::name('lxc_traffic_reset')->where('id', $pending['id'])->update([
                     'status'      => 'failed',
                     'paid_time'   => intval($invoiceInfo['paid_time']),
                     'handle_time' => time(),
@@ -68,14 +68,14 @@ class LxdTrafficResetPlugin extends \app\admin\lib\Plugin
 
             $result = \lxcapiserver_DoTrafficResetByHost($pending['hostid'], $pending['uid']);
             if (isset($result['status']) && $result['status'] == 'success') {
-                Db::name('lxd_traffic_reset')->where('id', $pending['id'])->update([
+                Db::name('lxc_traffic_reset')->where('id', $pending['id'])->update([
                     'status'      => 'done',
                     'paid_time'   => intval($invoiceInfo['paid_time']),
                     'handle_time' => time(),
                     'remark'      => $result['msg'],
                 ]);
             } else {
-                Db::name('lxd_traffic_reset')->where('id', $pending['id'])->update([
+                Db::name('lxc_traffic_reset')->where('id', $pending['id'])->update([
                     'status'      => 'failed',
                     'paid_time'   => intval($invoiceInfo['paid_time']),
                     'handle_time' => time(),
@@ -84,7 +84,7 @@ class LxdTrafficResetPlugin extends \app\admin\lib\Plugin
             }
         } catch (\Exception $e) {
             try {
-                Db::name('lxd_traffic_reset')->where('invoiceid', $invoiceid)->where('status', 'pending')->update([
+                Db::name('lxc_traffic_reset')->where('invoiceid', $invoiceid)->where('status', 'pending')->update([
                     'status'      => 'failed',
                     'handle_time' => time(),
                     'remark'      => mb_substr($e->getMessage(), 0, 200),
@@ -100,7 +100,7 @@ class LxdTrafficResetPlugin extends \app\admin\lib\Plugin
         if (empty($prefix)) {
             $prefix = 'shd_';
         }
-        $table = $prefix . 'lxd_traffic_reset';
+        $table = $prefix . 'lxc_traffic_reset';
         $exists = Db::query("SHOW TABLES LIKE '" . $table . "'");
         if (empty($exists)) {
             Db::execute("CREATE TABLE IF NOT EXISTS `" . $table . "` (

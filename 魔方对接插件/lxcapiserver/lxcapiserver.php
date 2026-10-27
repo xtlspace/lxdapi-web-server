@@ -17,9 +17,8 @@ function lxcapiserver_debug($message, $data = null)
 function lxcapiserver_MetaData()
 {
     return [
-        'DisplayName' => '魔方财务-LXD对接插件V2',
-        'APIVersion'  => 'v2.1.0',
-        'HelpDoc'     => 'https://github.com/xkatld/lxdapi-web-server',
+        'DisplayName' => '魔方财务-LxcAPI对接插件',
+        'APIVersion'  => 'v2.4.5'
     ];
 }
 
@@ -652,7 +651,7 @@ function lxcapiserver_EnsureTrafficResetTable()
     if (empty($prefix)) {
         $prefix = 'shd_';
     }
-    $table = $prefix . 'lxd_traffic_reset';
+    $table = $prefix . 'lxc_traffic_reset';
     $exists = Db::query("SHOW TABLES LIKE '" . $table . "'");
     if (empty($exists)) {
         Db::execute("CREATE TABLE IF NOT EXISTS `" . $table . "` (
@@ -742,7 +741,7 @@ function lxcapiserver_ResetTraffic($params)
     
     lxcapiserver_EnsureTrafficResetTable();
     
-    $existing = Db::name('lxd_traffic_reset')
+    $existing = Db::name('lxc_traffic_reset')
         ->where('hostid', $hostid)
         ->where('uid', $uid)
         ->whereIn('status', ['pending', 'failed'])
@@ -762,7 +761,7 @@ function lxcapiserver_ResetTraffic($params)
         if ($invStatus == 'Paid') {
             $resetResult = lxcapiserver_DoTrafficResetByHost($hostid, $uid);
             if (isset($resetResult['status']) && $resetResult['status'] == 'success') {
-                Db::name('lxd_traffic_reset')->where('id', $existing['id'])->update([
+                Db::name('lxc_traffic_reset')->where('id', $existing['id'])->update([
                     'status'      => 'done',
                     'paid_time'   => intval($invoiceInfo['paid_time']),
                     'handle_time' => time(),
@@ -770,7 +769,7 @@ function lxcapiserver_ResetTraffic($params)
                 ]);
                 return ['status' => 200, 'msg' => '流量已重置成功'];
             }
-            Db::name('lxd_traffic_reset')->where('id', $existing['id'])->update([
+            Db::name('lxc_traffic_reset')->where('id', $existing['id'])->update([
                 'handle_time' => time(),
                 'remark'      => $resetResult['msg'],
             ]);
@@ -817,7 +816,7 @@ function lxcapiserver_ResetTraffic($params)
         'delete_time' => 0,
     ]);
     
-    Db::name('lxd_traffic_reset')->insert([
+    Db::name('lxc_traffic_reset')->insert([
         'uid'         => $uid,
         'hostid'      => $hostid,
         'invoiceid'   => $invoiceId,
@@ -915,7 +914,7 @@ function lxcapiserver_ClientAreaOutput($params, $key)
         if ($trafficResetEnabled && $hostid > 0 && $uid > 0) {
             try {
                 lxcapiserver_EnsureTrafficResetTable();
-                $pendingList = Db::name('lxd_traffic_reset')
+                $pendingList = Db::name('lxc_traffic_reset')
                     ->where('hostid', $hostid)
                     ->where('uid', $uid)
                     ->whereIn('status', ['pending', 'failed'])
@@ -931,7 +930,7 @@ function lxcapiserver_ClientAreaOutput($params, $key)
                     if ($invoiceInfo['status'] == 'Paid') {
                         $resetResult = lxcapiserver_DoTrafficResetByHost($hostid, $uid);
                         if (isset($resetResult['status']) && $resetResult['status'] == 'success') {
-                            Db::name('lxd_traffic_reset')->where('id', $pending['id'])->update([
+                            Db::name('lxc_traffic_reset')->where('id', $pending['id'])->update([
                                 'status'      => 'done',
                                 'paid_time'   => intval($invoiceInfo['paid_time']),
                                 'handle_time' => time(),
@@ -940,7 +939,7 @@ function lxcapiserver_ClientAreaOutput($params, $key)
                             $resetNotice = '流量已重置成功';
                             $resetNoticeType = 'success';
                         } else {
-                            Db::name('lxd_traffic_reset')->where('id', $pending['id'])->update([
+                            Db::name('lxc_traffic_reset')->where('id', $pending['id'])->update([
                                 'handle_time' => time(),
                                 'remark'      => $resetResult['msg'],
                             ]);
