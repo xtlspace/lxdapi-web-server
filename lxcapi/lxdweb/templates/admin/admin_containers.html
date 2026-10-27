@@ -214,7 +214,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">硬盘 MB <span class="text-red-500">*</span></label>
-                                <input type="number" name="disk" required value="512" min="1" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <input type="number" name="disk" required value="1024" min="1" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             </div>
                         </div>
                     </div>
@@ -299,7 +299,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">CPU使用限制 %</label>
-                                <input type="number" name="cpu_allowance" value="50" min="1" max="100" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="留空不配置">
+                                <input type="number" name="cpu_allowance" value="20" min="1" max="100" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="留空不配置">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">I/O读取限制 MB</label>
@@ -307,7 +307,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">I/O写入限制 MB</label>
-                                <input type="number" name="io_write" value="100" min="1" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="留空不配置">
+                                <input type="number" name="io_write" value="50" min="1" class="input input-bordered input-sm w-full outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="留空不配置">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">最大进程数</label>
@@ -326,7 +326,7 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" name="allow_nesting" value="true" checked class="checkbox checkbox-sm">
+                                <input type="checkbox" name="allow_nesting" value="true" class="checkbox checkbox-sm">
                                 <label class="text-sm text-gray-700">启用嵌套虚拟化</label>
                             </div>
                             <div class="flex items-center gap-2">
