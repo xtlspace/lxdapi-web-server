@@ -17,13 +17,6 @@ func ContainerDashboard(c *gin.Context) {
 	}))
 }
 
-func ContainerDashboardBase(c *gin.Context) {
-	hash := c.Query("hash")
-	c.HTML(http.StatusOK, "container/container_dashboard_base1.html", utils.MergeTemplateData(c, gin.H{
-		"hash": hash,
-	}))
-}
-
 func ContainerDashboardLite(c *gin.Context) {
 	hash := c.Query("hash")
 	c.HTML(http.StatusOK, "container/container_dashboard_lite1.html", utils.MergeTemplateData(c, gin.H{

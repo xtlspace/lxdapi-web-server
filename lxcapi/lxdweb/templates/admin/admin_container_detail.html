@@ -855,8 +855,12 @@
 
             $('#btnUnlimit').toggle(containerStatus === 'limited');
 
-            const iconColor = containerStatus === 'running' ? 'from-green-500 to-green-600' : 'from-gray-500 to-gray-600';
-            $('#containerIconBg').removeClass().addClass(`w-12 h-12 bg-gradient-to-br ${iconColor} rounded-lg flex items-center justify-center`);
+            const iconColor = containerStatus === 'running' ? 'from-green-500 to-green-600' :
+                containerStatus === 'stopped' ? 'from-gray-500 to-gray-600' :
+                containerStatus === 'frozen' ? 'from-yellow-500 to-yellow-600' :
+                containerStatus === 'limited' ? 'from-orange-500 to-orange-600' :
+                'from-yellow-500 to-yellow-600';
+            $('#containerIconBg').removeClass('from-green-500 to-green-600 from-gray-500 to-gray-600 from-yellow-500 to-yellow-600 from-orange-500 to-orange-600').addClass(iconColor);
             
             $('#containerStatus').html(statusBadge);
             $('#containerImage').text(c.image || '未知镜像');

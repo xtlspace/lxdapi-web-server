@@ -636,8 +636,12 @@
                 '<span class="px-2 py-0.5 text-xs font-medium text-orange-700 bg-orange-100 rounded-full flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>已限速</span>' :
                 '<span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">其他</span>';
 
-            const iconColor = status === 'running' ? 'from-green-500 to-green-600' : 'from-gray-500 to-gray-600';
-            $('#containerIconBg').removeClass().addClass(`w-12 h-12 bg-gradient-to-br ${iconColor} rounded-lg flex items-center justify-center`);
+            const iconColor = status === 'running' ? 'from-green-500 to-green-600' :
+                status === 'stopped' ? 'from-gray-500 to-gray-600' :
+                status === 'frozen' ? 'from-yellow-500 to-yellow-600' :
+                status === 'limited' ? 'from-orange-500 to-orange-600' :
+                'from-yellow-500 to-yellow-600';
+            $('#containerIconBg').removeClass('from-green-500 to-green-600 from-gray-500 to-gray-600 from-yellow-500 to-yellow-600 from-orange-500 to-orange-600').addClass(iconColor);
             
             $('#containerStatus').html(statusBadge);
             $('#containerImage').text(c.image || '未知镜像');

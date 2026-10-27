@@ -241,7 +241,6 @@ func main() {
 	r.GET("/console", handlers.ConsolePage)
 	r.GET("/ws/console", console.HandleWebSocket)
 	r.GET("/container/dashboard/lite", handlers.ContainerDashboardLite)
-	r.GET("/container/dashboard/base", handlers.ContainerDashboardBase)
 	
 	adminPath := core.AdminBasePath()
 	for _, reserved := range []string{"/api", "/static", "/container", "/console", "/ws"} {
