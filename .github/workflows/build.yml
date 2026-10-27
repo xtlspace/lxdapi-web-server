@@ -3,23 +3,30 @@ name: Build Binaries
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.23'
+          go-version-file: lxcapi/go.mod
+          cache-dependency-path: lxcapi/go.sum
 
       - name: Install Swag
         run: |
           go install github.com/swaggo/swag/cmd/swag@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Download Dependencies
         run: |
@@ -30,13 +37,8 @@ jobs:
       - name: Generate Swagger Docs
         run: |
           cd lxcapi
-          if command -v swag &> /dev/null; then
-            swag init -g cmd/lxcapi/main.go --output docs --parseDependency --parseInternal
-          elif [ -f ~/go/bin/swag ]; then
-            ~/go/bin/swag init -g cmd/lxcapi/main.go --output docs --parseDependency --parseInternal
-          else
-            echo "警告: 未找到 swag 命令，跳过 Swagger 文档生成"
-          fi
+          swag init -g cmd/lxcapi/main.go --output docs --parseDependency --parseInternal \
+            || echo "警告: swag 生成失败（未找到注解），已跳过"
 
       - name: Prepare Embedded Resources
         run: |
@@ -64,7 +66,7 @@ jobs:
           echo "RELEASE_TAG=$(grep -oP 'Version\s*=\s*"\K[^"]+' lxcapi/pkg/version/version.go)" >> "$GITHUB_ENV"
 
       - name: Publish Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ env.RELEASE_TAG }}
