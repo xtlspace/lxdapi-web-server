@@ -41,3 +41,22 @@ func TestAdminBasePath(t *testing.T) {
 		t.Errorf("AdminBasePath() = %q, want %q", got, "/panel")
 	}
 }
+
+func TestSocketPath(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{"", "/var/lib/incus/unix.socket"},
+		{"   ", "/var/lib/incus/unix.socket"},
+		{"/run/incus/unix.socket", "/run/incus/unix.socket"},
+		{"  /run/incus/unix.socket  ", "/run/incus/unix.socket"},
+	}
+
+	for _, c := range cases {
+		cfg := LXCConfig{Socket: c.in}
+		if got := cfg.SocketPath(); got != c.want {
+			t.Errorf("LXCConfig{Socket: %q}.SocketPath() = %q, want %q", c.in, got, c.want)
+		}
+	}
+}

@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -36,7 +37,8 @@ type Logger struct {
 var Global *Logger
 
 func Init(mode string, colorful bool) {
-	if mode != "debug" && mode != "release" {
+	mode = strings.ToLower(strings.TrimSpace(mode))
+	if mode != "debug" {
 		mode = "release"
 	}
 	Global = &Logger{mode: mode, colorful: colorful}

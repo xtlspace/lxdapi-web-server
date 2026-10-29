@@ -37,14 +37,15 @@ func DefaultClient() *Client {
 
 func NewClient() *Client {
 	cfg := core.GlobalConfig.LXC
+	socketPath := cfg.SocketPath()
 	transport := &http.Transport{
 		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-			return net.DialTimeout("unix", cfg.Socket, time.Duration(cfg.Timeout)*time.Second)
+			return net.DialTimeout("unix", socketPath, time.Duration(cfg.Timeout)*time.Second)
 		},
 	}
 	execPath, _ := exec.LookPath("incus")
 	return &Client{
-		socket:  cfg.Socket,
+		socket:  socketPath,
 		timeout: time.Duration(cfg.Timeout) * time.Second,
 		httpClient: &http.Client{
 			Transport: transport,

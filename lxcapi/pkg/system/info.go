@@ -49,10 +49,7 @@ func GetSystemInfo() *SystemInfo {
 }
 
 func getLXDVersion() string {
-	socket := core.GlobalConfig.LXC.Socket
-	if socket == "" {
-		socket = "/var/lib/incus/unix.socket"
-	}
+	socket := core.GlobalConfig.LXC.SocketPath()
 
 	client := &http.Client{
 		Timeout: 3 * time.Second,

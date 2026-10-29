@@ -149,7 +149,11 @@ func main() {
 		logger.OK("启动模板同步完成: 新增 %d, 更新 %d, 删除 %d", added, updated, deleted)
 	}()
 
-	gin.SetMode(cfg.System.Server.Mode)
+	if cfg.System.Logger.IsDebug() {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	r := gin.Default()
 
 	store := cookie.NewStore([]byte(cfg.Admin.SessionSecret))

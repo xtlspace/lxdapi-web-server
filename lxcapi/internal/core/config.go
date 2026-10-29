@@ -26,7 +26,6 @@ type SystemConfig struct {
 type ServerConfig struct {
 	Host string    `yaml:"host"`
 	Port int       `yaml:"port"`
-	Mode string    `yaml:"mode"`
 	TLS  TLSConfig `yaml:"tls"`
 }
 
@@ -46,11 +45,26 @@ type LoggerConfig struct {
 	Colorful bool   `yaml:"colorful"`
 }
 
+// IsDebug 统一判定是否启用 debug 级别（忽略大小写与首尾空格）
+func (c *LoggerConfig) IsDebug() bool {
+	return strings.EqualFold(strings.TrimSpace(c.Level), "debug")
+}
+
 type LXCConfig struct {
 	Socket  string `yaml:"socket"`
 	Timeout int    `yaml:"timeout"`
 	Storage string `yaml:"storage"`
 	Bridge  string `yaml:"bridge"`
+}
+
+const defaultLXCSocket = "/var/lib/incus/unix.socket"
+
+// SocketPath 返回 Incus socket 路径，未配置或为空白时回退到默认路径。
+func (c *LXCConfig) SocketPath() string {
+	if s := strings.TrimSpace(c.Socket); s != "" {
+		return s
+	}
+	return defaultLXCSocket
 }
 
 // BridgeName 返回默认网桥名称，为空时回退到 incusbr0。
